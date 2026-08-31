@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model StatutUtilisateur {
+  idStatut      Int    @id @default(autoincrement()) @map("id_statut")
+  libelleStatut String @unique @map("libelle_statut") @db.VarChar(50)
+
+  utilisateurs Utilisateur[]
+
+  @@map("statut_utilisateur")
+}
+
+model NiveauUtilisateur {
+  idNiveau      Int    @id @default(autoincrement()) @map("id_niveau")
+  libelleNiveau String @unique @map("libelle_niveau") @db.VarChar(50)
+
+  utilisateurs Utilisateur[]
+
+  @@map("niveau_utilisateur")
+}
+
+model StatutEvent {
+  idStatutEvent Int    @id @default(autoincrement()) @map("id_statut_event")
+  libelleEvent  String @unique @map("libelle_event") @db.VarChar(50)
+
+  evenements Evenement[]
+
+  @@map("statut_event")
+}
+
+model NiveauEvent {
+  idNiveauEvent      Int    @id @default(autoincrement()) @map("id_niveau_event")
+  libelleNiveauEvent String @unique @map("libelle_niveau_event") @db.VarChar(50)
+
+  requiert Requiert[]
+
+  @@map("niveau_event")
+}
+
+model Motif {
+  idMotif Int    @id @default(autoincrement()) @map("id_motif")
+  libelle String @unique @db.VarChar(50)
+
+  signalements Signal[]
+
+  @@map("motif")
+}
+
+model Utilisateur {
+  idJoueur        Int       @id @default(autoincrement()) @map("id_joueur")
+  nom             String    @db.VarChar(50)
+  prenom          String    @db.VarChar(50)
+  email           String    @unique @db.VarChar(50)
+  motDePasse      String    @map("mot_de_passe") @db.VarChar(255)
+  ville           String?   @db.VarChar(50)
+  dateInscription DateTime  @default(now()) @map("date_inscription")
+  lastLogin       DateTime? @map("last_login")
+  role            String    @default("joueur") @db.VarChar(20)
+  idStatut        Int?      @map("id_statut")
+  idNiveau        Int?      @map("id_niveau")
+
+  statut       StatutUtilisateur? @relation(fields: [idStatut], references: [idStatut])
+  niveau       NiveauUtilisateur? @relation(fields: [idNiveau], references: [idNiveau])
+  evenements   Evenement[]
+  inscriptions Rejoint[]
+  signalements Signal[]
+  evaluations  Evaluation[]
+
+  @@index([email])
+  @@map("utilisateur")
+}
+
+model Lieu {
+  idLieu      Int     @id @default(autoincrement()) @map("id_lieu")
+  region      String? @db.VarChar(50)
+  ville       String  @db.VarChar(50)
+  adresse     String  @db.VarChar(50)
+  codePostal  String  @map("code_postal") @db.VarChar(50)
+  typeTerrain String? @map("type_terrain") @db.VarChar(50)
+  latitude    Decimal @db.Decimal(10, 7)
+  longitude   Decimal @db.Decimal(10, 7)
+
+  evenements Evenement[]
+
+  @@map("lieu")
+}
+
+model Evenement {
+  idEvenement       Int       @id @default(autoincrement()) @map("id_evenement")
+  titre             String    @db.VarChar(50)
+  nombrePlaces      Int       @map("nombre_places")
+  typePrivePublique Boolean   @default(false) @map("type_prive_publique")
+  dateCreation      DateTime  @default(now()) @map("date_creation")
+  dateDebut         DateTime  @map("date_debut")
+  dateFin           DateTime  @map("date_fin")
+  dateDesactivation DateTime? @map("date_desactivation")
+  idLieu            Int       @map("id_lieu")
+  idStatutEvent     Int       @map("id_statut_event")
+  idJoueur          Int       @map("id_joueur")
+
+  lieu         Lieu        @relation(fields: [idLieu], references: [idLieu])
+  statut       StatutEvent @relation(fields: [idStatutEvent], references: [idStatutEvent])
+  organisateur Utilisateur @relation(fields: [idJoueur], references: [idJoueur])
+  niveaux      Requiert[]
+  inscriptions Rejoint[]
+  signalements Signal[]
+  evaluations  Evaluation[]
+
+  @@index([dateDebut])
+  @@index([idJoueur])
+  @@map("evenement")
+}
+
+model Requiert {
+  idEvenement   Int @map("id_evenement")
+  idNiveauEvent Int @map("id_niveau_event")
+
+  evenement Evenement   @relation(fields: [idEvenement], references: [idEvenement])
+  niveau    NiveauEvent @relation(fields: [idNiveauEvent], references: [idNiveauEvent])
+
+  @@id([idEvenement, idNiveauEvent])
+  @@map("requiert")
+}
+
+model Rejoint {
+  idJoueur          Int       @map("id_joueur")
+  idEvenement       Int       @map("id_evenement")
+  dateInscription   DateTime  @default(now()) @map("date_inscription")
+  presence          DateTime?
+  statutInscription String    @default("en_attente") @map("statut_inscription") @db.VarChar(50)
+
+  joueur    Utilisateur @relation(fields: [idJoueur], references: [idJoueur])
+  evenement Evenement   @relation(fields: [idEvenement], references: [idEvenement])
+
+  @@id([idJoueur, idEvenement])
+  @@index([idEvenement])
+  @@map("rejoint")
+}
+
+model Signal {
+  idJoueur        Int      @map("id_joueur")
+  idEvenement     Int      @map("id_evenement")
+  idMotif         Int      @map("id_motif")
+  dateSignalement DateTime @default(now()) @map("date_signalement")
+  texteLibre      String?  @map("texte_libre") @db.VarChar(255)
+
+  joueur    Utilisateur @relation(fields: [idJoueur], references: [idJoueur])
+  evenement Evenement   @relation(fields: [idEvenement], references: [idEvenement])
+  motif     Motif       @relation(fields: [idMotif], references: [idMotif])
+
+  @@id([idJoueur, idEvenement, idMotif])
+  @@map("signal")
+}
+
+model Evaluation {
+  idJoueur       Int      @map("id_joueur")
+  idEvenement    Int      @map("id_evenement")
+  note           Int
+  dateEvaluation DateTime @default(now()) @map("date_evaluation")
+  commentaire    String?  @db.VarChar(255)
+
+  joueur    Utilisateur @relation(fields: [idJoueur], references: [idJoueur])
+  evenement Evenement   @relation(fields: [idEvenement], references: [idEvenement])
+
+  @@id([idJoueur, idEvenement])
+  @@map("evaluation")
+}
