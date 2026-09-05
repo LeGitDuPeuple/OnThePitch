@@ -33,20 +33,22 @@ Devant un choix entre deux solutions qui répondent au besoin, prendre la plus s
 terminé et testé.
 
 ### Socle
-- [ ] `docker-compose.yml` fonctionnel (db + api + client)
-- [ ] Extension PostGIS active + index GIST (via migration Prisma, pas `init.sql`)
-- [ ] Serveur Express qui démarre et répond sur une route de santé
-- [ ] Structure de dossiers en place (controllers / services / repositories)
-- [ ] `container.ts` (composition des dépendances)
-- [ ] Middleware d'erreurs centralisé
-- [ ] `.env.example` versionné, `.env` ignoré
+- [ ] `docker-compose.yml` fonctionnel (db + api + client) — seul `db` existe pour l'instant,
+      `api`/`client` pas encore conteneurisés (pas de Dockerfile, `frontend/` pas encore amorcé)
+- [x] Extension PostGIS active + index GIST (via migration Prisma, pas `init.sql`)
+- [x] Serveur Express qui démarre et répond sur une route de santé
+- [x] Structure de dossiers en place (controllers / services / repositories)
+- [x] `container.ts` (composition des dépendances)
+- [x] Middleware d'erreurs centralisé
+- [x] `.env.example` versionné, `.env` ignoré
 
 ### Authentification
-- [ ] Inscription avec hachage bcrypt
-- [ ] Connexion avec émission du JWT
-- [ ] Middleware `authentifier`
-- [ ] Middleware `verifierRole`
-- [ ] Schémas Zod de validation partagés
+- [x] Inscription avec hachage bcrypt — testé (201, doublon d'email → 409)
+- [x] Connexion avec émission du JWT — testé (200 + jeton)
+- [x] Middleware `authentifier` — implémenté, pas encore utilisé sur une route protégée
+      (aucune route protégée n'existe encore, normal à ce stade)
+- [x] Middleware `verifierRole` — implémenté, même remarque
+- [x] Schémas Zod de validation partagés — testé (400 + détail du champ en erreur)
 
 ### Événements
 - [ ] `GeocodageService` (API Adresse) opérationnel
@@ -55,9 +57,12 @@ terminé et testé.
 - [ ] Consultation d'un événement (détail + inscrits)
 
 ### Recherche géolocalisée
-- [ ] Requête PostGIS `ST_DWithin` + `ST_Distance` dans le repository
-- [ ] Index GIST créé
-- [ ] Règles métier du service (rayon par défaut, conversions)
+- [ ] Requête PostGIS `ST_DWithin` + `ST_Distance` dans le repository — repository pas
+      encore écrit ; interface (`EvenementRepositoryInterface`) posée
+- [x] Index GIST créé
+- [x] Règles métier du service (rayon par défaut, conversions) — `RechercheEvenementService`
+      écrit (rayon par défaut 10 km, plafond 100 km, conversion km/m), pas encore branché
+      sur un controller/une route
 - [ ] Point de recherche par géolocalisation navigateur
 - [ ] Point de recherche par saisie manuelle d'adresse
 - [ ] Performance vérifiée (< 500 ms sur 1 000 événements)
