@@ -34,7 +34,7 @@ terminé et testé.
 
 ### Socle
 - [ ] `docker-compose.yml` fonctionnel (db + api + client)
-- [ ] `init.sql` exécuté au démarrage, extension PostGIS active
+- [ ] Extension PostGIS active + index GIST (via migration Prisma, pas `init.sql`)
 - [ ] Serveur Express qui démarre et répond sur une route de santé
 - [ ] Structure de dossiers en place (controllers / services / repositories)
 - [ ] `container.ts` (composition des dépendances)
@@ -104,6 +104,7 @@ terminé et testé.
 | Back-end | Node.js 24 LTS + Express, **TypeScript** |
 | Validation | **Zod** (schémas partagés front / back) |
 | Base de données | PostgreSQL + extension **PostGIS** |
+| ORM | **Prisma** (CRUD standard) + SQL brut via `$queryRaw` pour PostGIS |
 | Conteneurisation | Docker / docker-compose |
 | Tests | Jest |
 | CI/CD | Jenkins (cible) |
@@ -119,8 +120,9 @@ terminé et testé.
 - Pas de `any`. En particulier, tout retour de `JSON.parse` et toute réponse d'API
   externe doit être typé explicitement — sans quoi l'éditeur ne détecte plus rien
 - Les types métier (`Evenement`, `Utilisateur`, `Inscription`) vivent dans `src/domain/`
-  et ne dépendent ni d'Express, ni de `pg`. Les services manipulent ces types, jamais
-  des `Request` ou des `QueryResult`
+  et ne dépendent ni d'Express, ni des types générés par Prisma. Les services manipulent
+  ces types du domaine, jamais des `Request` ni des types Prisma (modèle généré,
+  `Prisma.EvenementGetPayload<...>`, etc.) — la conversion se fait dans le Repository
 
 ### SOLID, appliqué au projet
 
@@ -146,6 +148,26 @@ export class EvenementService {
 }
 ```
 
+L'implémentation concrète s'appuie sur Prisma, mais reste cachée derrière l'interface :
+
+```ts
+// src/repositories/EvenementRepositoryDatabase.ts
+export class EvenementRepositoryDatabase implements IEvenementRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async rechercherParRayon(lon: number, lat: number, rayonM: number): Promise<Evenement[]> {
+    // PostGIS non modélisé par Prisma → seule requête du projet en SQL brut, via $queryRaw
+    const lignes = await this.prisma.$queryRaw<LigneRecherche[]>`...`;
+    return lignes.map(this.versEntite);
+  }
+
+  async creer(evenement: NouvelEvenement): Promise<Evenement> {
+    const ligne = await this.prisma.evenement.create({ data: { /* ... */ } });
+    return this.versEntite(ligne);
+  }
+}
+```
+
 C'est ce qui rend les tests Jest immédiats : on injecte un double au lieu de la base.
 
 Les trois autres principes (ouvert/fermé, Liskov, ségrégation des interfaces) se
@@ -158,7 +180,9 @@ Un seul point de composition, sans bibliothèque :
 
 ```ts
 // src/config/container.ts
-const evenementRepository = new PostgresEvenementRepository(pool);
+import { prisma } from "./prismaClient";
+
+const evenementRepository = new EvenementRepositoryDatabase(prisma);
 const geocodageService   = new GeocodageService();
 const evenementService   = new EvenementService(evenementRepository, geocodageService);
 export const evenementController = new EvenementController(evenementService);
@@ -178,11 +202,32 @@ Repository  → accès aux données, requêtes SQL
 Le Service ne contient jamais de SQL. Le Repository ne contient jamais de règle métier.
 Les dépendances vont toujours vers le bas : un Repository ne remonte jamais vers un Service.
 
+Le Repository s'appuie sur **Prisma** pour les opérations CRUD standards (créer,
+modifier, lire par id). Exception assumée et unique : la recherche géolocalisée, où
+Prisma ne modélise pas les types géographiques PostGIS. Cette requête reste en SQL
+brut, via `prisma.$queryRaw` (tagged template : les paramètres sont liés, jamais
+interpolés en chaîne — même garantie qu'une requête préparée `pg`). Nulle part
+ailleurs dans le projet.
+
 **Position à tenir devant le jury :** une architecture hexagonale ou en oignon a été
 évaluée et écartée. Le domaine d'OnThePitch (contrôle de places, de dates, résolution
 d'adresses) ne justifie pas une couche de cas d'usage supplémentaire qui ne ferait que
 transiter les données. L'inversion de dépendance sur les repositories apporte l'essentiel
 du bénéfice — testabilité, indépendance vis-à-vis de la base — sans le coût structurel.
+
+### Choix Prisma plutôt que `pg` brut
+
+Le dossier envisageait initialement des requêtes SQL manuscrites via `pg`. Prisma est
+retenu à la place : migrations versionnées à partir d'un schéma unique, types générés
+automatiquement (une garantie de plus contre les `any` interdits par ce dossier), et
+nettement moins de code répétitif sur les opérations CRUD (inscription, connexion,
+création d'événement, inscriptions). L'inversion de dépendance sur
+`IEvenementRepository` est conservée à l'identique : le Service ne connaît jamais
+Prisma, seul le Repository l'importe — Prisma est un détail d'implémentation du
+Repository, pas une fuite d'infrastructure vers le domaine. Sur la recherche
+géolocalisée, qui reste la fonctionnalité prioritaire, ce choix ne change rien :
+PostGIS n'étant pas modélisé par l'ORM, la requête `ST_DWithin`/`ST_Distance` reste
+écrite à la main via `$queryRaw`, exactement comme prévu à l'origine.
 
 ### Express et REST
 
@@ -334,6 +379,11 @@ CREATE INDEX idx_lieu_position
   );
 ```
 
+En pratique, ces deux instructions vivent dans une migration Prisma
+(`prisma/migrations/.../migration.sql`), pas dans un script `init.sql` séparé — cohérent
+avec le choix de Prisma comme ORM (voir plus haut, section "Choix Prisma plutôt que
+`pg` brut").
+
 ---
 
 ## Rôles et droits
@@ -359,7 +409,8 @@ CREATE INDEX idx_lieu_position
 
 - `docker-compose.yml` : services `db` (postgis/postgis:16-3.4), `api`, `client`
 - Variables sensibles dans `.env` non versionné + `.env.example` fourni
-- `init.sql` monté dans `/docker-entrypoint-initdb.d/`
+- Extension PostGIS + index GIST créés via une migration Prisma
+  (`prisma/migrations/`), pas via un `init.sql` monté dans `docker-entrypoint-initdb.d/`
 - Structure de dossiers :
 
 ```
@@ -415,25 +466,28 @@ Le joueur définit son point de recherche de deux façons :
 
 Puis il choisit un rayon et obtient les événements du périmètre, triés par distance.
 
-**Repository** — requête PostGIS, paramètres en requête préparée :
+**Repository** — seule requête SQL brute du projet, Prisma ne modélisant pas PostGIS.
+Paramètres liés via tagged template `$queryRaw` (jamais d'interpolation de chaîne) :
 
-```sql
-SELECT e.id_evenement, e.titre, e.date_debut, e.nombre_places,
-       l.adresse, l.ville,
-       ST_Distance(
-         ST_MakePoint(l.longitude, l.latitude)::geography,
-         ST_MakePoint($1, $2)::geography
-       ) AS distance
-FROM evenement e
-JOIN lieu l ON l.id_lieu = e.id_lieu
-WHERE ST_DWithin(
-        ST_MakePoint(l.longitude, l.latitude)::geography,
-        ST_MakePoint($1, $2)::geography, $3
-      )
-  AND e.type_prive_publique = false
-  AND e.date_debut > NOW()
-  AND e.date_desactivation IS NULL
-ORDER BY distance ASC;
+```ts
+const evenements = await prisma.$queryRaw<LigneRecherche[]>`
+  SELECT e.id_evenement, e.titre, e.date_debut, e.nombre_places,
+         l.adresse, l.ville,
+         ST_Distance(
+           ST_MakePoint(l.longitude, l.latitude)::geography,
+           ST_MakePoint(${lon}, ${lat})::geography
+         ) AS distance
+  FROM evenement e
+  JOIN lieu l ON l.id_lieu = e.id_lieu
+  WHERE ST_DWithin(
+          ST_MakePoint(l.longitude, l.latitude)::geography,
+          ST_MakePoint(${lon}, ${lat})::geography, ${rayonM}
+        )
+    AND e.type_prive_publique = false
+    AND e.date_debut > NOW()
+    AND e.date_desactivation IS NULL
+  ORDER BY distance ASC;
+`;
 ```
 
 **Service** — règles métier :
@@ -516,14 +570,15 @@ Trois écrans principaux, maquettés :
 
 - Code, noms de variables et commentaires **en français** (cohérence avec le dossier)
 - TypeScript strict, pas de `any`
-- Requêtes préparées systématiques (protection injection SQL)
+- Requêtes préparées systématiques (protection injection SQL) — assuré nativement par
+  Prisma pour le CRUD, et par tagged template `$queryRaw` pour la requête géolocalisée
 - Soft delete via `date_desactivation`, jamais de DELETE physique sur `evenement`
 - Messages d'erreur utilisateur en français, explicites
 - Tests Jest sur la couche Service, repository substitué par un double via l'interface
 
 ## Ordre de développement recommandé
 
-1. Socle : docker-compose + init.sql + serveur Express + container + middleware d'erreurs
+1. Socle : docker-compose + migration Prisma (PostGIS) + serveur Express + container + middleware d'erreurs
 2. Authentification : inscription, connexion, middlewares
 3. Création d'événement + géocodage
 4. **Recherche géolocalisée** (la feature à soigner)
@@ -538,8 +593,9 @@ Trois écrans principaux, maquettés :
 - `latitude` et `longitude` doivent être ajoutés au MCD Looping (absents actuellement)
 - Le rôle `administrateur` doit être ajouté à `utilisateur` (absent actuellement)
 - Nettoyer les noms de colonnes avant génération du MPD : accents (`prénom`,
-  `libellé_statut`) et underscores traînants obligent à échapper les identifiants
-  dans toutes les requêtes PostgreSQL
+  `libellé_statut`) et underscores traînants. Avec Prisma, le `@map`/`@@map` du schéma
+  absorbe ce problème pour tout le CRUD généré ; ça reste pertinent uniquement pour la
+  requête PostGIS en SQL brut, qui référence les noms de colonnes réels de la base
 - Le diagramme de séquence "Créer un événement" ne montre pas le `GeocodageService` :
   à mettre à jour pour rester cohérent avec le code
 

@@ -1,6 +1,3 @@
-import { config } from "dotenv";
-config({ path: "../.env" });
-
 /**
  * Lit une variable d'environnement.
  * Lève une erreur si elle est absente, pour ne pas démarrer avec une config incomplète.
