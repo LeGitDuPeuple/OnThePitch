@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/authController";
+import { authentifier } from "../middlewares/authentification";
 
 export const authRoutes = Router();
 
@@ -7,4 +8,5 @@ export const authRoutes = Router();
 export const registerAuthRoutes = (controller: AuthController) => {
   authRoutes.post("/inscription", controller.inscription);
   authRoutes.post("/connexion", controller.connexion);
+  authRoutes.get("/profil", authentifier, controller.profil);
 };
