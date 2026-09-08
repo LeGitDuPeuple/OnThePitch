@@ -1,21 +1,45 @@
-export interface CriteresRecherche {
-  latitude: number;
-  longitude: number;
-  rayonMetres: number;
-  limite: number;
-}
+import { Evenement } from "../entities/Evenement";
 
-export interface EvenementProche {
-  id: number;
+// Données nécessaires pour créer un lieu puis un événement.
+export type NouvelEvenement = {
   titre: string;
-  dateDebut: Date;
   nombrePlaces: number;
-  nombreInscrits: number;
-  adresse: string;
+  estPrive: boolean;
+  dateDebut: Date;
+  dateFin: Date;
+  idOrganisateur: number;
+  lieu: {
+    adresse: string;
+    ville: string;
+    codePostal: string;
+    latitude: number;
+    longitude: number;
+    typeTerrain?: string | null;
+  };
+};
+
+// Une ligne de résultat de la recherche géolocalisée, avec sa distance.
+export type EvenementProche = {
+  evenement: Evenement;
+  distanceKm: number;
   ville: string;
-  distanceMetres: number;
-}
+  adresse: string;
+};
 
 export interface EvenementRepositoryInterface {
-  rechercherParRayon(criteres: CriteresRecherche): Promise<EvenementProche[]>;
+  // Crée le lieu et l'événement dans une même transaction.
+  creer(donnees: NouvelEvenement): Promise<Evenement>;
+
+  // Récupère un événement par son identifiant, avec son nombre d'inscrits.
+  trouverParId(id: number): Promise<Evenement | null>;
+
+  // Recherche les événements publics à venir dans un rayon donné (en mètres).
+  rechercherParRayon(
+    longitude: number,
+    latitude: number,
+    rayonMetres: number
+  ): Promise<EvenementProche[]>;
+
+  // Marque un événement comme désactivé (soft delete).
+  desactiver(id: number): Promise<void>;
 }

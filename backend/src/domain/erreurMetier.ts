@@ -30,3 +30,7 @@ export class AccesRefuse extends ErreurMetier {
 export class Conflit extends ErreurMetier {
   readonly statut = 409;
 }
+
+export class ServiceIndisponible extends ErreurMetier {
+  readonly statut = 503;
+}

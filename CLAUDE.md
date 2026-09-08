@@ -45,26 +45,29 @@ terminé et testé.
 ### Authentification
 - [x] Inscription avec hachage bcrypt — testé (201, doublon d'email → 409)
 - [x] Connexion avec émission du JWT — testé (200 + jeton)
-- [x] Middleware `authentifier` — implémenté, pas encore utilisé sur une route protégée
-      (aucune route protégée n'existe encore, normal à ce stade)
-- [x] Middleware `verifierRole` — implémenté, même remarque
+- [x] Middleware `authentifier` — testé sur `POST/DELETE /evenements` (401 sans jeton)
+- [x] Middleware `verifierRole` — testé sur `POST /evenements` (rôle `joueur` requis)
 - [x] Schémas Zod de validation partagés — testé (400 + détail du champ en erreur)
 
 ### Événements
-- [ ] `GeocodageService` (API Adresse) opérationnel
-- [ ] Création d'événement avec géocodage et refus si adresse non résolue
-- [ ] Modification / annulation (soft delete)
-- [ ] Consultation d'un événement (détail + inscrits)
+- [x] `GeocodageService` (API Adresse) opérationnel — testé contre la vraie API
+      (adresse valide résolue, adresse introuvable → 400 explicite)
+- [x] Création d'événement avec géocodage et refus si adresse non résolue — testé
+      (201 adresse valide, 400 adresse introuvable, 400 date de début passée)
+- [x] Annulation (soft delete) — testée (204 par l'organisateur, 403 pour un autre
+      joueur, ligne conservée en base avec `date_desactivation`). Modification
+      (édition d'un événement existant) pas encore implémentée.
+- [x] Consultation d'un événement (détail) — testée (200, 404 si inexistant ou
+      désactivé). Liste des inscrits pas encore incluse (dépend des inscriptions).
 
 ### Recherche géolocalisée
-- [ ] Requête PostGIS `ST_DWithin` + `ST_Distance` dans le repository — repository pas
-      encore écrit ; interface (`EvenementRepositoryInterface`) posée
+- [x] Requête PostGIS `ST_DWithin` + `ST_Distance` dans le repository — testée contre
+      la vraie base (résultat trié par distance, zone vide → liste vide, pas une erreur)
 - [x] Index GIST créé
-- [x] Règles métier du service (rayon par défaut, conversions) — `RechercheEvenementService`
-      écrit (rayon par défaut 10 km, plafond 100 km, conversion km/m), pas encore branché
-      sur un controller/une route
-- [ ] Point de recherche par géolocalisation navigateur
-- [ ] Point de recherche par saisie manuelle d'adresse
+- [x] Règles métier du service (rayon par défaut, conversions) — testées via
+      `GET /evenements/recherche` (défaut 10 km, refus > 100 km)
+- [ ] Point de recherche par géolocalisation navigateur — dépend du front, pas commencé
+- [ ] Point de recherche par saisie manuelle d'adresse — dépend du front, pas commencé
 - [ ] Performance vérifiée (< 500 ms sur 1 000 événements)
 
 ### Inscriptions
