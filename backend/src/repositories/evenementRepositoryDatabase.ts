@@ -74,14 +74,12 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
   }
 
   // Récupère un événement avec le compte de ses inscriptions acceptées.
+  // Une demande "en_attente" ou "refusee" n'occupe pas de place : elle ne compte pas.
   async trouverParId(id: number): Promise<Evenement | null> {
-    const ligne = await prisma.evenement.findUnique({
-      where: { idEvenement: id },
-      include: {
-        statut: true,
-        _count: { select: { inscriptions: true } },
-      },
-    });
+    const [ligne, nombreAcceptees] = await Promise.all([
+      prisma.evenement.findUnique({ where: { idEvenement: id }, include: { statut: true } }),
+      prisma.rejoint.count({ where: { idEvenement: id, statutInscription: "acceptee" } }),
+    ]);
 
     if (!ligne) return null;
 
@@ -96,7 +94,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
       idLieu: ligne.idLieu,
       idOrganisateur: ligne.idJoueur,
       statut: ligne.statut.libelleEvent as StatutEvenement,
-      nombreInscrits: ligne._count.inscriptions,
+      nombreInscrits: nombreAcceptees,
     });
   }
 
@@ -121,7 +119,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
       FROM evenement e
       JOIN lieu l ON l.id_lieu = e.id_lieu
       JOIN statut_event s ON s.id_statut_event = e.id_statut_event
-      LEFT JOIN rejoint r ON r.id_evenement = e.id_evenement
+      LEFT JOIN rejoint r ON r.id_evenement = e.id_evenement AND r.statut_inscription = 'acceptee'
       WHERE ST_DWithin(
               ST_MakePoint(l.longitude::float8, l.latitude::float8)::geography,
               ST_MakePoint(${longitude}::float8, ${latitude}::float8)::geography,
