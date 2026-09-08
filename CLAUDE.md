@@ -71,11 +71,18 @@ terminé et testé.
 - [ ] Performance vérifiée (< 500 ms sur 1 000 événements)
 
 ### Inscriptions
-- [ ] Rejoindre un événement public
-- [ ] Demande + validation pour un événement privé
-- [ ] Transaction sur le contrôle des places
-- [ ] Passage automatique en statut "Complet"
-- [ ] Désinscription
+- [x] Rejoindre un événement public — testé (201 direct, 409 si déjà inscrit,
+      409 si complet)
+- [x] Demande + validation pour un événement privé — testée (demande → `en_attente`,
+      seul l'organisateur peut valider via `PATCH .../inscriptions/:idJoueur`,
+      403 sinon, `accepter`/`refuser` testés)
+- [x] Transaction sur le contrôle des places — testée en conditions réelles de
+      concurrence : 10 requêtes simultanées sur un événement à 2 places → exactement
+      2 acceptées, 8 refusées (409), vérifié en base. Isolation `Serializable` +
+      retry sur conflit de sérialisation, dans `InscriptionRepositoryDatabase`
+- [x] Passage automatique en statut "Complet" — testé, et testé en sens inverse
+      (désinscription libère une place → repasse "Ouvert")
+- [x] Désinscription — testée (204, 404 si pas inscrit)
 
 ### Front React
 - [ ] Service API centralisé avec injection du jeton
@@ -541,6 +548,12 @@ dernière place.
 
 Choix retenu : **chaque joueur affiche son QR, l'organisateur scanne**.
 (Le sens inverse permettrait de transmettre le QR par messagerie à un absent.)
+
+> Discuté le 08/09/2026 : l'inverse (un QR unique affiché par l'organisateur,
+> chaque joueur se scanne lui-même) a été envisagé puis écarté — confirmé après
+> discussion. Retenu pour la même raison qu'à l'origine : l'organisateur doit
+> visuellement constater la présence de chaque joueur, ce qu'un scan
+> auto-administré ne garantit pas.
 
 - L'API génère pour chaque joueur inscrit un jeton signé (JWT court, valable le
   jour de l'événement) contenant `id_joueur` + `id_evenement`

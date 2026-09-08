@@ -3,9 +3,10 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { errorHandlerMiddleware } from "./middlewares/erreur";
-import { authController, evenementController } from "./config/container";
+import { authController, evenementController, inscriptionController } from "./config/container";
 import { authRoutes, registerAuthRoutes } from "./routes/authRoute";
 import { evenementRoutes, registerEvenementRoutes } from "./routes/evenementRoute";
+import { registerInscriptionRoutes } from "./routes/inscriptionRoute";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
@@ -19,6 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 // Dépendances assemblées dans config/container.ts — server.ts ne fait que brancher les routes.
 registerAuthRoutes(authController);
 registerEvenementRoutes(evenementController);
+registerInscriptionRoutes(evenementRoutes, inscriptionController);
 
 // Route de santé, pour vérifier que l'API répond
 app.get("/api/v1/sante", (_req, res) => {
