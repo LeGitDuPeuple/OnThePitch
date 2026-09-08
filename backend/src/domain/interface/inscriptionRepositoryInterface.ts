@@ -17,4 +17,7 @@ export interface InscriptionRepositoryInterface {
   // Retire l'inscription. Si elle était acceptée et l'événement complet,
   // celui-ci repasse en "Ouvert" dans la même transaction.
   desinscrire(idJoueur: number, idEvenement: number): Promise<void>;
+
+  // Alimente rejoint.presence — scan du QR par l'organisateur, ou marquage manuel.
+  marquerPresence(idJoueur: number, idEvenement: number): Promise<Inscription>;
 }

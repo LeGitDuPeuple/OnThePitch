@@ -8,10 +8,12 @@ import { EvenementService } from "../services/evenementService";
 import { RechercheEvenementService } from "../services/rechercheEvenementService";
 import { GeocodageService } from "../services/geocodageService";
 import { InscriptionService } from "../services/inscriptionService";
+import { PresenceService } from "../services/presenceService";
 // Controllers
 import { AuthController } from "../controllers/authController";
 import { EvenementController } from "../controllers/evenementController";
 import { InscriptionController } from "../controllers/inscriptionController";
+import { PresenceController } from "../controllers/presenceController";
 
 // Point de composition unique : c'est le seul endroit du projet où un
 // repository est instancié avec `new`. Le reste du code ne connaît que
@@ -26,7 +28,9 @@ const geocodageService = new GeocodageService();
 const evenementService = new EvenementService(evenementRepository, geocodageService);
 const rechercheEvenementService = new RechercheEvenementService(evenementRepository);
 const inscriptionService = new InscriptionService(inscriptionRepository, evenementRepository);
+const presenceService = new PresenceService(inscriptionRepository, evenementRepository);
 
 export const authController = new AuthController(authService);
 export const evenementController = new EvenementController(evenementService, rechercheEvenementService);
 export const inscriptionController = new InscriptionController(inscriptionService);
+export const presenceController = new PresenceController(presenceService);

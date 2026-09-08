@@ -3,10 +3,11 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import { errorHandlerMiddleware } from "./middlewares/erreur";
-import { authController, evenementController, inscriptionController } from "./config/container";
+import { authController, evenementController, inscriptionController, presenceController } from "./config/container";
 import { authRoutes, registerAuthRoutes } from "./routes/authRoute";
 import { evenementRoutes, registerEvenementRoutes } from "./routes/evenementRoute";
 import { registerInscriptionRoutes } from "./routes/inscriptionRoute";
+import { registerPresenceRoutes } from "./routes/presenceRoute";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
@@ -21,6 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 registerAuthRoutes(authController);
 registerEvenementRoutes(evenementController);
 registerInscriptionRoutes(evenementRoutes, inscriptionController);
+registerPresenceRoutes(evenementRoutes, presenceController);
 
 // Route de santé, pour vérifier que l'API répond
 app.get("/api/v1/sante", (_req, res) => {

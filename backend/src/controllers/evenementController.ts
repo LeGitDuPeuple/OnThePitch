@@ -58,6 +58,18 @@ export class EvenementController {
     }
   };
 
+  // POST /evenements/:id/terminer — clôture par l'organisateur, une fois les présences relevées
+  terminer = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = this.extraireId(req);
+      await this.evenementService.terminer(id, req.utilisateur!.id);
+
+      res.status(204).send();
+    } catch (erreur) {
+      next(erreur);
+    }
+  };
+
   private extraireId(req: Request): number {
     const id = Number(req.params.id);
 

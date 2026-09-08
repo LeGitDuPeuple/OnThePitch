@@ -2,7 +2,7 @@ import { Evenement } from "../domain/entities/Evenement";
 import { Role } from "../domain/entities/Utilisateur";
 import { EvenementRepositoryInterface } from "../domain/interface/evenementRepositoryInterface";
 import { GeocodeurInterface } from "../domain/interface/geocodeurInterface";
-import { RessourceIntrouvable, AccesRefuse, RequeteInvalide } from "../domain/erreurMetier";
+import { RessourceIntrouvable, AccesRefuse, RequeteInvalide, Conflit } from "../domain/erreurMetier";
 
 export type DemandeCreation = {
   titre: string;
@@ -68,5 +68,21 @@ export class EvenementService {
     }
 
     await this.evenementRepository.desactiver(id);
+  }
+
+  // Clôture l'événement une fois les présences relevées. Réservé à l'organisateur :
+  // à la différence de l'annulation, ce n'est pas une action de modération.
+  async terminer(id: number, idOrganisateur: number): Promise<void> {
+    const evenement = await this.trouverParId(id);
+
+    if (!evenement.estOrganisePar(idOrganisateur)) {
+      throw new AccesRefuse("Seul l'organisateur peut terminer cet événement");
+    }
+
+    if (evenement.statut === "Termine") {
+      throw new Conflit("Cet événement est déjà terminé");
+    }
+
+    await this.evenementRepository.terminer(id);
   }
 }
