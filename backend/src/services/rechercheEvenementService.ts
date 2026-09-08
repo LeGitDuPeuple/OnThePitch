@@ -9,7 +9,6 @@ export interface ParametresRecherche {
 
 const RAYON_DEFAUT_KM = 10;
 const RAYON_MAXIMUM_KM = 100;
-const RESULTATS_MAX = 50;
 
 export class RechercheEvenementService {
   constructor(private readonly evenementRepository: EvenementRepositoryInterface) {}
@@ -26,18 +25,18 @@ export class RechercheEvenementService {
     // PostGIS raisonne en mètres : la conversion est une règle métier.
     const rayonMetres = rayonKm * 1000;
 
-    const evenements = await this.evenementRepository.rechercherParRayon({
-      latitude: parametres.latitude,
-      longitude: parametres.longitude,
-      rayonMetres,
-      limite: RESULTATS_MAX,
-    });
+    const resultats = await this.evenementRepository.rechercherParRayon(
+      parametres.longitude,
+      parametres.latitude,
+      rayonMetres
+    );
 
     // Une zone sans événement est un résultat valide, pas une erreur.
-    return evenements.map((evenement) => ({
-      ...evenement,
-      distanceKm: Math.round(evenement.distanceMetres / 100) / 10,
-      placesRestantes: evenement.nombrePlaces - evenement.nombreInscrits,
+    return resultats.map((resultat) => ({
+      ...resultat.evenement.versReponse(),
+      distanceKm: resultat.distanceKm,
+      ville: resultat.ville,
+      adresse: resultat.adresse,
     }));
   }
 }
