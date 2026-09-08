@@ -42,4 +42,7 @@ export interface EvenementRepositoryInterface {
 
   // Marque un événement comme désactivé (soft delete).
   desactiver(id: number): Promise<void>;
+
+  // Clôture l'événement une fois les présences relevées.
+  terminer(id: number): Promise<void>;
 }

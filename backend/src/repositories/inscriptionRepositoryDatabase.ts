@@ -92,6 +92,15 @@ export class InscriptionRepositoryDatabase implements InscriptionRepositoryInter
     });
   }
 
+  async marquerPresence(idJoueur: number, idEvenement: number): Promise<Inscription> {
+    const ligne = await prisma.rejoint.update({
+      where: { idJoueur_idEvenement: { idJoueur, idEvenement } },
+      data: { presence: new Date() },
+    });
+
+    return this.versEntite(ligne);
+  }
+
   // Exécute `operation` (création ou mise à jour d'une inscription "acceptee") après avoir
   // vérifié qu'une place est disponible, et bascule l'événement en "Complet" le cas échéant —
   // le tout en isolation sérialisable, seul moyen d'empêcher deux joueurs de prendre la même

@@ -158,4 +158,16 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
       data: { dateDesactivation: new Date() },
     });
   }
+
+  // Bascule l'événement en "Termine" une fois les présences relevées.
+  async terminer(id: number): Promise<void> {
+    const statutTermine = await prisma.statutEvent.findUniqueOrThrow({
+      where: { libelleEvent: "Termine" },
+    });
+
+    await prisma.evenement.update({
+      where: { idEvenement: id },
+      data: { idStatutEvent: statutTermine.idStatutEvent },
+    });
+  }
 }

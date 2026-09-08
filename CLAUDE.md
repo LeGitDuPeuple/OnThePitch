@@ -93,11 +93,17 @@ terminé et testé.
 - [ ] Responsive (desktop / tablette / mobile)
 
 ### Présences
-- [ ] Marquage manuel (secours)
-- [ ] Génération du jeton QR côté serveur
-- [ ] Affichage du QR côté joueur
-- [ ] Scan côté organisateur
-- [ ] Passage en statut "Terminé"
+- [x] Marquage manuel (secours) — `POST /evenements/:id/presences/manuel`, testé
+      (200, 409 si le joueur n'est pas inscrit/accepté, 403 si pas l'organisateur)
+- [x] Génération du jeton QR côté serveur — `GET /evenements/:id/presences/jeton`,
+      testée (JWT court avec `type:"presence"`, refusé si pas le jour de l'événement
+      ou pas inscrit/accepté)
+- [ ] Affichage du QR côté joueur — dépend du front, pas commencé
+- [x] Scan côté organisateur — `POST /evenements/:id/presences/scan`, testé (200,
+      403 si pas l'organisateur, 400 si jeton invalide/expiré/mauvais événement,
+      400 si un jeton d'authentification classique est présenté à la place)
+- [x] Passage en statut "Terminé" — `POST /evenements/:id/terminer`, testé (204,
+      403 si pas l'organisateur, 409 si déjà terminé)
 
 ### Modération
 - [ ] Signalement d'un événement

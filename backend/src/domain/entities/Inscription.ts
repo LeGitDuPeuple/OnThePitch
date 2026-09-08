@@ -36,6 +36,7 @@ export class Inscription {
       idEvenement: this.idEvenement,
       dateInscription: this.dateInscription,
       statut: this.statut,
+      presence: this.presence,
     };
   }
 }
