@@ -90,6 +90,7 @@ terminé et testé.
 - [ ] Écran carte de recherche
 - [ ] Écran fiche événement
 - [ ] Écran création d'annonce
+- [ ] Écran tableau de bord admin (`/admin`) — voir section 9, pas un backoffice séparé
 - [ ] Responsive (desktop / tablette / mobile)
 
 ### Présences
@@ -106,12 +107,23 @@ terminé et testé.
       403 si pas l'organisateur, 409 si déjà terminé)
 
 ### Modération
-- [ ] Signalement d'un événement
-- [ ] Tableau de bord admin
-- [ ] Désactivation + avertissement
+- [x] Signalement d'un événement — `POST /evenements/:id/signalements`, testé
+      (201, 409 si doublon même joueur/événement/motif, 404 si événement inexistant)
+- [x] Consultation des signalements en attente (admin) — `GET /moderation/signalements`,
+      testée (403 si pas admin, liste enrichie motif + titre événement, exclut les
+      événements déjà désactivés). Pas d'écran dédié encore (voir Front React)
+- [x] Désactivation + avertissement — `POST /moderation/evenements/:id/sanctionner`,
+      testé (soft delete de l'événement + statut "averti" sur l'organisateur, vérifié
+      en base). Faux signalement : `DELETE /moderation/evenements/:id/signalements`,
+      testé (événement inchangé, signalements retirés)
 
 ### Qualité et déploiement
-- [ ] Tests Jest sur la couche Service
+- [x] Tests Jest sur la couche Service — 53 tests, 7 services (Auth, Evenement,
+      RechercheEvenement, Inscription, Presence, Moderation, Geocodage), repositories
+      substitués par des doubles en mémoire (`tests/doubles/`) implémentant les
+      interfaces du domaine. Transform `@swc/jest` (rapide, pas de vérification de
+      types) + `tsc --noEmit -p tsconfig.tests.json` en complément pour le typage
+      strict des tests eux-mêmes (`npm run typecheck:tests`)
 - [ ] `Jenkinsfile` en place
 - [ ] Déploiement HTTPS
 
@@ -504,12 +516,19 @@ const evenements = await prisma.$queryRaw<LigneRecherche[]>`
           ST_MakePoint(l.longitude, l.latitude)::geography,
           ST_MakePoint(${lon}, ${lat})::geography, ${rayonM}
         )
-    AND e.type_prive_publique = false
     AND e.date_debut > NOW()
     AND e.date_desactivation IS NULL
   ORDER BY distance ASC;
 `;
 ```
+
+> Public et privé apparaissent tous les deux dans ces résultats (revu le 11/09/2026,
+> à la demande explicite du porteur de projet — la version précédente excluait les
+> événements privés de la recherche). "Privé" ne conditionne que le mécanisme
+> d'inscription (voir section 6), pas la visibilité : avec des id numériques
+> auto-incrémentés, prétendre les cacher n'aurait été qu'une confidentialité de
+> façade. Aucune notion de liste d'invités n'existe dans le MCD ; ne pas en
+> introduire une sans le signaler explicitement.
 
 **Service** — règles métier :
 - rayon par défaut : 10 km si aucun n'est fourni
@@ -578,15 +597,27 @@ Choix retenu : **chaque joueur affiche son QR, l'organisateur scanne**.
 - Événement non conforme → soft delete (`date_desactivation`) + avertissement au joueur
 - Faux signalement → retrait du signalement
 
+> Pas de backoffice séparé (précisé le 08/09/2026, en cohérence avec la simplicité
+> visée) : le "tableau de bord admin" est le 4e écran de la même application React
+> (`/admin`), pas un produit à part. Voir section 9.
+
 ### 9. Front React
 
-Trois écrans principaux, maquettés :
+Quatre écrans, maquettés pour les trois premiers :
 - **Carte de recherche** : filtres (adresse/géoloc, rayon, date), carte, liste triée par distance
 - **Fiche événement** : infos, carte, liste des inscrits, bouton d'inscription
   (états : inscription possible / complet / désinscription)
 - **Création d'annonce** : formulaire en trois blocs
+- **Tableau de bord admin** (`/admin`, non maquetté) : écran de connexion dédié qui
+  réutilise `POST /auth/connexion` (même compte, même mot de passe — pas un second
+  système d'authentification), puis liste des signalements en attente avec deux
+  actions (désactiver l'événement + avertir le joueur, ou rejeter le signalement).
+  Protégé par une garde de route côté front (redirige si `role !== 'administrateur'`)
+  — confort d'usage uniquement. La vraie protection reste `verifierRole('administrateur')`
+  côté API, comme pour toute route admin : une URL non devinable n'est pas un
+  mécanisme de sécurité et ne doit jamais être présentée comme tel.
 
-**Responsive, trois points de rupture :**
+**Responsive, trois points de rupture (écrans 1 à 3 uniquement) :**
 - Desktop : carte et liste côte à côte
 - Tablette : liste sous la carte
 - Mobile : bascule liste/carte, navigation en menu
