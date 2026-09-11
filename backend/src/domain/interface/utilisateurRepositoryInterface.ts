@@ -21,4 +21,7 @@ export interface UtilisateurRepositoryInterface {
 
   // Met à jour la date de dernière connexion.
   majDerniereConnexion(id: number): Promise<void>;
+
+  // Passe le statut de l'utilisateur à "averti" (modération).
+  avertir(id: number): Promise<void>;
 }

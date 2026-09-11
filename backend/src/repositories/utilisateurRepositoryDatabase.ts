@@ -42,6 +42,18 @@ export class UtilisateurRepositoryDatabase implements UtilisateurRepositoryInter
     });
   }
 
+  // Passe le statut de l'utilisateur à "averti" (modération).
+  async avertir(id: number): Promise<void> {
+    const statutAverti = await prisma.statutUtilisateur.findUniqueOrThrow({
+      where: { libelleStatut: "averti" },
+    });
+
+    await prisma.utilisateur.update({
+      where: { idJoueur: id },
+      data: { idStatut: statutAverti.idStatut },
+    });
+  }
+
   // Convertit une ligne Prisma en entité du domaine.
   private versEntite(ligne: {
     idJoueur: number;
