@@ -101,6 +101,8 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
   // Recherche géolocalisée : seule requête SQL brute du projet.
   // Prisma ne modélise pas les types géographiques de PostGIS.
   // Les paramètres sont liés par le tagged template, jamais concaténés.
+  // Public ET privé apparaissent : "privé" ne change que le mécanisme d'inscription
+  // (demande à valider par l'organisateur), pas la visibilité — voir CLAUDE.md section 6.
   async rechercherParRayon(
     longitude: number,
     latitude: number,
@@ -125,7 +127,6 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
               ST_MakePoint(${longitude}::float8, ${latitude}::float8)::geography,
               ${rayonMetres}::float8
             )
-        AND e.type_prive_publique = false
         AND e.date_debut > NOW()
         AND e.date_desactivation IS NULL
       GROUP BY e.id_evenement, s.libelle_event, l.adresse, l.ville, l.longitude, l.latitude
