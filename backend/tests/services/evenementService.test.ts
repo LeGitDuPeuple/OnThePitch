@@ -60,6 +60,25 @@ describe("EvenementService", () => {
     });
   });
 
+  describe("trouverDetailParId", () => {
+    it("renvoie l'événement avec le détail de son lieu", async () => {
+      const evenementRepository = new EvenementRepositoryFake();
+      const service = new EvenementService(evenementRepository, new GeocodeurFake(coordonneesTest));
+      const evenement = await service.creer(demandeValide(), 1);
+
+      const detail = await service.trouverDetailParId(evenement.id);
+
+      expect(detail.evenement.id).toBe(evenement.id);
+      expect(detail.lieu.adresse).toBe(coordonneesTest.adresse);
+    });
+
+    it("lève RessourceIntrouvable si l'événement n'existe pas", async () => {
+      const service = new EvenementService(new EvenementRepositoryFake(), new GeocodeurFake(coordonneesTest));
+
+      await expect(service.trouverDetailParId(999)).rejects.toBeInstanceOf(RessourceIntrouvable);
+    });
+  });
+
   describe("annuler", () => {
     it("l'organisateur peut annuler son événement", async () => {
       const evenementRepository = new EvenementRepositoryFake();
