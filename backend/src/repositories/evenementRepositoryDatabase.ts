@@ -1,8 +1,10 @@
 import { prisma } from "../config/prismaClient";
 import { Evenement, StatutEvenement, NiveauRequis } from "../domain/entities/Evenement";
+import { ServiceIndisponible } from "../domain/erreurMetier";
 import {
   EvenementRepositoryInterface,
   NouvelEvenement,
+  ModificationEvenement,
   EvenementProche,
   EvenementDetail,
 } from "../domain/interface/evenementRepositoryInterface";
@@ -158,6 +160,41 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
         aUnePhoto: ligne.lieu.photo !== null,
       },
     };
+  }
+
+  // Modifie les champs fournis. Le niveau requis vit dans une table à part
+  // (requiert, clé composite id_evenement/id_niveau_event) : pas d'update simple,
+  // on retire l'ancienne ligne et on pose la nouvelle, dans la même transaction
+  // que la mise à jour de l'événement pour éviter un état incohérent.
+  async modifier(id: number, donnees: ModificationEvenement): Promise<Evenement> {
+    await prisma.$transaction(async (tx) => {
+      await tx.evenement.update({
+        where: { idEvenement: id },
+        data: {
+          titre: donnees.titre,
+          description: donnees.description,
+          nombrePlaces: donnees.nombrePlaces,
+          dateDebut: donnees.dateDebut,
+          dateFin: donnees.dateFin,
+        },
+      });
+
+      if (donnees.niveauRequis) {
+        const niveau = await tx.niveauEvent.findUniqueOrThrow({
+          where: { libelleNiveauEvent: donnees.niveauRequis },
+        });
+
+        await tx.requiert.deleteMany({ where: { idEvenement: id } });
+        await tx.requiert.create({ data: { idEvenement: id, idNiveauEvent: niveau.idNiveauEvent } });
+      }
+    });
+
+    const evenement = await this.trouverParId(id);
+    if (!evenement) {
+      throw new ServiceIndisponible("Événement introuvable juste après sa modification");
+    }
+
+    return evenement;
   }
 
   // Recherche géolocalisée : seule requête SQL brute du projet.

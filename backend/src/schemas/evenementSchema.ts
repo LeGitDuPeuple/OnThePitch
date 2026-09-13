@@ -17,6 +17,23 @@ export const creationEvenementSchema = z.object({
   niveauRequis: niveauRequisSchema.default("tous_niveaux"),
 });
 
+// Validation du corps de PATCH /evenements/:id — tous les champs sont facultatifs
+// (modification partielle), sauf qu'au moins un doit être présent. L'adresse n'est
+// pas modifiable ici : elle redéclencherait un géocodage et changerait le lieu
+// utilisé par la recherche géolocalisée, hors périmètre de cette fonctionnalité.
+export const modificationEvenementSchema = z
+  .object({
+    titre: z.string().min(3).max(50).optional(),
+    description: z.string().max(1000).optional(),
+    dateDebut: z.coerce.date().optional(),
+    dateFin: z.coerce.date().optional(),
+    nombrePlaces: z.number().int().min(2).max(30).optional(),
+    niveauRequis: niveauRequisSchema.optional(),
+  })
+  .refine((donnees) => Object.keys(donnees).length > 0, {
+    message: "Au moins un champ doit être fourni",
+  });
+
 // Validation des paramètres de GET /evenements/recherche (query string, donc coercition).
 export const rechercheEvenementSchema = z.object({
   latitude: z.coerce.number().min(-90).max(90),
@@ -26,4 +43,5 @@ export const rechercheEvenementSchema = z.object({
 
 // Types déduits des schémas : une seule source de vérité.
 export type CreationEvenement = z.infer<typeof creationEvenementSchema>;
+export type ModificationEvenement = z.infer<typeof modificationEvenementSchema>;
 export type RechercheEvenementQuery = z.infer<typeof rechercheEvenementSchema>;

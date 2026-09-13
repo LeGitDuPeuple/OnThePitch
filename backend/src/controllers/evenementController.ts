@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { EvenementService } from "../services/evenementService";
 import { RechercheEvenementService } from "../services/rechercheEvenementService";
-import { creationEvenementSchema, rechercheEvenementSchema } from "../schemas/evenementSchema";
+import { creationEvenementSchema, modificationEvenementSchema, rechercheEvenementSchema } from "../schemas/evenementSchema";
 import { RequeteInvalide } from "../domain/erreurMetier";
 
 export class EvenementController {
@@ -42,6 +42,19 @@ export class EvenementController {
       const { evenement, lieu } = await this.evenementService.trouverDetailParId(id);
 
       res.json({ ...evenement.versReponse(), lieu });
+    } catch (erreur) {
+      next(erreur);
+    }
+  };
+
+  // PATCH /evenements/:id — modification partielle, réservée à l'organisateur
+  modifier = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const id = this.extraireId(req);
+      const donnees = modificationEvenementSchema.parse(req.body);
+      const evenement = await this.evenementService.modifier(id, donnees, req.utilisateur!.id);
+
+      res.json(evenement.versReponse());
     } catch (erreur) {
       next(erreur);
     }

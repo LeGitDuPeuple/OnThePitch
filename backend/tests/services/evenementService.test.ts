@@ -79,6 +79,81 @@ describe("EvenementService", () => {
     });
   });
 
+  describe("modifier", () => {
+    it("l'organisateur peut modifier titre, places, dates et niveau", async () => {
+      const evenementRepository = new EvenementRepositoryFake();
+      const service = new EvenementService(evenementRepository, new GeocodeurFake(coordonneesTest));
+      const evenement = await service.creer(demandeValide(), 1);
+      const nouvelleDateDebut = dansUneSemaine();
+      nouvelleDateDebut.setDate(nouvelleDateDebut.getDate() + 1);
+      const nouvelleDateFin = new Date(nouvelleDateDebut.getTime() + 2 * 60 * 60 * 1000);
+
+      const modifie = await service.modifier(
+        evenement.id,
+        { titre: "Match du lundi", nombrePlaces: 12, dateDebut: nouvelleDateDebut, dateFin: nouvelleDateFin, niveauRequis: "confirme" },
+        1
+      );
+
+      expect(modifie.titre).toBe("Match du lundi");
+      expect(modifie.nombrePlaces).toBe(12);
+      expect(modifie.niveauRequis).toBe("confirme");
+    });
+
+    it("refuse la modification par un non-organisateur", async () => {
+      const evenementRepository = new EvenementRepositoryFake();
+      const service = new EvenementService(evenementRepository, new GeocodeurFake(coordonneesTest));
+      const evenement = await service.creer(demandeValide(), 1);
+
+      await expect(service.modifier(evenement.id, { titre: "Autre titre" }, 2)).rejects.toBeInstanceOf(AccesRefuse);
+    });
+
+    it("refuse de modifier un événement inexistant", async () => {
+      const service = new EvenementService(new EvenementRepositoryFake(), new GeocodeurFake(coordonneesTest));
+
+      await expect(service.modifier(999, { titre: "Autre titre" }, 1)).rejects.toBeInstanceOf(RessourceIntrouvable);
+    });
+
+    it("refuse de modifier un événement déjà terminé", async () => {
+      const evenementRepository = new EvenementRepositoryFake();
+      const service = new EvenementService(evenementRepository, new GeocodeurFake(coordonneesTest));
+      const evenement = await service.creer(demandeValide(), 1);
+      await service.terminer(evenement.id, 1);
+
+      await expect(service.modifier(evenement.id, { titre: "Autre titre" }, 1)).rejects.toBeInstanceOf(Conflit);
+    });
+
+    it("refuse une nouvelle date de début dans le passé", async () => {
+      const evenementRepository = new EvenementRepositoryFake();
+      const service = new EvenementService(evenementRepository, new GeocodeurFake(coordonneesTest));
+      const evenement = await service.creer(demandeValide(), 1);
+
+      await expect(
+        service.modifier(evenement.id, { dateDebut: new Date(Date.now() - 1000) }, 1)
+      ).rejects.toBeInstanceOf(RequeteInvalide);
+    });
+
+    it("refuse une date de fin antérieure ou égale à la date de début effective", async () => {
+      const evenementRepository = new EvenementRepositoryFake();
+      const service = new EvenementService(evenementRepository, new GeocodeurFake(coordonneesTest));
+      const evenement = await service.creer(demandeValide(), 1);
+
+      await expect(
+        service.modifier(evenement.id, { dateFin: new Date(evenement.dateDebut) }, 1) // égale à dateDebut existante
+      ).rejects.toBeInstanceOf(RequeteInvalide);
+    });
+
+    it("refuse de réduire le nombre de places sous le nombre d'inscrits", async () => {
+      const evenementRepository = new EvenementRepositoryFake();
+      const service = new EvenementService(evenementRepository, new GeocodeurFake(coordonneesTest));
+      const evenement = await service.creer(demandeValide(), 1);
+      // Simule des inscriptions déjà acceptées, comme ailleurs dans ces tests
+      // (le contrôle réel des places est testé en base, voir InscriptionRepositoryDatabase).
+      evenement.nombreInscrits = 5;
+
+      await expect(service.modifier(evenement.id, { nombrePlaces: 4 }, 1)).rejects.toBeInstanceOf(RequeteInvalide);
+    });
+  });
+
   describe("annuler", () => {
     it("l'organisateur peut annuler son événement", async () => {
       const evenementRepository = new EvenementRepositoryFake();

@@ -14,6 +14,7 @@ export const registerEvenementRoutes = (controller: EvenementController, geocoda
 
   evenementRoutes.post("/", authentifier, verifierRole("joueur"), controller.creer);
   evenementRoutes.get("/:id", controller.trouverParId);
+  evenementRoutes.patch("/:id", authentifier, verifierRole("joueur"), controller.modifier);
   evenementRoutes.delete("/:id", authentifier, verifierRole("joueur", "administrateur"), controller.annuler);
   evenementRoutes.post("/:id/terminer", authentifier, verifierRole("joueur"), controller.terminer);
 };

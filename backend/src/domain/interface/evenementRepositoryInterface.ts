@@ -21,6 +21,17 @@ export type NouvelEvenement = {
   };
 };
 
+// Modification partielle d'un événement existant — jamais l'adresse/le lieu
+// (voir schemas/evenementSchema.ts : redéclencherait un géocodage, hors périmètre).
+export type ModificationEvenement = {
+  titre?: string;
+  description?: string;
+  nombrePlaces?: number;
+  dateDebut?: Date;
+  dateFin?: Date;
+  niveauRequis?: NiveauRequis;
+};
+
 // Une ligne de résultat de la recherche géolocalisée, avec sa distance.
 export type EvenementProche = {
   evenement: Evenement;
@@ -57,6 +68,9 @@ export interface EvenementRepositoryInterface {
 
   // Récupère un événement avec le détail de son lieu — pour la fiche événement.
   trouverAvecLieu(id: number): Promise<EvenementDetail | null>;
+
+  // Modifie les champs fournis d'un événement existant, sans toucher au lieu.
+  modifier(id: number, donnees: ModificationEvenement): Promise<Evenement>;
 
   // Recherche les événements publics à venir dans un rayon donné (en mètres).
   rechercherParRayon(

@@ -19,6 +19,16 @@ export type DemandeCreation = {
   niveauRequis?: NiveauRequis;
 };
 
+// Modification partielle — l'adresse n'en fait pas partie (voir schemas/evenementSchema.ts).
+export type DemandeModification = {
+  titre?: string;
+  description?: string;
+  nombrePlaces?: number;
+  dateDebut?: Date;
+  dateFin?: Date;
+  niveauRequis?: NiveauRequis;
+};
+
 export class EvenementService {
   constructor(
     private readonly evenementRepository: EvenementRepositoryInterface,
@@ -76,6 +86,39 @@ export class EvenementService {
     }
 
     return detail;
+  }
+
+  // Modifie un événement existant. Réservé à l'organisateur.
+  async modifier(id: number, demande: DemandeModification, idOrganisateur: number): Promise<Evenement> {
+    const evenement = await this.trouverParId(id);
+
+    if (!evenement.estOrganisePar(idOrganisateur)) {
+      throw new AccesRefuse("Seul l'organisateur peut modifier cet événement");
+    }
+
+    if (evenement.statut === "Termine") {
+      throw new Conflit("Cet événement est déjà terminé");
+    }
+
+    // Même règle qu'à la création : un événement ne peut pas être déplacé dans le passé.
+    if (demande.dateDebut && demande.dateDebut <= new Date()) {
+      throw new RequeteInvalide("La date de début doit être dans le futur");
+    }
+
+    const dateDebutEffective = demande.dateDebut ?? evenement.dateDebut;
+    const dateFinEffective = demande.dateFin ?? evenement.dateFin;
+    if (dateFinEffective <= dateDebutEffective) {
+      throw new RequeteInvalide("La date de fin doit suivre la date de début");
+    }
+
+    // On ne peut pas réduire les places sous le nombre de joueurs déjà acceptés.
+    if (demande.nombrePlaces !== undefined && demande.nombrePlaces < evenement.nombreInscrits) {
+      throw new RequeteInvalide(
+        `Le nombre de places ne peut pas être inférieur au nombre d'inscrits (${evenement.nombreInscrits})`
+      );
+    }
+
+    return this.evenementRepository.modifier(id, demande);
   }
 
   // Annule un événement. Réservé à l'organisateur, ou à un administrateur (modération).
