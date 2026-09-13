@@ -60,7 +60,9 @@ terminé et testé.
       joueur, ligne conservée en base avec `date_desactivation`). Modification
       (édition d'un événement existant) pas encore implémentée.
 - [x] Consultation d'un événement (détail) — testée (200, 404 si inexistant ou
-      désactivé). Liste des inscrits pas encore incluse (dépend des inscriptions).
+      désactivé), inclut le lieu. Liste des inscrits exposée séparément via
+      `GET /evenements/:id/inscriptions` (accessible sans authentification, comme
+      la consultation de l'événement), testée.
 - [x] Niveau requis (`niveau_event`/`requiert`, prévu au MCD, jamais câblé jusqu'ici) —
       testé (valeur par défaut `tous_niveaux`, valeur explicite, 400 si invalide),
       exposé sur la création, la consultation et la recherche
@@ -104,7 +106,13 @@ terminé et testé.
 - [x] Écran carte de recherche — fonctionnel : adresse (géocodée côté serveur) ou
       géolocalisation navigateur, rayon ajustable, liste triée par distance. Pas
       encore de carte visuelle interactive (Leaflet à ajouter), style minimal
-- [ ] Écran fiche événement
+- [x] Écran fiche événement — fonctionnel : infos, lieu, photo si présente, liste
+      des inscrits, bouton d'inscription (états : non connecté / organisateur /
+      rejoindre / demander à rejoindre / en attente / inscrit / complet / terminé),
+      testé manuellement de bout en bout (création d'événement, inscription,
+      désinscription, mise à jour des places restantes). Carte visuelle et actions
+      de l'organisateur sur les demandes en attente (accepter/refuser) pas encore
+      sur cet écran — à faire
 - [ ] Écran création d'annonce
 - [ ] Écran tableau de bord admin (`/admin`) — voir section 9, pas un backoffice séparé
 - [ ] Responsive (desktop / tablette / mobile)

@@ -1,5 +1,5 @@
-import { appelApi } from "./api";
-import type { EvenementProche } from "../types/evenement";
+import { appelApi, URL_BASE } from "./api";
+import type { EvenementProche, EvenementDetail } from "../types/evenement";
 
 export type ParametresRecherche = {
   latitude: number;
@@ -20,4 +20,9 @@ export const evenementService = {
 
     return appelApi<EvenementProche[]>(`/evenements/recherche?${params.toString()}`);
   },
+
+  trouverParId: (id: number): Promise<EvenementDetail> => appelApi(`/evenements/${id}`),
+
+  // Pas de fetch ici : consommée directement comme src d'une balise <img>.
+  urlPhoto: (id: number): string => `${URL_BASE}/evenements/${id}/photo`,
 };

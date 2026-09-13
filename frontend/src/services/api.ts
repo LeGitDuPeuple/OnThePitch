@@ -1,4 +1,6 @@
-const URL_BASE = "http://localhost:3000/api/v1";
+// Exportée pour les rares cas où l'URL sert hors de appelApi (ex. src d'une <img>
+// pour la photo du lieu, qui n'est jamais chargée via fetch — voir evenementService).
+export const URL_BASE = "http://localhost:3000/api/v1";
 
 // Erreur homogène pour tous les appels API : le message vient du backend
 // (déjà en français, déjà explicite — voir gestionnaire d'erreurs centralisé de l'API).
