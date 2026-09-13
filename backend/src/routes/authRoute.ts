@@ -9,4 +9,5 @@ export const registerAuthRoutes = (controller: AuthController) => {
   authRoutes.post("/inscription", controller.inscription);
   authRoutes.post("/connexion", controller.connexion);
   authRoutes.get("/profil", authentifier, controller.profil);
+  authRoutes.post("/deconnexion", controller.deconnexion);
 };

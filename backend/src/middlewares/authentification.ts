@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { extractToken, getEnvVariable } from "../config/utility/utils";
+import { getEnvVariable } from "../config/utility/utils";
+import { NOM_COOKIE_JETON } from "../config/cookie";
 import { NonAuthentifie } from "../domain/erreurMetier";
 import { Role } from "../domain/entities/Utilisateur";
 
@@ -17,19 +18,13 @@ declare module "express-serve-static-core" {
   }
 }
 
-// Vérifie le jeton et attache l'utilisateur à la requête.
+// Vérifie le jeton (cookie httpOnly, jamais un en-tête) et attache l'utilisateur à la requête.
 export const authentifier = (req: Request, res: Response, next: NextFunction) => {
   try {
-    const entete = req.headers.authorization;
+    const jeton: unknown = req.cookies?.[NOM_COOKIE_JETON];
 
-    if (!entete) {
+    if (typeof jeton !== "string") {
       throw new NonAuthentifie("Authentification requise");
-    }
-
-    const jeton = extractToken(entete);
-
-    if (!jeton) {
-      throw new NonAuthentifie("Format d'authentification invalide");
     }
 
     req.utilisateur = jwt.verify(jeton, getEnvVariable("JWT_SECRET")) as JetonPayload;
