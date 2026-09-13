@@ -57,8 +57,12 @@ terminé et testé.
 - [x] Création d'événement avec géocodage et refus si adresse non résolue — testé
       (201 adresse valide, 400 adresse introuvable, 400 date de début passée)
 - [x] Annulation (soft delete) — testée (204 par l'organisateur, 403 pour un autre
-      joueur, ligne conservée en base avec `date_desactivation`). Modification
-      (édition d'un événement existant) pas encore implémentée.
+      joueur, ligne conservée en base avec `date_desactivation`).
+- [x] Modification (édition) d'un événement existant — `PATCH /evenements/:id`,
+      réservé à l'organisateur. Titre, description, places, dates, niveau requis ;
+      l'adresse n'est volontairement pas modifiable ici (redéclencherait un
+      géocodage). Testée (200, 403 non-organisateur, 400 corps vide/date invalide,
+      409 si déjà terminé, refus de réduire les places sous le nombre d'inscrits).
 - [x] Consultation d'un événement (détail) — testée (200, 404 si inexistant ou
       désactivé), inclut le lieu. Liste des inscrits exposée séparément via
       `GET /evenements/:id/inscriptions` (accessible sans authentification, comme
@@ -142,12 +146,17 @@ terminé et testé.
       testé (événement inchangé, signalements retirés)
 
 ### Qualité et déploiement
-- [x] Tests Jest sur la couche Service — 58 tests, 8 services (Auth, Evenement,
+- [x] Tests Jest sur la couche Service — 69 tests, 8 services (Auth, Evenement,
       RechercheEvenement, Inscription, Presence, Moderation, Geocodage, Photo), repositories
       substitués par des doubles en mémoire (`tests/doubles/`) implémentant les
       interfaces du domaine. Transform `@swc/jest` (rapide, pas de vérification de
       types) + `tsc --noEmit -p tsconfig.tests.json` en complément pour le typage
-      strict des tests eux-mêmes (`npm run typecheck:tests`)
+      strict des tests eux-mêmes (`npm run typecheck:tests`). Corrigé le 13/09/2026 :
+      `tsconfig.tests.json` héritait silencieusement de l'`exclude: ["tests"]` du
+      tsconfig parent (les `include`/`exclude` ne se fusionnent pas avec `extends`)
+      — la commande ne vérifiait en réalité aucun fichier de `tests/` depuis sa
+      création. Deux non-conformités réelles dans `EvenementRepositoryFake`
+      dormaient derrière ce trou (interface pas respectée à la lettre).
 - [ ] `Jenkinsfile` en place
 - [ ] Déploiement HTTPS
 
