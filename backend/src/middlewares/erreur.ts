@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
+import { MulterError } from "multer";
 import { ErreurMetier } from "../domain/erreurMetier";
 
 /**
@@ -15,6 +16,11 @@ export const errorHandlerMiddleware = (
 ) => {
   if (erreur instanceof ErreurMetier) {
     return res.status(erreur.statut).json({ message: erreur.message });
+  }
+
+  // Fichier trop volumineux, champ inattendu, etc. — voir routes/photoRoute.ts.
+  if (erreur instanceof MulterError) {
+    return res.status(400).json({ message: `Fichier invalide : ${erreur.message}` });
   }
 
   if (erreur instanceof ZodError) {

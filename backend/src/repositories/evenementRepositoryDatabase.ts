@@ -1,9 +1,10 @@
 import { prisma } from "../config/prismaClient";
-import { Evenement, StatutEvenement } from "../domain/entities/Evenement";
+import { Evenement, StatutEvenement, NiveauRequis } from "../domain/entities/Evenement";
 import {
   EvenementRepositoryInterface,
   NouvelEvenement,
   EvenementProche,
+  EvenementDetail,
 } from "../domain/interface/evenementRepositoryInterface";
 
 // Forme brute d'une ligne renvoyée par la requête PostGIS.
@@ -17,7 +18,9 @@ type LigneRecherche = {
   id_lieu: number;
   id_joueur: number;
   libelle_event: string;
+  libelle_niveau_event: string;
   nombre_inscrits: bigint;
+  nom_lieu: string | null;
   adresse: string;
   ville: string;
   distance: number;
@@ -30,6 +33,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
     const ligne = await prisma.$transaction(async (tx) => {
       const lieu = await tx.lieu.create({
         data: {
+          nom: donnees.lieu.nom ?? null,
           adresse: donnees.lieu.adresse,
           ville: donnees.lieu.ville,
           codePostal: donnees.lieu.codePostal,
@@ -39,13 +43,15 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
         },
       });
 
-      const statutOuvert = await tx.statutEvent.findUniqueOrThrow({
-        where: { libelleEvent: "Ouvert" },
-      });
+      const [statutOuvert, niveau] = await Promise.all([
+        tx.statutEvent.findUniqueOrThrow({ where: { libelleEvent: "Ouvert" } }),
+        tx.niveauEvent.findUniqueOrThrow({ where: { libelleNiveauEvent: donnees.niveauRequis } }),
+      ]);
 
-      return tx.evenement.create({
+      const evenementCree = await tx.evenement.create({
         data: {
           titre: donnees.titre,
+          description: donnees.description ?? null,
           nombrePlaces: donnees.nombrePlaces,
           typePrivePublique: donnees.estPrive,
           dateDebut: donnees.dateDebut,
@@ -56,11 +62,18 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
         },
         include: { statut: true },
       });
+
+      await tx.requiert.create({
+        data: { idEvenement: evenementCree.idEvenement, idNiveauEvent: niveau.idNiveauEvent },
+      });
+
+      return evenementCree;
     });
 
     return new Evenement({
       id: ligne.idEvenement,
       titre: ligne.titre,
+      description: ligne.description,
       nombrePlaces: ligne.nombrePlaces,
       estPrive: ligne.typePrivePublique,
       dateDebut: ligne.dateDebut,
@@ -69,6 +82,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
       idLieu: ligne.idLieu,
       idOrganisateur: ligne.idJoueur,
       statut: ligne.statut.libelleEvent as StatutEvenement,
+      niveauRequis: donnees.niveauRequis,
       nombreInscrits: 0,
     });
   }
@@ -77,7 +91,10 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
   // Une demande "en_attente" ou "refusee" n'occupe pas de place : elle ne compte pas.
   async trouverParId(id: number): Promise<Evenement | null> {
     const [ligne, nombreAcceptees] = await Promise.all([
-      prisma.evenement.findUnique({ where: { idEvenement: id }, include: { statut: true } }),
+      prisma.evenement.findUnique({
+        where: { idEvenement: id },
+        include: { statut: true, niveaux: { include: { niveau: true } } },
+      }),
       prisma.rejoint.count({ where: { idEvenement: id, statutInscription: "acceptee" } }),
     ]);
 
@@ -86,6 +103,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
     return new Evenement({
       id: ligne.idEvenement,
       titre: ligne.titre,
+      description: ligne.description,
       nombrePlaces: ligne.nombrePlaces,
       estPrive: ligne.typePrivePublique,
       dateDebut: ligne.dateDebut,
@@ -94,8 +112,52 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
       idLieu: ligne.idLieu,
       idOrganisateur: ligne.idJoueur,
       statut: ligne.statut.libelleEvent as StatutEvenement,
+      niveauRequis: (ligne.niveaux[0]?.niveau.libelleNiveauEvent as NiveauRequis) ?? "tous_niveaux",
       nombreInscrits: nombreAcceptees,
     });
+  }
+
+  // Récupère un événement avec le détail de son lieu — pour la fiche événement
+  // (carte, adresse complète). La photo n'est jamais chargée ici : seule sa
+  // présence est signalée, l'image se récupère à part (voir routes/photoRoute.ts).
+  async trouverAvecLieu(id: number): Promise<EvenementDetail | null> {
+    const [ligne, nombreAcceptees] = await Promise.all([
+      prisma.evenement.findUnique({
+        where: { idEvenement: id },
+        include: { statut: true, niveaux: { include: { niveau: true } }, lieu: true },
+      }),
+      prisma.rejoint.count({ where: { idEvenement: id, statutInscription: "acceptee" } }),
+    ]);
+
+    if (!ligne) return null;
+
+    return {
+      evenement: new Evenement({
+        id: ligne.idEvenement,
+        titre: ligne.titre,
+        description: ligne.description,
+        nombrePlaces: ligne.nombrePlaces,
+        estPrive: ligne.typePrivePublique,
+        dateDebut: ligne.dateDebut,
+        dateFin: ligne.dateFin,
+        dateDesactivation: ligne.dateDesactivation,
+        idLieu: ligne.idLieu,
+        idOrganisateur: ligne.idJoueur,
+        statut: ligne.statut.libelleEvent as StatutEvenement,
+        niveauRequis: (ligne.niveaux[0]?.niveau.libelleNiveauEvent as NiveauRequis) ?? "tous_niveaux",
+        nombreInscrits: nombreAcceptees,
+      }),
+      lieu: {
+        nom: ligne.lieu.nom,
+        adresse: ligne.lieu.adresse,
+        ville: ligne.lieu.ville,
+        codePostal: ligne.lieu.codePostal,
+        latitude: Number(ligne.lieu.latitude),
+        longitude: Number(ligne.lieu.longitude),
+        typeTerrain: ligne.lieu.typeTerrain,
+        aUnePhoto: ligne.lieu.photo !== null,
+      },
+    };
   }
 
   // Recherche géolocalisée : seule requête SQL brute du projet.
@@ -111,8 +173,8 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
     const lignes = await prisma.$queryRaw<LigneRecherche[]>`
       SELECT e.id_evenement, e.titre, e.nombre_places, e.type_prive_publique,
              e.date_debut, e.date_fin, e.id_lieu, e.id_joueur,
-             s.libelle_event,
-             l.adresse, l.ville,
+             s.libelle_event, n.libelle_niveau_event,
+             l.nom AS nom_lieu, l.adresse, l.ville,
              COUNT(r.id_joueur) AS nombre_inscrits,
              ST_Distance(
                ST_MakePoint(l.longitude::float8, l.latitude::float8)::geography,
@@ -121,6 +183,8 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
       FROM evenement e
       JOIN lieu l ON l.id_lieu = e.id_lieu
       JOIN statut_event s ON s.id_statut_event = e.id_statut_event
+      JOIN requiert req ON req.id_evenement = e.id_evenement
+      JOIN niveau_event n ON n.id_niveau_event = req.id_niveau_event
       LEFT JOIN rejoint r ON r.id_evenement = e.id_evenement AND r.statut_inscription = 'acceptee'
       WHERE ST_DWithin(
               ST_MakePoint(l.longitude::float8, l.latitude::float8)::geography,
@@ -129,7 +193,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
             )
         AND e.date_debut > NOW()
         AND e.date_desactivation IS NULL
-      GROUP BY e.id_evenement, s.libelle_event, l.adresse, l.ville, l.longitude, l.latitude
+      GROUP BY e.id_evenement, s.libelle_event, n.libelle_niveau_event, l.nom, l.adresse, l.ville, l.longitude, l.latitude
       ORDER BY distance ASC
     `;
 
@@ -144,9 +208,11 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
         idLieu: ligne.id_lieu,
         idOrganisateur: ligne.id_joueur,
         statut: ligne.libelle_event as StatutEvenement,
+        niveauRequis: ligne.libelle_niveau_event as NiveauRequis,
         nombreInscrits: Number(ligne.nombre_inscrits),
       }),
       distanceKm: Math.round((ligne.distance / 1000) * 10) / 10,
+      nomLieu: ligne.nom_lieu,
       ville: ligne.ville,
       adresse: ligne.adresse,
     }));

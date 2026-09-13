@@ -2,9 +2,13 @@ import { RequeteInvalide, Conflit } from "../erreurMetier";
 
 export type StatutEvenement = "Ouvert" | "Complet" | "Termine" | "Annule";
 
+// Correspond aux libellés de la table de référence niveau_event.
+export type NiveauRequis = "debutant" | "intermediaire" | "confirme" | "tous_niveaux";
+
 export class Evenement {
   id: number;
   titre: string;
+  description: string | null;
   nombrePlaces: number;
   estPrive: boolean;
   dateDebut: Date;
@@ -13,11 +17,13 @@ export class Evenement {
   idLieu: number;
   idOrganisateur: number;
   statut: StatutEvenement;
+  niveauRequis: NiveauRequis;
   nombreInscrits: number;
 
   constructor(params: {
     id: number;
     titre: string;
+    description?: string | null;
     nombrePlaces: number;
     estPrive: boolean;
     dateDebut: Date;
@@ -26,10 +32,12 @@ export class Evenement {
     idLieu: number;
     idOrganisateur: number;
     statut: StatutEvenement;
+    niveauRequis: NiveauRequis;
     nombreInscrits?: number;
   }) {
     this.id = params.id;
     this.titre = params.titre;
+    this.description = params.description ?? null;
     this.nombrePlaces = params.nombrePlaces;
     this.estPrive = params.estPrive;
     this.dateDebut = params.dateDebut;
@@ -38,6 +46,7 @@ export class Evenement {
     this.idLieu = params.idLieu;
     this.idOrganisateur = params.idOrganisateur;
     this.statut = params.statut;
+    this.niveauRequis = params.niveauRequis;
     this.nombreInscrits = params.nombreInscrits ?? 0;
   }
 
@@ -86,12 +95,14 @@ export class Evenement {
     return {
       id: this.id,
       titre: this.titre,
+      description: this.description,
       nombrePlaces: this.nombrePlaces,
       placesRestantes: this.placesRestantes(),
       estPrive: this.estPrive,
       dateDebut: this.dateDebut,
       dateFin: this.dateFin,
       statut: this.statut,
+      niveauRequis: this.niveauRequis,
       idOrganisateur: this.idOrganisateur,
     };
   }
