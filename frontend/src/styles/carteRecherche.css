@@ -5,6 +5,13 @@
   font-family: system-ui, sans-serif;
 }
 
+.entete-recherche {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .filtres-recherche {
   display: flex;
   flex-wrap: wrap;

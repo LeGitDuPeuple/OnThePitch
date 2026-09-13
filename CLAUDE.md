@@ -117,7 +117,14 @@ terminé et testé.
       désinscription, mise à jour des places restantes). Carte visuelle et actions
       de l'organisateur sur les demandes en attente (accepter/refuser) pas encore
       sur cet écran — à faire
-- [ ] Écran création d'annonce
+- [x] Écran création d'annonce — formulaire en trois blocs (`useCreationEvenementForm`),
+      accessible depuis la carte de recherche, garde de rôle (`joueur` uniquement,
+      cf. tableau des droits — un visiteur ou un administrateur ne voit pas le
+      formulaire). Testé manuellement de bout en bout contre la vraie API
+      (création, redirection vers la fiche événement créée). Écart signalé : la
+      maquette du bloc "Caractéristiques" mentionne un champ "format", absent du
+      MCD — remplacé par le champ existant `typeTerrain` (rattaché au bloc "Lieu
+      et date", où il a plus de sens)
 - [ ] Écran tableau de bord admin (`/admin`) — voir section 9, pas un backoffice séparé
 - [ ] Responsive (desktop / tablette / mobile)
 

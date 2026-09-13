@@ -19,7 +19,10 @@ export const CarteRecherche = () => {
 
   return (
     <main className="page-recherche">
-      <h1>OnThePitch</h1>
+      <div className="entete-recherche">
+        <h1>OnThePitch</h1>
+        <Link to="/creer">Créer un événement</Link>
+      </div>
 
       <form
         className="filtres-recherche"

@@ -1,0 +1,37 @@
+.page-creation {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  font-family: system-ui, sans-serif;
+}
+
+.page-creation fieldset {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.page-creation label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.page-creation label.option-visibilite {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-creation input,
+.page-creation select,
+.page-creation textarea {
+  font: inherit;
+  padding: 0.4rem;
+}
+
+.message-erreur {
+  color: #b3261e;
+}

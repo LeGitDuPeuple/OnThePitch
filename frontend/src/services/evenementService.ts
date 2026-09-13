@@ -1,10 +1,26 @@
 import { appelApi, URL_BASE } from "./api";
-import type { EvenementProche, EvenementDetail } from "../types/evenement";
+import type { EvenementProche, EvenementDetail, Evenement, NiveauRequis } from "../types/evenement";
 
 export type ParametresRecherche = {
   latitude: number;
   longitude: number;
   rayonKm?: number;
+};
+
+// Corps de POST /evenements (voir schemas/evenementSchema.ts côté back — pas de
+// paquet partagé entre les deux projets, donc pas d'import direct du schéma Zod :
+// c'est le serveur qui valide, le front n'affiche que le message renvoyé).
+export type CreationEvenement = {
+  titre: string;
+  description?: string;
+  adresse: string;
+  nomLieu?: string;
+  dateDebut: Date;
+  dateFin: Date;
+  nombrePlaces: number;
+  estPrive: boolean;
+  typeTerrain?: string;
+  niveauRequis: NiveauRequis;
 };
 
 export const evenementService = {
@@ -22,6 +38,8 @@ export const evenementService = {
   },
 
   trouverParId: (id: number): Promise<EvenementDetail> => appelApi(`/evenements/${id}`),
+
+  creer: (donnees: CreationEvenement): Promise<Evenement> => appelApi("/evenements", { methode: "POST", corps: donnees }),
 
   // Pas de fetch ici : consommée directement comme src d'une balise <img>.
   urlPhoto: (id: number): string => `${URL_BASE}/evenements/${id}/photo`,
