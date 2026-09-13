@@ -1,0 +1,44 @@
+.page-recherche {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  font-family: system-ui, sans-serif;
+}
+
+.filtres-recherche {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.filtres-recherche input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+}
+
+.message-erreur {
+  color: #b3261e;
+}
+
+.resultats-recherche ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.carte-evenement {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.badge-prive {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  background: #eee;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+}
