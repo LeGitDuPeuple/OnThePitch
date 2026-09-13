@@ -1,5 +1,5 @@
 import { Inscription } from "../domain/entities/Inscription";
-import { InscriptionRepositoryInterface } from "../domain/interface/inscriptionRepositoryInterface";
+import { InscriptionRepositoryInterface, InscritDetail } from "../domain/interface/inscriptionRepositoryInterface";
 import { EvenementRepositoryInterface } from "../domain/interface/evenementRepositoryInterface";
 import { RessourceIntrouvable, AccesRefuse, Conflit } from "../domain/erreurMetier";
 
@@ -8,6 +8,18 @@ export class InscriptionService {
     private readonly inscriptionRepository: InscriptionRepositoryInterface,
     private readonly evenementRepository: EvenementRepositoryInterface
   ) {}
+
+  // Liste les inscrits d'un événement — pour la fiche événement (accessible sans
+  // authentification, au même titre que la consultation de l'événement lui-même).
+  async lister(idEvenement: number): Promise<InscritDetail[]> {
+    const evenement = await this.evenementRepository.trouverParId(idEvenement);
+
+    if (!evenement || !evenement.estActif()) {
+      throw new RessourceIntrouvable("Événement introuvable");
+    }
+
+    return this.inscriptionRepository.listerParEvenement(idEvenement);
+  }
 
   // Rejoindre un événement : demande directe si public, demande en attente si privé.
   // Diagramme d'activité du dossier : public/privé → déjà inscrit ? → places disponibles ?

@@ -129,6 +129,31 @@ describe("InscriptionService", () => {
     });
   });
 
+  describe("lister", () => {
+    it("liste les inscrits d'un événement, avec leur statut", async () => {
+      const evenementRepository = new EvenementRepositoryFake();
+      const inscriptionRepository = new InscriptionRepositoryFake();
+      const evenement = await creerEvenement(evenementRepository, true);
+      const service = new InscriptionService(inscriptionRepository, evenementRepository);
+      await service.rejoindre(evenement.id, 2);
+      await service.validerDemande(evenement.id, 2, 1, true);
+      await service.rejoindre(evenement.id, 3);
+
+      const inscrits = await service.lister(evenement.id);
+
+      expect(inscrits).toEqual([
+        expect.objectContaining({ idJoueur: 2, statut: "acceptee" }),
+        expect.objectContaining({ idJoueur: 3, statut: "en_attente" }),
+      ]);
+    });
+
+    it("refuse de lister les inscrits d'un événement inexistant", async () => {
+      const service = new InscriptionService(new InscriptionRepositoryFake(), new EvenementRepositoryFake());
+
+      await expect(service.lister(999)).rejects.toBeInstanceOf(RessourceIntrouvable);
+    });
+  });
+
   describe("desinscrire", () => {
     it("retire l'inscription du joueur", async () => {
       const evenementRepository = new EvenementRepositoryFake();

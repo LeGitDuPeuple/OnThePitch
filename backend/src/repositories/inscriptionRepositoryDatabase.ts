@@ -1,7 +1,7 @@
 import { prisma } from "../config/prismaClient";
 import { Prisma } from "../generated/prisma/client";
 import { Inscription, StatutInscription } from "../domain/entities/Inscription";
-import { InscriptionRepositoryInterface } from "../domain/interface/inscriptionRepositoryInterface";
+import { InscriptionRepositoryInterface, InscritDetail } from "../domain/interface/inscriptionRepositoryInterface";
 import { Conflit, ServiceIndisponible } from "../domain/erreurMetier";
 
 // Forme brute d'une ligne "rejoint" telle que renvoyée par Prisma.
@@ -22,6 +22,21 @@ export class InscriptionRepositoryDatabase implements InscriptionRepositoryInter
     });
 
     return ligne ? this.versEntite(ligne) : null;
+  }
+
+  async listerParEvenement(idEvenement: number): Promise<InscritDetail[]> {
+    const lignes = await prisma.rejoint.findMany({
+      where: { idEvenement },
+      include: { joueur: true },
+      orderBy: { dateInscription: "asc" },
+    });
+
+    return lignes.map((ligne) => ({
+      idJoueur: ligne.idJoueur,
+      nom: ligne.joueur.nom,
+      prenom: ligne.joueur.prenom,
+      statut: ligne.statutInscription as StatutInscription,
+    }));
   }
 
   async rejoindre(idJoueur: number, idEvenement: number, statutInitial: StatutInscription): Promise<Inscription> {

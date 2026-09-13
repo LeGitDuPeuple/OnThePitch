@@ -1,8 +1,25 @@
 import { Inscription, StatutInscription } from "../../src/domain/entities/Inscription";
-import { InscriptionRepositoryInterface } from "../../src/domain/interface/inscriptionRepositoryInterface";
+import { InscriptionRepositoryInterface, InscritDetail } from "../../src/domain/interface/inscriptionRepositoryInterface";
+
+// Identité minimale d'un joueur, uniquement pour restituer nom/prénom dans listerParEvenement.
+const IDENTITES_JOUEURS: Record<number, { nom: string; prenom: string }> = {
+  1: { nom: "Organisateur", prenom: "Test" },
+  2: { nom: "Deux", prenom: "Joueur" },
+  3: { nom: "Trois", prenom: "Joueur" },
+};
 
 export class InscriptionRepositoryFake implements InscriptionRepositoryInterface {
   private inscriptions: Inscription[] = [];
+
+  async listerParEvenement(idEvenement: number): Promise<InscritDetail[]> {
+    return this.inscriptions
+      .filter((inscription) => inscription.idEvenement === idEvenement)
+      .map((inscription) => ({
+        idJoueur: inscription.idJoueur,
+        statut: inscription.statut,
+        ...(IDENTITES_JOUEURS[inscription.idJoueur] ?? { nom: "Joueur", prenom: `#${inscription.idJoueur}` }),
+      }));
+  }
 
   ajouter(inscription: Inscription): void {
     this.inscriptions.push(inscription);

@@ -6,6 +6,18 @@ import { RequeteInvalide } from "../domain/erreurMetier";
 export class InscriptionController {
   constructor(private readonly inscriptionService: InscriptionService) {}
 
+  // GET /evenements/:id/inscriptions — liste des inscrits, accessible sans authentification
+  lister = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const idEvenement = this.extraireId(req, "id");
+      const inscrits = await this.inscriptionService.lister(idEvenement);
+
+      res.json(inscrits);
+    } catch (erreur) {
+      next(erreur);
+    }
+  };
+
   // POST /evenements/:id/inscriptions — rejoindre (public : direct, privé : demande)
   rejoindre = async (req: Request, res: Response, next: NextFunction) => {
     try {
