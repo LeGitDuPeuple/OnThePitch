@@ -2,10 +2,12 @@ import { Evenement } from "../../src/domain/entities/Evenement";
 import {
   EvenementRepositoryInterface,
   NouvelEvenement,
+  ModificationEvenement,
   EvenementProche,
   EvenementDetail,
   LieuDetail,
 } from "../../src/domain/interface/evenementRepositoryInterface";
+import { RessourceIntrouvable } from "../../src/domain/erreurMetier";
 
 // Double de test en mémoire : remplace la base pour tester EvenementService,
 // RechercheEvenementService, InscriptionService et PresenceService isolément.
@@ -63,6 +65,20 @@ export class EvenementRepositoryFake implements EvenementRepositoryInterface {
     if (!evenement || !lieu) return null;
 
     return { evenement, lieu };
+  }
+
+  async modifier(id: number, donnees: ModificationEvenement): Promise<Evenement> {
+    const evenement = this.evenements.find((e) => e.id === id);
+    if (!evenement) throw new RessourceIntrouvable("Événement introuvable (double de test)");
+
+    if (donnees.titre !== undefined) evenement.titre = donnees.titre;
+    if (donnees.description !== undefined) evenement.description = donnees.description;
+    if (donnees.nombrePlaces !== undefined) evenement.nombrePlaces = donnees.nombrePlaces;
+    if (donnees.dateDebut !== undefined) evenement.dateDebut = donnees.dateDebut;
+    if (donnees.dateFin !== undefined) evenement.dateFin = donnees.dateFin;
+    if (donnees.niveauRequis !== undefined) evenement.niveauRequis = donnees.niveauRequis;
+
+    return evenement;
   }
 
   async rechercherParRayon(_longitude: number, _latitude: number, _rayonMetres: number): Promise<EvenementProche[]> {
