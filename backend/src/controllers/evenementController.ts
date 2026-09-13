@@ -34,13 +34,14 @@ export class EvenementController {
     }
   };
 
-  // GET /evenements/:id — accessible sans authentification
+  // GET /evenements/:id — accessible sans authentification. Inclut le lieu
+  // (adresse, coordonnées) pour la fiche événement.
   trouverParId = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const id = this.extraireId(req);
-      const evenement = await this.evenementService.trouverParId(id);
+      const { evenement, lieu } = await this.evenementService.trouverDetailParId(id);
 
-      res.json(evenement.versReponse());
+      res.json({ ...evenement.versReponse(), lieu });
     } catch (erreur) {
       next(erreur);
     }

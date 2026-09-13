@@ -78,6 +78,7 @@ model Utilisateur {
 
 model Lieu {
   idLieu      Int     @id @default(autoincrement()) @map("id_lieu")
+  nom         String? @db.VarChar(100)
   region      String? @db.VarChar(50)
   ville       String  @db.VarChar(50)
   adresse     String  @db.VarChar(50)
@@ -85,6 +86,8 @@ model Lieu {
   typeTerrain String? @map("type_terrain") @db.VarChar(50)
   latitude    Decimal @db.Decimal(10, 7)
   longitude   Decimal @db.Decimal(10, 7)
+  photo       Bytes?
+  photoType   String? @map("photo_type") @db.VarChar(100)
 
   evenements Evenement[]
 
@@ -94,6 +97,7 @@ model Lieu {
 model Evenement {
   idEvenement       Int       @id @default(autoincrement()) @map("id_evenement")
   titre             String    @db.VarChar(50)
+  description       String?   @db.VarChar(1000)
   nombrePlaces      Int       @map("nombre_places")
   typePrivePublique Boolean   @default(false) @map("type_prive_publique")
   dateCreation      DateTime  @default(now()) @map("date_creation")

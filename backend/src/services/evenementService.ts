@@ -1,17 +1,22 @@
-import { Evenement } from "../domain/entities/Evenement";
+import { Evenement, NiveauRequis } from "../domain/entities/Evenement";
 import { Role } from "../domain/entities/Utilisateur";
-import { EvenementRepositoryInterface } from "../domain/interface/evenementRepositoryInterface";
+import { EvenementRepositoryInterface, EvenementDetail } from "../domain/interface/evenementRepositoryInterface";
 import { GeocodeurInterface } from "../domain/interface/geocodeurInterface";
 import { RessourceIntrouvable, AccesRefuse, RequeteInvalide, Conflit } from "../domain/erreurMetier";
 
+const NIVEAU_REQUIS_DEFAUT: NiveauRequis = "tous_niveaux";
+
 export type DemandeCreation = {
   titre: string;
+  description?: string;
   adresse: string;
+  nomLieu?: string;
   nombrePlaces: number;
   estPrive: boolean;
   dateDebut: Date;
   dateFin: Date;
   typeTerrain?: string;
+  niveauRequis?: NiveauRequis;
 };
 
 export class EvenementService {
@@ -32,12 +37,15 @@ export class EvenementService {
 
     return this.evenementRepository.creer({
       titre: demande.titre,
+      description: demande.description ?? null,
       nombrePlaces: demande.nombrePlaces,
       estPrive: demande.estPrive,
       dateDebut: demande.dateDebut,
       dateFin: demande.dateFin,
       idOrganisateur,
+      niveauRequis: demande.niveauRequis ?? NIVEAU_REQUIS_DEFAUT,
       lieu: {
+        nom: demande.nomLieu ?? null,
         adresse: coordonnees.adresse,
         ville: coordonnees.ville,
         codePostal: coordonnees.codePostal,
@@ -57,6 +65,17 @@ export class EvenementService {
     }
 
     return evenement;
+  }
+
+  // Récupère un événement avec le détail de son lieu — pour la fiche événement.
+  async trouverDetailParId(id: number): Promise<EvenementDetail> {
+    const detail = await this.evenementRepository.trouverAvecLieu(id);
+
+    if (!detail || !detail.evenement.estActif()) {
+      throw new RessourceIntrouvable("Événement introuvable");
+    }
+
+    return detail;
   }
 
   // Annule un événement. Réservé à l'organisateur, ou à un administrateur (modération).

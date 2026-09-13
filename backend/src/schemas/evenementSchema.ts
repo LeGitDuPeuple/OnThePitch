@@ -1,14 +1,20 @@
 import { z } from "zod";
 
+// Correspond aux libellés de la table de référence niveau_event.
+const niveauRequisSchema = z.enum(["debutant", "intermediaire", "confirme", "tous_niveaux"]);
+
 // Validation du corps de POST /evenements
 export const creationEvenementSchema = z.object({
   titre: z.string().min(3).max(50),
+  description: z.string().max(1000).optional(),
   adresse: z.string().min(5),
+  nomLieu: z.string().max(100).optional(),
   dateDebut: z.coerce.date(),
   dateFin: z.coerce.date(),
   nombrePlaces: z.number().int().min(2).max(30),
   estPrive: z.boolean(),
   typeTerrain: z.string().max(50).optional(),
+  niveauRequis: niveauRequisSchema.default("tous_niveaux"),
 });
 
 // Validation des paramètres de GET /evenements/recherche (query string, donc coercition).
