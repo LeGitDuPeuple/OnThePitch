@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useRechercheForm } from "../hooks/useRechercheForm";
 import "../styles/carteRecherche.css";
 
@@ -60,19 +61,21 @@ export const CarteRecherche = () => {
         </p>
         <ul>
           {resultats.map((evenement) => (
-            <li key={evenement.id} className="carte-evenement">
-              <strong>{evenement.titre}</strong>
-              {evenement.estPrive && <span className="badge-prive">privé</span>}
-              <div>
-                {evenement.ville} · {evenement.distanceKm} km
-              </div>
-              <div>
-                {new Date(evenement.dateDebut).toLocaleString("fr-FR", {
-                  dateStyle: "short",
-                  timeStyle: "short",
-                })}
-              </div>
-              <div>{evenement.placesRestantes} places restantes</div>
+            <li key={evenement.id}>
+              <Link to={`/evenements/${evenement.id}`} className="carte-evenement">
+                <strong>{evenement.titre}</strong>
+                {evenement.estPrive && <span className="badge-prive">privé</span>}
+                <div>
+                  {evenement.ville} · {evenement.distanceKm} km
+                </div>
+                <div>
+                  {new Date(evenement.dateDebut).toLocaleString("fr-FR", {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  })}
+                </div>
+                <div>{evenement.placesRestantes} places restantes</div>
+              </Link>
             </li>
           ))}
         </ul>
