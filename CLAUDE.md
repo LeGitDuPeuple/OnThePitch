@@ -44,8 +44,10 @@ terminé et testé.
 
 ### Authentification
 - [x] Inscription avec hachage bcrypt — testé (201, doublon d'email → 409)
-- [x] Connexion avec émission du JWT — testé (200 + jeton)
-- [x] Middleware `authentifier` — testé sur `POST/DELETE /evenements` (401 sans jeton)
+- [x] Connexion avec émission du JWT — testé (200, jeton posé en cookie httpOnly,
+      jamais dans le corps JSON — voir section 2). `POST /auth/deconnexion` testé
+      (efface le cookie, `GET /auth/profil` échoue ensuite)
+- [x] Middleware `authentifier` — testé sur `POST/DELETE /evenements` (401 sans cookie)
 - [x] Middleware `verifierRole` — testé sur `POST /evenements` (rôle `joueur` requis)
 - [x] Schémas Zod de validation partagés — testé (400 + détail du champ en erreur)
 
@@ -59,6 +61,11 @@ terminé et testé.
       (édition d'un événement existant) pas encore implémentée.
 - [x] Consultation d'un événement (détail) — testée (200, 404 si inexistant ou
       désactivé). Liste des inscrits pas encore incluse (dépend des inscriptions).
+- [x] Niveau requis (`niveau_event`/`requiert`, prévu au MCD, jamais câblé jusqu'ici) —
+      testé (valeur par défaut `tous_niveaux`, valeur explicite, 400 si invalide),
+      exposé sur la création, la consultation et la recherche
+- [x] Photo du lieu — testée (upload multipart par l'organisateur, 401/403/400,
+      récupération avec octets identiques). Écart au MCD documenté (section `lieu`)
 
 ### Recherche géolocalisée
 - [x] Requête PostGIS `ST_DWithin` + `ST_Distance` dans le repository — testée contre
@@ -66,8 +73,9 @@ terminé et testé.
 - [x] Index GIST créé
 - [x] Règles métier du service (rayon par défaut, conversions) — testées via
       `GET /evenements/recherche` (défaut 10 km, refus > 100 km)
-- [ ] Point de recherche par géolocalisation navigateur — dépend du front, pas commencé
-- [ ] Point de recherche par saisie manuelle d'adresse — dépend du front, pas commencé
+- [x] Point de recherche par géolocalisation navigateur — testé (front, `CarteRecherche`)
+- [x] Point de recherche par saisie manuelle d'adresse — testé, via la nouvelle route
+      `GET /evenements/geocoder` (front + back)
 - [ ] Performance vérifiée (< 500 ms sur 1 000 événements)
 
 ### Inscriptions
@@ -85,9 +93,17 @@ terminé et testé.
 - [x] Désinscription — testée (204, 404 si pas inscrit)
 
 ### Front React
-- [ ] Service API centralisé avec injection du jeton
-- [ ] Contexte d'authentification
-- [ ] Écran carte de recherche
+- [x] Service API centralisé (`services/api.ts`) — `credentials: "include"` sur
+      chaque appel (cookie httpOnly, pas d'en-tête à injecter), erreurs traduites
+      en `ErreurApi`. Aucun `fetch` en dur ailleurs dans le code
+- [x] Store Redux Toolkit pour l'authentification (`authSlice`) — voir section 9.
+      Hydratation de la session au démarrage via `useHydrateAuth` (`GET /auth/profil`,
+      le cookie httpOnly ne peut pas être lu directement par le front)
+- [x] Écran connexion — formulaire fonctionnel (`useConnexionForm`), connecté au
+      cookie httpOnly, testé manuellement de bout en bout
+- [x] Écran carte de recherche — fonctionnel : adresse (géocodée côté serveur) ou
+      géolocalisation navigateur, rayon ajustable, liste triée par distance. Pas
+      encore de carte visuelle interactive (Leaflet à ajouter), style minimal
 - [ ] Écran fiche événement
 - [ ] Écran création d'annonce
 - [ ] Écran tableau de bord admin (`/admin`) — voir section 9, pas un backoffice séparé
@@ -118,8 +134,8 @@ terminé et testé.
       testé (événement inchangé, signalements retirés)
 
 ### Qualité et déploiement
-- [x] Tests Jest sur la couche Service — 53 tests, 7 services (Auth, Evenement,
-      RechercheEvenement, Inscription, Presence, Moderation, Geocodage), repositories
+- [x] Tests Jest sur la couche Service — 58 tests, 8 services (Auth, Evenement,
+      RechercheEvenement, Inscription, Presence, Moderation, Geocodage, Photo), repositories
       substitués par des doubles en mémoire (`tests/doubles/`) implémentant les
       interfaces du domaine. Transform `@swc/jest` (rapide, pas de vérification de
       types) + `tsc --noEmit -p tsconfig.tests.json` en complément pour le typage
@@ -272,8 +288,11 @@ PostGIS n'étant pas modélisé par l'ORM, la requête `ST_DWithin`/`ST_Distance
 - **Validation en middleware séparé**, en amont du controller, via schéma Zod.
   Un controller ne valide pas, il reçoit des données déjà valides
 - **API sans état** (contrainte REST) : aucune session serveur. L'identité et le rôle
-  sont portés par le JWT, vérifiés à chaque requête. C'est ce qui permettra la mise à
-  l'échelle horizontale sous Kubernetes
+  sont portés par le JWT, vérifiés à chaque requête — transporté dans un cookie
+  httpOnly plutôt qu'un en-tête `Authorization` (voir section 2), ce qui ne change
+  rien à la statelessness : `jwt.verify` ne dépend d'aucun état stocké côté serveur,
+  quel que soit le canal de transport. C'est ce qui permettra la mise à l'échelle
+  horizontale sous Kubernetes
 - Routes nommées sur les ressources : `GET /evenements`, `POST /evenements`,
   `POST /evenements/:id/inscriptions`
 
@@ -303,15 +322,22 @@ seule source de vérité.
   (mise à jour des champs, validation Zod, condition de soumission) part dans un
   hook dédié : `useCreationEvenementForm`, `useRechercheForm`
 - **Service API isolé** dans `src/services/api.ts` : centralise l'URL de base,
-  l'injection du jeton et le traitement des erreurs. Aucun `fetch` en dur dans un composant
-- **État global limité à l'authentification**, via un contexte React
-  (`AuthContext` : utilisateur, rôle, jeton). Le reste — résultats de recherche, fiche
+  l'envoi du cookie de session (`credentials: "include"` — pas d'en-tête à injecter,
+  voir section 2) et le traitement des erreurs. Aucun `fetch` en dur dans un composant
+- **État global limité à l'authentification**, via un store **Redux Toolkit**
+  (`authSlice` : utilisateur, rôle, jeton). Le reste — résultats de recherche, fiche
   événement — reste en état local de page
 
-> Redux Toolkit est le pattern enseigné en cours. Il est écarté ici : sur trois écrans
-> dont un seul état réellement partagé, la mise en place de slices, actions et reducers
-> coûte plus qu'elle ne rapporte. Si le formateur l'exige, la bascule se fait sans
-> refonte : le contexte est remplacé par un `authSlice`, le reste ne bouge pas.
+> Décision du 12/09/2026 : Redux Toolkit n'est pas strictement nécessaire ici — un
+> seul état est réellement partagé (l'authentification), un Context React aurait
+> suffi pour ~30-50 % de code en moins (pas de store, pas de `<Provider>`, pas de
+> dépendance supplémentaire). Retenu quand même, choix assumé pour démontrer la
+> maîtrise de l'outil vu en cours — périmètre volontairement limité à
+> l'authentification : ni la recherche ni la fiche événement n'ont de slice, ce
+> sont des données propres à chaque page, mal adaptées à un store global (elles
+> devraient se réinitialiser à chaque visite d'écran, source de bugs d'état
+> périmé). Ne pas étendre Redux au-delà de l'auth sans le signaler explicitement.
+> Nouvelles dépendances : `@reduxjs/toolkit`, `react-redux`.
 
 ---
 
@@ -360,9 +386,21 @@ code_postal   VARCHAR(50)
 type_terrain  VARCHAR(50)
 latitude      DECIMAL(10,7)   -- issu du géocodage
 longitude     DECIMAL(10,7)   -- issu du géocodage
+photo         BYTEA           -- À AJOUTER au MCD (absent actuellement)
+photo_type    VARCHAR(100)    -- type MIME de la photo ; À AJOUTER au MCD
 ```
 
 > La position géographique est portée par **lieu**, pas par evenement.
+
+> **Photo du lieu** (ajoutée le 11/09/2026, à la demande du porteur de projet) :
+> stockée en base (`bytea`), pas de service de stockage de fichiers (S3-like) —
+> absent de la stack imposée. Jamais incluse dans les réponses JSON de liste ou de
+> recherche (romprait le budget de 500 ms) : servie à part via une route dédiée
+> (`GET /evenements/:id/photo`), chargée par le navigateur comme une URL d'image
+> classique. Upload en `multipart/form-data` via `multer` (nouvelle dépendance),
+> stockage en mémoire uniquement côté serveur — jamais sur disque, pour ne pas
+> casser le caractère sans état de l'API (mise à l'échelle horizontale sous K8s).
+> Plafonné à 2 Mo, jpeg/png/webp uniquement.
 
 ### rejoint (inscription d'un joueur à un événement)
 ```
@@ -472,7 +510,15 @@ Flux : Route → middleware de validation (Zod) → Controller → Service → R
 
 - Inscription : hachage bcrypt, la base ne contient jamais le mot de passe en clair
 - Connexion : émission d'un JWT contenant `id_joueur` et `role`
-- Middleware `authentifier` : vérifie le jeton, rattache l'utilisateur à `req`
+- **Transport du jeton : cookie `httpOnly`** (revu le 12/09/2026, à la demande du
+  porteur de projet), posé par le serveur (`config/cookie.ts`) à la connexion —
+  jamais renvoyé dans le corps JSON, jamais lu par le JavaScript du front. Protège
+  contre le vol de jeton par XSS, contrairement à un jeton stocké côté client
+  (`localStorage` ou état JS) et rejoué via un en-tête `Authorization`. Implique
+  `POST /auth/deconnexion` (le front ne peut pas effacer lui-même un cookie
+  httpOnly) et `credentials: "include"` sur chaque appel `fetch` du front
+- Middleware `authentifier` : vérifie le jeton (lu dans le cookie, jamais un
+  en-tête), rattache l'utilisateur à `req`
 - Middleware `verifierRole('administrateur')` : contrôle d'accès sur les routes admin
 - **Authentification et autorisation restent deux middlewares distincts** : l'un répond
   « qui es-tu », l'autre « as-tu le droit »
@@ -493,9 +539,12 @@ Flux : Route → middleware de validation (Zod) → Controller → Service → R
 ### 4. Recherche géolocalisée (PRIORITÉ)
 
 Le joueur définit son point de recherche de deux façons :
-- géolocalisation du navigateur
+- géolocalisation du navigateur — coordonnées directement exploitables, rien à ajouter
 - **saisie manuelle d'une adresse ou d'une ville** (pour chercher ailleurs que chez soi,
-  en déplacement ou en vacances)
+  en déplacement ou en vacances) — nécessite de convertir cette saisie en coordonnées.
+  Comme le client ne doit jamais appeler l'API Adresse lui-même (section 3), une route
+  dédiée expose le `GeocodageService` déjà existant : `GET /evenements/geocoder?adresse=...`
+  (ajoutée le 12/09/2026 — le besoin n'avait pas été anticipé avant d'attaquer le front)
 
 Puis il choisit un rayon et obtient les événements du périmètre, triés par distance.
 
@@ -656,6 +705,8 @@ Quatre écrans, maquettés pour les trois premiers :
   requête PostGIS en SQL brut, qui référence les noms de colonnes réels de la base
 - Le diagramme de séquence "Créer un événement" ne montre pas le `GeocodageService` :
   à mettre à jour pour rester cohérent avec le code
+- `photo` et `photo_type` doivent être ajoutés à `lieu` au MCD Looping (absents
+  actuellement, voir section "Modèle de données")
 
 ## Évolutions envisagées (hors périmètre initial)
 
