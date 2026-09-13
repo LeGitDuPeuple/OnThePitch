@@ -11,17 +11,3 @@ export const getEnvVariable = (nom: string): string => {
 
   return valeur;
 };
-
-/**
- * Extrait le jeton depuis l'en-tête Authorization.
- * Format attendu : "Bearer <token>"
- */
-export const extractToken = (authorization: string): string | null => {
-  const [prefixe, token] = authorization.split(" ");
-
-  if (prefixe !== "Bearer" || !token) {
-    return null;
-  }
-
-  return token;
-};
