@@ -10,4 +10,8 @@ export const inscriptionService = {
 
   seDesinscrire: (idEvenement: number): Promise<void> =>
     appelApi(`/evenements/${idEvenement}/inscriptions`, { methode: "DELETE" }),
+
+  // Validation d'une demande sur un événement privé — réservée à l'organisateur.
+  validerDemande: (idEvenement: number, idJoueur: number, accepter: boolean): Promise<void> =>
+    appelApi(`/evenements/${idEvenement}/inscriptions/${idJoueur}`, { methode: "PATCH", corps: { accepter } }),
 };

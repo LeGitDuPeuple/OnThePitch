@@ -57,3 +57,48 @@
   list-style: none;
   padding: 0;
 }
+
+.bouton-secondaire {
+  background: none;
+  border: 1px solid #999;
+}
+
+.formulaire-modification,
+.demandes-attente {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.formulaire-modification label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.formulaire-modification input,
+.formulaire-modification select,
+.formulaire-modification textarea {
+  font: inherit;
+  padding: 0.4rem;
+}
+
+.actions-formulaire {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ligne-demande {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+}
+
+.actions-demande {
+  display: flex;
+  gap: 0.5rem;
+}

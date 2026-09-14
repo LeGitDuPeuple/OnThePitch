@@ -112,11 +112,13 @@ terminé et testé.
       encore de carte visuelle interactive (Leaflet à ajouter), style minimal
 - [x] Écran fiche événement — fonctionnel : infos, lieu, photo si présente, liste
       des inscrits, bouton d'inscription (états : non connecté / organisateur /
-      rejoindre / demander à rejoindre / en attente / inscrit / complet / terminé),
-      testé manuellement de bout en bout (création d'événement, inscription,
-      désinscription, mise à jour des places restantes). Carte visuelle et actions
-      de l'organisateur sur les demandes en attente (accepter/refuser) pas encore
-      sur cet écran — à faire
+      rejoindre / demander à rejoindre / en attente / inscrit / complet / terminé).
+      Organisateur : modification de l'événement (`useModificationEvenementForm`,
+      mêmes champs qu'à la création sans l'adresse) et validation des demandes en
+      attente sur un événement privé (accepter/refuser, `PATCH .../inscriptions/:idJoueur`).
+      Testé manuellement de bout en bout contre la vraie API (inscription,
+      désinscription, demande/validation privée, modification). Carte visuelle
+      pas encore ajoutée (dépend de Leaflet, voir écran carte de recherche)
 - [x] Écran création d'annonce — formulaire en trois blocs (`useCreationEvenementForm`),
       accessible depuis la carte de recherche, garde de rôle (`joueur` uniquement,
       cf. tableau des droits — un visiteur ou un administrateur ne voit pas le
