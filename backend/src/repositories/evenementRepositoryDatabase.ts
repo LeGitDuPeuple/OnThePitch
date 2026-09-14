@@ -25,6 +25,8 @@ type LigneRecherche = {
   nom_lieu: string | null;
   adresse: string;
   ville: string;
+  latitude: number;
+  longitude: number;
   distance: number;
 };
 
@@ -212,6 +214,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
              e.date_debut, e.date_fin, e.id_lieu, e.id_joueur,
              s.libelle_event, n.libelle_niveau_event,
              l.nom AS nom_lieu, l.adresse, l.ville,
+             l.latitude::float8 AS latitude, l.longitude::float8 AS longitude,
              COUNT(r.id_joueur) AS nombre_inscrits,
              ST_Distance(
                ST_MakePoint(l.longitude::float8, l.latitude::float8)::geography,
@@ -252,6 +255,8 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
       nomLieu: ligne.nom_lieu,
       ville: ligne.ville,
       adresse: ligne.adresse,
+      latitude: ligne.latitude,
+      longitude: ligne.longitude,
     }));
   }
 
