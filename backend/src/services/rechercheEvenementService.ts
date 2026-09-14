@@ -37,6 +37,8 @@ export class RechercheEvenementService {
       distanceKm: resultat.distanceKm,
       ville: resultat.ville,
       adresse: resultat.adresse,
+      latitude: resultat.latitude,
+      longitude: resultat.longitude,
     }));
   }
 }

@@ -39,6 +39,10 @@ export type EvenementProche = {
   nomLieu: string | null;
   ville: string;
   adresse: string;
+  // Coordonnées du lieu — pour poser un marqueur sur la carte de recherche,
+  // sans requête supplémentaire par événement.
+  latitude: number;
+  longitude: number;
 };
 
 // Détail d'un lieu, pour la fiche événement (carte, adresse complète).
