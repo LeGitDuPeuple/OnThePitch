@@ -86,7 +86,12 @@ terminé et testé.
 - [x] Index GIST créé
 - [x] Règles métier du service (rayon par défaut, conversions) — testées via
       `GET /evenements/recherche` (défaut 10 km, refus > 100 km)
-- [x] Point de recherche par géolocalisation navigateur — testé (front, `CarteRecherche`)
+- [x] Point de recherche par géolocalisation navigateur — testé (front, `CarteRecherche`).
+      Déclenchée aussi automatiquement au chargement de l'écran (15/09/2026, à la
+      demande du porteur de projet) : plus besoin de cliquer pour voir des résultats,
+      la demande de permission du navigateur reste incontournable ; refus/indisponible
+      → pas d'erreur affichée, recherche manuelle par adresse toujours disponible.
+      Testé avec Chrome headless (géolocalisation simulée)
 - [x] Point de recherche par saisie manuelle d'adresse — testé, via la nouvelle route
       `GET /evenements/geocoder` (front + back)
 - [ ] Performance vérifiée (< 500 ms sur 1 000 événements)
