@@ -28,6 +28,7 @@ export class EvenementRepositoryFake implements EvenementRepositoryInterface {
       id: this.prochainId++,
       titre: donnees.titre,
       description: donnees.description,
+      format: donnees.format,
       nombrePlaces: donnees.nombrePlaces,
       estPrive: donnees.estPrive,
       dateDebut: donnees.dateDebut,
@@ -74,6 +75,7 @@ export class EvenementRepositoryFake implements EvenementRepositoryInterface {
 
     if (donnees.titre !== undefined) evenement.titre = donnees.titre;
     if (donnees.description !== undefined) evenement.description = donnees.description;
+    if (donnees.format !== undefined) evenement.format = donnees.format;
     if (donnees.nombrePlaces !== undefined) evenement.nombrePlaces = donnees.nombrePlaces;
     if (donnees.dateDebut !== undefined) evenement.dateDebut = donnees.dateDebut;
     if (donnees.dateFin !== undefined) evenement.dateFin = donnees.dateFin;

@@ -4,6 +4,7 @@ import { Evenement, NiveauRequis } from "../entities/Evenement";
 export type NouvelEvenement = {
   titre: string;
   description?: string | null;
+  format?: string | null;
   nombrePlaces: number;
   estPrive: boolean;
   dateDebut: Date;
@@ -26,6 +27,7 @@ export type NouvelEvenement = {
 export type ModificationEvenement = {
   titre?: string;
   description?: string;
+  format?: string;
   nombrePlaces?: number;
   dateDebut?: Date;
   dateFin?: Date;

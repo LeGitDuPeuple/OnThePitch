@@ -98,6 +98,10 @@ model Evenement {
   idEvenement       Int       @id @default(autoincrement()) @map("id_evenement")
   titre             String    @db.VarChar(50)
   description       String?   @db.VarChar(1000)
+  // Format de jeu ("5 contre 5", "7 contre 7"...) — libre, comme typeTerrain sur
+  // Lieu. Ajouté le 15/09/2026 : présent dans la maquette (blocs "Caractéristiques"
+  // et fiche événement), jamais modélisé jusqu'ici. À AJOUTER au MCD Looping.
+  format            String?   @db.VarChar(30)
   nombrePlaces      Int       @map("nombre_places")
   typePrivePublique Boolean   @default(false) @map("type_prive_publique")
   dateCreation      DateTime  @default(now()) @map("date_creation")
