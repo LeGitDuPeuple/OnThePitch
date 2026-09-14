@@ -64,7 +64,8 @@ export class EvenementRepositoryFake implements EvenementRepositoryInterface {
 
     if (!evenement || !lieu) return null;
 
-    return { evenement, lieu };
+    // Identité factice : ce double ne modélise pas les utilisateurs.
+    return { evenement, lieu, organisateur: { nom: "Organisateur", prenom: `#${evenement.idOrganisateur}` } };
   }
 
   async modifier(id: number, donnees: ModificationEvenement): Promise<Evenement> {

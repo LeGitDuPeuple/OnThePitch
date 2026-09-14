@@ -128,7 +128,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
     const [ligne, nombreAcceptees] = await Promise.all([
       prisma.evenement.findUnique({
         where: { idEvenement: id },
-        include: { statut: true, niveaux: { include: { niveau: true } }, lieu: true },
+        include: { statut: true, niveaux: { include: { niveau: true } }, lieu: true, organisateur: true },
       }),
       prisma.rejoint.count({ where: { idEvenement: id, statutInscription: "acceptee" } }),
     ]);
@@ -160,6 +160,10 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
         longitude: Number(ligne.lieu.longitude),
         typeTerrain: ligne.lieu.typeTerrain,
         aUnePhoto: ligne.lieu.photo !== null,
+      },
+      organisateur: {
+        nom: ligne.organisateur.nom,
+        prenom: ligne.organisateur.prenom,
       },
     };
   }

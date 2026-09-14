@@ -57,9 +57,18 @@ export type LieuDetail = {
   aUnePhoto: boolean;
 };
 
+// Identité minimale de l'organisateur, pour l'affichage sur la fiche événement
+// ("Organisé par ..."). idOrganisateur seul (déjà sur Evenement) ne suffit pas
+// à afficher un nom sans requête supplémentaire côté front.
+export type OrganisateurDetail = {
+  nom: string;
+  prenom: string;
+};
+
 export type EvenementDetail = {
   evenement: Evenement;
   lieu: LieuDetail;
+  organisateur: OrganisateurDetail;
 };
 
 export interface EvenementRepositoryInterface {

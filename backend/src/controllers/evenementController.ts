@@ -39,9 +39,9 @@ export class EvenementController {
   trouverParId = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const id = this.extraireId(req);
-      const { evenement, lieu } = await this.evenementService.trouverDetailParId(id);
+      const { evenement, lieu, organisateur } = await this.evenementService.trouverDetailParId(id);
 
-      res.json({ ...evenement.versReponse(), lieu });
+      res.json({ ...evenement.versReponse(), lieu, organisateur });
     } catch (erreur) {
       next(erreur);
     }
