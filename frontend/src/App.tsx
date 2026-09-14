@@ -5,6 +5,7 @@ import { CarteRecherche } from "./pages/CarteRecherche";
 import { FicheEvenement } from "./pages/FicheEvenement";
 import { CreationAnnonce } from "./pages/CreationAnnonce";
 import { Connexion } from "./pages/Connexion";
+import { Inscription } from "./pages/Inscription";
 import { Admin } from "./pages/Admin";
 
 export const App = () => {
@@ -19,6 +20,7 @@ export const App = () => {
         <Route path="/evenements/:id" element={<FicheEvenement />} />
         <Route path="/creer" element={<CreationAnnonce />} />
         <Route path="/connexion" element={<Connexion />} />
+        <Route path="/inscription" element={<Inscription />} />
         <Route path="/admin" element={<Admin />} />
       </Routes>
     </>

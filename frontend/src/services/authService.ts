@@ -6,7 +6,21 @@ export type DonneesConnexion = {
   motDePasse: string;
 };
 
+export type DonneesInscription = {
+  nom: string;
+  prenom: string;
+  email: string;
+  motDePasse: string;
+  ville?: string;
+};
+
 export const authService = {
+  // Ne pose pas le cookie de session : POST /auth/inscription crée le compte
+  // sans connecter (voir CLAUDE.md, section 2 — inscription et connexion
+  // restent deux actions distinctes côté back).
+  inscription: (donnees: DonneesInscription): Promise<Utilisateur> =>
+    appelApi("/auth/inscription", { methode: "POST", corps: donnees }),
+
   connexion: (donnees: DonneesConnexion): Promise<{ utilisateur: Utilisateur }> =>
     appelApi("/auth/connexion", { methode: "POST", corps: donnees }),
 
