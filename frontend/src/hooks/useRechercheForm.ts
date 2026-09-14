@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { evenementService } from "../services/evenementService";
-import { geocodageService } from "../services/geocodageService";
+import { geocodageService, type Coordonnees } from "../services/geocodageService";
 import { ErreurApi } from "../services/api";
 import type { EvenementProche } from "../types/evenement";
 
@@ -64,6 +64,18 @@ export const useRechercheForm = () => {
       setChargement(false);
     }
   }, [adresse, rayonKm, lancerRecherche]);
+
+  // Sélection d'une suggestion d'autocomplétion : ses coordonnées sont déjà
+  // connues (renvoyées par /geocoder/suggestions), inutile de regéocoder.
+  const rechercherSuggestion = useCallback(
+    (suggestion: Coordonnees) => {
+      const point: PointRecherche = { latitude: suggestion.latitude, longitude: suggestion.longitude, libelle: suggestion.adresse };
+      setAdresse(suggestion.adresse);
+      setPointRecherche(point);
+      void lancerRecherche(point, rayonKm);
+    },
+    [rayonKm, lancerRecherche]
+  );
 
   // Recherche à partir de la géolocalisation du navigateur.
   const rechercherParPosition = useCallback(() => {
@@ -141,5 +153,6 @@ export const useRechercheForm = () => {
     erreur,
     rechercherParAdresse,
     rechercherParPosition,
+    rechercherSuggestion,
   };
 };

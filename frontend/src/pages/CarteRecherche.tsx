@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useRechercheForm } from "../hooks/useRechercheForm";
+import { useSuggestionsAdresse } from "../hooks/useSuggestionsAdresse";
 import { CarteInteractive } from "../components/CarteInteractive";
+import { SuggestionsAdresse } from "../components/SuggestionsAdresse";
 import { LIBELLES_NIVEAU } from "../types/evenement";
 import "../styles/carteRecherche.css";
 
@@ -31,7 +33,9 @@ export const CarteRecherche = () => {
     erreur,
     rechercherParAdresse,
     rechercherParPosition,
+    rechercherSuggestion,
   } = useRechercheForm();
+  const { suggestions, choisir, fermer } = useSuggestionsAdresse(adresse);
   const [vue, setVue] = useState<Vue>("liste");
   const navigate = useNavigate();
 
@@ -46,13 +50,22 @@ export const CarteRecherche = () => {
             void rechercherParAdresse();
           }}
         >
-          <label className="champ-filtre champ-filtre--large">
+          <label className="champ-filtre champ-filtre--large champ-avec-suggestions">
             <span>Où chercher</span>
             <input
               type="text"
               placeholder="Adresse ou ville"
               value={adresse}
               onChange={(evenement) => setAdresse(evenement.target.value)}
+              onBlur={fermer}
+              autoComplete="off"
+            />
+            <SuggestionsAdresse
+              suggestions={suggestions}
+              onChoisir={(suggestion) => {
+                choisir(suggestion);
+                rechercherSuggestion(suggestion);
+              }}
             />
           </label>
           <button type="button" className="bouton-secondaire bouton-position" onClick={rechercherParPosition}>

@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { useAppSelector } from "../store/hooks";
 import { useCreationEvenementForm } from "../hooks/useCreationEvenementForm";
+import { useSuggestionsAdresse } from "../hooks/useSuggestionsAdresse";
+import { SuggestionsAdresse } from "../components/SuggestionsAdresse";
 import { FORMATS_COURANTS, LIBELLES_NIVEAU, type NiveauRequis } from "../types/evenement";
 import "../styles/creationAnnonce.css";
 
@@ -37,6 +39,7 @@ export const CreationAnnonce = () => {
     chargement,
     soumettre,
   } = useCreationEvenementForm();
+  const { suggestions, choisir, fermer } = useSuggestionsAdresse(adresse);
 
   if (chargementInitial) return <p className="page-creation">Chargement…</p>;
 
@@ -78,16 +81,19 @@ export const CreationAnnonce = () => {
             <legend>
               <span className="numero-bloc">1</span> Lieu et date
             </legend>
-            <label>
+            <label className="champ-avec-suggestions">
               Adresse du terrain
               <input
                 type="text"
                 placeholder="Adresse ou ville du terrain"
                 value={adresse}
                 onChange={(evenement) => setAdresse(evenement.target.value)}
+                onBlur={fermer}
+                autoComplete="off"
                 required
                 minLength={5}
               />
+              <SuggestionsAdresse suggestions={suggestions} onChoisir={(suggestion) => setAdresse(choisir(suggestion))} />
             </label>
             <label>
               Nom du lieu (facultatif)
