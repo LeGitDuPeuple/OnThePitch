@@ -1,15 +1,11 @@
+/* Points de rupture du projet (voir CLAUDE.md, "Responsive") :
+   mobile < 600px, tablette 600–1023px, desktop >= 1024px. */
+
 .page-recherche {
   max-width: 720px;
   margin: 0 auto;
   padding: 1.5rem;
   font-family: system-ui, sans-serif;
-}
-
-.entete-recherche {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
 }
 
 .filtres-recherche {
@@ -26,6 +22,26 @@
 
 .message-erreur {
   color: #b3261e;
+}
+
+/* Empilées par défaut (tablette : liste sous la carte, cf. CLAUDE.md) — desktop
+   les passe côte à côte plus bas. */
+.zone-resultats {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.zone-carte {
+  min-height: 220px;
+  border: 1px dashed #bbb;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+  text-align: center;
+  padding: 1rem;
 }
 
 .resultats-recherche ul {
@@ -55,4 +71,56 @@
   background: #eee;
   border-radius: 4px;
   padding: 0.1rem 0.4rem;
+}
+
+/* Bascule carte/liste : masquée sauf sur mobile (voir plus bas). */
+.bascule-vue {
+  display: none;
+}
+
+/* Mobile : un seul des deux blocs visible à la fois, choisi par la bascule. */
+@media (max-width: 599px) {
+  .bascule-vue {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .bascule-vue button {
+    flex: 1;
+    padding: 0.5rem;
+  }
+
+  .bascule-vue button.actif {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+  }
+
+  .cachee-mobile {
+    display: none;
+  }
+}
+
+/* Desktop : carte et liste côte à côte (cf. CLAUDE.md). */
+@media (min-width: 1024px) {
+  .page-recherche {
+    max-width: 1100px;
+  }
+
+  .zone-resultats {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .zone-carte,
+  .resultats-recherche {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .zone-carte {
+    position: sticky;
+    top: 1.5rem;
+  }
 }

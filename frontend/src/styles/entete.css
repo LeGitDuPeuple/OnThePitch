@@ -1,0 +1,76 @@
+/* Points de rupture du projet (voir CLAUDE.md, "Responsive") :
+   mobile < 600px, tablette 600–1023px, desktop >= 1024px. */
+
+.entete {
+  border-bottom: 1px solid #ddd;
+  background: #fff;
+  font-family: system-ui, sans-serif;
+}
+
+.entete-barre {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+}
+
+.entete-logo {
+  font-weight: 700;
+  text-decoration: none;
+  color: inherit;
+}
+
+.entete-bouton-menu {
+  display: none;
+  font-size: 1.25rem;
+  background: none;
+  border: 1px solid #999;
+  border-radius: 4px;
+  padding: 0.2rem 0.6rem;
+}
+
+.entete-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0 1.5rem 0.75rem;
+}
+
+.entete-nav a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.entete-nav a:hover {
+  text-decoration: underline;
+}
+
+.entete-compte {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+/* Mobile : le menu se replie derrière le bouton ☰ (cf. CLAUDE.md — navigation en menu). */
+@media (max-width: 599px) {
+  .entete-bouton-menu {
+    display: block;
+  }
+
+  .entete-nav {
+    display: none;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0 1.5rem 1rem;
+  }
+
+  .entete-nav--ouvert {
+    display: flex;
+  }
+
+  .entete-compte {
+    margin-left: 0;
+  }
+}

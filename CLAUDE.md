@@ -134,7 +134,16 @@ terminé et testé.
       (désactiver + avertir / rejeter le signalement). Testé manuellement de bout
       en bout contre la vraie API (connexion admin, signalement, sanction — 404
       ensuite sur l'événement —, rejet — événement inchangé)
-- [ ] Responsive (desktop / tablette / mobile)
+- [x] Responsive (desktop / tablette / mobile) — points de rupture mobile < 600px,
+      tablette 600–1023px, desktop ≥ 1024px, sur les 3 écrans concernés (recherche,
+      fiche événement, création). En-tête commun (`Entete.tsx`), navigation en menu
+      replié sur mobile. Carte de recherche : desktop = carte et liste côte à côte,
+      tablette = liste sous la carte, mobile = bascule par onglets. La "carte" est
+      un bloc `.zone-carte` placeholder — pas encore Leaflet (voir écran carte de
+      recherche) ; la mise en page responsive est en place, prête à recevoir la
+      vraie carte. Vérifié par lecture du CSS et build, pas de vérification
+      visuelle en navigateur réel (outil d'automatisation indisponible cette
+      session — à confirmer visuellement)
 
 ### Présences
 - [x] Marquage manuel (secours) — `POST /evenements/:id/presences/manuel`, testé
