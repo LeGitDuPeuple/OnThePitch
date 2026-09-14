@@ -127,7 +127,13 @@ terminé et testé.
       maquette du bloc "Caractéristiques" mentionne un champ "format", absent du
       MCD — remplacé par le champ existant `typeTerrain` (rattaché au bloc "Lieu
       et date", où il a plus de sens)
-- [ ] Écran tableau de bord admin (`/admin`) — voir section 9, pas un backoffice séparé
+- [x] Écran tableau de bord admin (`/admin`) — connexion dédiée réutilisant
+      `POST /auth/connexion` (même compte, pas de second système), garde de rôle
+      côté front (confort d'usage, la vraie protection reste `verifierRole`
+      côté API). Liste des signalements en attente, deux actions par événement
+      (désactiver + avertir / rejeter le signalement). Testé manuellement de bout
+      en bout contre la vraie API (connexion admin, signalement, sanction — 404
+      ensuite sur l'événement —, rejet — événement inchangé)
 - [ ] Responsive (desktop / tablette / mobile)
 
 ### Présences
