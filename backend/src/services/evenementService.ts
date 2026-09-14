@@ -9,6 +9,7 @@ const NIVEAU_REQUIS_DEFAUT: NiveauRequis = "tous_niveaux";
 export type DemandeCreation = {
   titre: string;
   description?: string;
+  format?: string;
   adresse: string;
   nomLieu?: string;
   nombrePlaces: number;
@@ -23,6 +24,7 @@ export type DemandeCreation = {
 export type DemandeModification = {
   titre?: string;
   description?: string;
+  format?: string;
   nombrePlaces?: number;
   dateDebut?: Date;
   dateFin?: Date;
@@ -48,6 +50,7 @@ export class EvenementService {
     return this.evenementRepository.creer({
       titre: demande.titre,
       description: demande.description ?? null,
+      format: demande.format ?? null,
       nombrePlaces: demande.nombrePlaces,
       estPrive: demande.estPrive,
       dateDebut: demande.dateDebut,

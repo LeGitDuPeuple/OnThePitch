@@ -9,6 +9,10 @@ export class Evenement {
   id: number;
   titre: string;
   description: string | null;
+  // Format de jeu ("5 contre 5"...) — libre, comme lieu.typeTerrain. Absent du
+  // MCD initial, ajouté suite à la maquette (blocs "Caractéristiques" et fiche
+  // événement). À AJOUTER au MCD Looping.
+  format: string | null;
   nombrePlaces: number;
   estPrive: boolean;
   dateDebut: Date;
@@ -24,6 +28,7 @@ export class Evenement {
     id: number;
     titre: string;
     description?: string | null;
+    format?: string | null;
     nombrePlaces: number;
     estPrive: boolean;
     dateDebut: Date;
@@ -38,6 +43,7 @@ export class Evenement {
     this.id = params.id;
     this.titre = params.titre;
     this.description = params.description ?? null;
+    this.format = params.format ?? null;
     this.nombrePlaces = params.nombrePlaces;
     this.estPrive = params.estPrive;
     this.dateDebut = params.dateDebut;
@@ -96,6 +102,7 @@ export class Evenement {
       id: this.id,
       titre: this.titre,
       description: this.description,
+      format: this.format,
       nombrePlaces: this.nombrePlaces,
       placesRestantes: this.placesRestantes(),
       estPrive: this.estPrive,

@@ -7,6 +7,9 @@ const niveauRequisSchema = z.enum(["debutant", "intermediaire", "confirme", "tou
 export const creationEvenementSchema = z.object({
   titre: z.string().min(3).max(50),
   description: z.string().max(1000).optional(),
+  // Format de jeu ("5 contre 5"...) — libre comme typeTerrain, pas de table de
+  // référence dédiée (voir CLAUDE.md, "points de vigilance").
+  format: z.string().max(30).optional(),
   adresse: z.string().min(5),
   nomLieu: z.string().max(100).optional(),
   dateDebut: z.coerce.date(),
@@ -25,6 +28,7 @@ export const modificationEvenementSchema = z
   .object({
     titre: z.string().min(3).max(50).optional(),
     description: z.string().max(1000).optional(),
+    format: z.string().max(30).optional(),
     dateDebut: z.coerce.date().optional(),
     dateFin: z.coerce.date().optional(),
     nombrePlaces: z.number().int().min(2).max(30).optional(),

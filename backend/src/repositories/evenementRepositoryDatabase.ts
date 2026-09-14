@@ -28,6 +28,7 @@ type LigneRecherche = {
   latitude: number;
   longitude: number;
   distance: number;
+  format: string | null;
 };
 
 export class EvenementRepositoryDatabase implements EvenementRepositoryInterface {
@@ -56,6 +57,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
         data: {
           titre: donnees.titre,
           description: donnees.description ?? null,
+          format: donnees.format ?? null,
           nombrePlaces: donnees.nombrePlaces,
           typePrivePublique: donnees.estPrive,
           dateDebut: donnees.dateDebut,
@@ -78,6 +80,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
       id: ligne.idEvenement,
       titre: ligne.titre,
       description: ligne.description,
+      format: ligne.format,
       nombrePlaces: ligne.nombrePlaces,
       estPrive: ligne.typePrivePublique,
       dateDebut: ligne.dateDebut,
@@ -108,6 +111,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
       id: ligne.idEvenement,
       titre: ligne.titre,
       description: ligne.description,
+      format: ligne.format,
       nombrePlaces: ligne.nombrePlaces,
       estPrive: ligne.typePrivePublique,
       dateDebut: ligne.dateDebut,
@@ -140,6 +144,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
         id: ligne.idEvenement,
         titre: ligne.titre,
         description: ligne.description,
+        format: ligne.format,
         nombrePlaces: ligne.nombrePlaces,
         estPrive: ligne.typePrivePublique,
         dateDebut: ligne.dateDebut,
@@ -179,6 +184,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
         data: {
           titre: donnees.titre,
           description: donnees.description,
+          format: donnees.format,
           nombrePlaces: donnees.nombrePlaces,
           dateDebut: donnees.dateDebut,
           dateFin: donnees.dateFin,
@@ -214,7 +220,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
     rayonMetres: number
   ): Promise<EvenementProche[]> {
     const lignes = await prisma.$queryRaw<LigneRecherche[]>`
-      SELECT e.id_evenement, e.titre, e.nombre_places, e.type_prive_publique,
+      SELECT e.id_evenement, e.titre, e.format, e.nombre_places, e.type_prive_publique,
              e.date_debut, e.date_fin, e.id_lieu, e.id_joueur,
              s.libelle_event, n.libelle_niveau_event,
              l.nom AS nom_lieu, l.adresse, l.ville,
@@ -245,6 +251,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
       evenement: new Evenement({
         id: ligne.id_evenement,
         titre: ligne.titre,
+        format: ligne.format,
         nombrePlaces: ligne.nombre_places,
         estPrive: ligne.type_prive_publique,
         dateDebut: ligne.date_debut,
