@@ -7,13 +7,27 @@ import { useQrPresence } from "../hooks/useQrPresence";
 import { evenementService } from "../services/evenementService";
 import { CarteInteractive } from "../components/CarteInteractive";
 import { Avatar } from "../components/Avatar";
-import { LIBELLES_NIVEAU, type Evenement, type InscritDetail, type NiveauRequis } from "../types/evenement";
+import { FORMATS_COURANTS, LIBELLES_NIVEAU, type Evenement, type InscritDetail, type NiveauRequis } from "../types/evenement";
 import "../styles/ficheEvenement.css";
 
 const formaterDateLongue = (date: string) =>
   new Date(date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
 const formaterHeure = (date: string) => new Date(date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+const formaterDelai = (date: string) => {
+  const jours = Math.round((new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (jours <= 0) return "Aujourd'hui";
+  if (jours === 1) return "Demain";
+  return `Dans ${jours} jours`;
+};
+
+const formaterDuree = (debut: string, fin: string) => {
+  const minutes = Math.round((new Date(fin).getTime() - new Date(debut).getTime()) / 60000);
+  const heures = Math.floor(minutes / 60);
+  const reste = minutes % 60;
+  return reste === 0 ? `${heures} h de jeu` : `${heures} h ${reste} de jeu`;
+};
 
 // Même méthode que le back (comparaison de la date au format ISO, voir
 // PresenceService.estAujourdhui côté serveur) : évite de proposer un bouton qui
@@ -100,16 +114,19 @@ export const FicheEvenement = () => {
               <div>
                 <span className="libelle-info">Date</span>
                 <strong>{formaterDateLongue(evenement.dateDebut)}</strong>
+                <span className="texte-attenue">{formaterDelai(evenement.dateDebut)}</span>
               </div>
               <div>
                 <span className="libelle-info">Horaire</span>
                 <strong>
                   {formaterHeure(evenement.dateDebut)} — {formaterHeure(evenement.dateFin)}
                 </strong>
+                <span className="texte-attenue">{formaterDuree(evenement.dateDebut, evenement.dateFin)}</span>
               </div>
               <div>
-                <span className="libelle-info">Niveau</span>
-                <strong>{LIBELLES_NIVEAU[evenement.niveauRequis]}</strong>
+                <span className="libelle-info">Format</span>
+                <strong>{evenement.format ?? "Non précisé"}</strong>
+                {evenement.lieu.typeTerrain && <span className="texte-attenue">{evenement.lieu.typeTerrain}</span>}
               </div>
             </div>
 
@@ -256,6 +273,8 @@ const FormulaireModification = ({ evenement, onSuccess, onAnnuler }: PropsFormul
   const {
     titre,
     setTitre,
+    format,
+    setFormat,
     description,
     setDescription,
     nombrePlaces,
@@ -279,6 +298,17 @@ const FormulaireModification = ({ evenement, onSuccess, onAnnuler }: PropsFormul
       <label>
         Titre
         <input type="text" value={titre} onChange={(e) => setTitre(e.target.value)} required minLength={3} maxLength={50} />
+      </label>
+      <label>
+        Format
+        <select value={format} onChange={(e) => setFormat(e.target.value)}>
+          <option value="">Non précisé</option>
+          {FORMATS_COURANTS.map((valeur) => (
+            <option key={valeur} value={valeur}>
+              {valeur}
+            </option>
+          ))}
+        </select>
       </label>
       <label>
         Description

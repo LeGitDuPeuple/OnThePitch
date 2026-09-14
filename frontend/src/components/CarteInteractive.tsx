@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Circle, Tooltip, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Circle, Tooltip, ZoomControl, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "../styles/carteInteractive.css";
@@ -54,18 +54,30 @@ type PropsCarteInteractive = {
   rayonKm?: number;
   points?: PointCarte[];
   hauteur?: number | string;
+  // Légende "Point de recherche / Événement à venir" (cf. maquette 2.2.a) —
+  // seulement pertinente en contexte de recherche, pas sur la fiche événement
+  // (un seul point, pas d'ambiguïté à lever).
+  afficherLegende?: boolean;
 };
 
 // Carte OpenStreetMap (Leaflet) : point de recherche (ou lieu de l'événement),
 // cercle de rayon le cas échéant, marqueurs cliquables pour les résultats.
-export const CarteInteractive = ({ latitude, longitude, rayonKm, points = [], hauteur = 320 }: PropsCarteInteractive) => {
+export const CarteInteractive = ({
+  latitude,
+  longitude,
+  rayonKm,
+  points = [],
+  hauteur = 320,
+  afficherLegende = false,
+}: PropsCarteInteractive) => {
   const centre: [number, number] = [latitude, longitude];
   const zoom = zoomPourRayon(rayonKm);
 
   return (
     <div className="conteneur-carte" style={{ height: hauteur }}>
-      <MapContainer center={centre} zoom={zoom} scrollWheelZoom={false} style={{ height: "100%", width: "100%" }}>
+      <MapContainer center={centre} zoom={zoom} zoomControl={false} scrollWheelZoom={false} style={{ height: "100%", width: "100%" }}>
         <Recentreur centre={centre} zoom={zoom} />
+        <ZoomControl position="topright" />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -80,13 +92,25 @@ export const CarteInteractive = ({ latitude, longitude, rayonKm, points = [], ha
             eventHandlers={point.onClick ? { click: point.onClick } : undefined}
           >
             {point.label && (
-              <Tooltip direction="top" offset={[0, -12]} opacity={1} className="etiquette-carte">
+              <Tooltip permanent direction="top" offset={[0, -13]} opacity={1} className="etiquette-carte">
                 {point.label}
               </Tooltip>
             )}
           </Marker>
         ))}
       </MapContainer>
+
+      {afficherLegende && rayonKm && (
+        <div className="legende-carte">
+          <strong>Rayon de {rayonKm} km</strong>
+          <span>
+            <i className="puce-legende puce-legende--recherche" /> Point de recherche
+          </span>
+          <span>
+            <i className="puce-legende puce-legende--evenement" /> Événement à venir
+          </span>
+        </div>
+      )}
     </div>
   );
 };

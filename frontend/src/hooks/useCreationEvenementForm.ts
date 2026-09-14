@@ -20,6 +20,7 @@ export const useCreationEvenementForm = () => {
 
   // Bloc 2 — caractéristiques
   const [titre, setTitre] = useState("");
+  const [format, setFormat] = useState("");
   const [description, setDescription] = useState("");
   const [nombrePlaces, setNombrePlaces] = useState(10);
   const [niveauRequis, setNiveauRequis] = useState<NiveauRequis>(NIVEAU_DEFAUT);
@@ -48,6 +49,7 @@ export const useCreationEvenementForm = () => {
       try {
         const evenementCree = await evenementService.creer({
           titre,
+          format: format || undefined,
           description: description.trim() || undefined,
           adresse,
           nomLieu: nomLieu.trim() || undefined,
@@ -65,7 +67,21 @@ export const useCreationEvenementForm = () => {
         setChargement(false);
       }
     },
-    [titre, description, adresse, nomLieu, date, heureDebut, heureFin, nombrePlaces, estPrive, typeTerrain, niveauRequis, navigate]
+    [
+      titre,
+      format,
+      description,
+      adresse,
+      nomLieu,
+      date,
+      heureDebut,
+      heureFin,
+      nombrePlaces,
+      estPrive,
+      typeTerrain,
+      niveauRequis,
+      navigate,
+    ]
   );
 
   return {
@@ -83,6 +99,8 @@ export const useCreationEvenementForm = () => {
     setHeureFin,
     titre,
     setTitre,
+    format,
+    setFormat,
     description,
     setDescription,
     nombrePlaces,

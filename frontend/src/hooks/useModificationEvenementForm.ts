@@ -22,6 +22,7 @@ export const useModificationEvenementForm = (evenement: Evenement, onSuccess: ()
   const fin = versChampsDate(new Date(evenement.dateFin));
 
   const [titre, setTitre] = useState(evenement.titre);
+  const [format, setFormat] = useState(evenement.format ?? "");
   const [description, setDescription] = useState(evenement.description ?? "");
   const [nombrePlaces, setNombrePlaces] = useState(evenement.nombrePlaces);
   const [niveauRequis, setNiveauRequis] = useState<NiveauRequis>(evenement.niveauRequis);
@@ -46,6 +47,7 @@ export const useModificationEvenementForm = (evenement: Evenement, onSuccess: ()
       try {
         await evenementService.modifier(evenement.id, {
           titre,
+          format: format || undefined,
           description: description.trim() || undefined,
           dateDebut: new Date(`${date}T${heureDebut}`),
           dateFin: new Date(`${date}T${heureFin}`),
@@ -59,12 +61,14 @@ export const useModificationEvenementForm = (evenement: Evenement, onSuccess: ()
         setChargement(false);
       }
     },
-    [evenement.id, titre, description, date, heureDebut, heureFin, nombrePlaces, niveauRequis, onSuccess]
+    [evenement.id, titre, format, description, date, heureDebut, heureFin, nombrePlaces, niveauRequis, onSuccess]
   );
 
   return {
     titre,
     setTitre,
+    format,
+    setFormat,
     description,
     setDescription,
     nombrePlaces,

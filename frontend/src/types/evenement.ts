@@ -9,10 +9,16 @@ export const LIBELLES_NIVEAU: Record<NiveauRequis, string> = {
   tous_niveaux: "Tous niveaux",
 };
 
+// Formats de jeu courants — liste fermée côté front pour le <select>, mais le
+// champ reste une chaîne libre côté back (comme lieu.typeTerrain, pas de table
+// de référence dédiée).
+export const FORMATS_COURANTS = ["Futsal", "5 contre 5", "6 contre 6", "7 contre 7", "8 contre 8", "11 contre 11"] as const;
+
 export type Evenement = {
   id: number;
   titre: string;
   description: string | null;
+  format: string | null;
   nombrePlaces: number;
   placesRestantes: number;
   estPrive: boolean;

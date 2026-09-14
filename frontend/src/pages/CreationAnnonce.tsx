@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAppSelector } from "../store/hooks";
 import { useCreationEvenementForm } from "../hooks/useCreationEvenementForm";
-import { LIBELLES_NIVEAU, type NiveauRequis } from "../types/evenement";
+import { FORMATS_COURANTS, LIBELLES_NIVEAU, type NiveauRequis } from "../types/evenement";
 import "../styles/creationAnnonce.css";
 
 const NIVEAUX: NiveauRequis[] = ["tous_niveaux", "debutant", "intermediaire", "confirme"];
@@ -23,6 +23,8 @@ export const CreationAnnonce = () => {
     setHeureFin,
     titre,
     setTitre,
+    format,
+    setFormat,
     description,
     setDescription,
     nombrePlaces,
@@ -132,6 +134,17 @@ export const CreationAnnonce = () => {
               />
             </label>
             <div className="ligne-champs">
+              <label>
+                Format
+                <select value={format} onChange={(evenement) => setFormat(evenement.target.value)}>
+                  <option value="">Non précisé</option>
+                  {FORMATS_COURANTS.map((valeur) => (
+                    <option key={valeur} value={valeur}>
+                      {valeur}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <label>
                 Nombre de places
                 <input
