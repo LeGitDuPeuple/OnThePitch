@@ -40,10 +40,14 @@
 .page-connexion .ligne-champs {
   display: flex;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .page-connexion .ligne-champs > label {
   flex: 1;
+  /* Plus bas que sur les autres formulaires (140px) : cette carte fait au
+     plus 380px de large, prénom/nom doivent tenir sur une ligne dedans. */
+  min-width: 110px;
 }
 
 .lien-bas-formulaire {
