@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { evenementService } from "../services/evenementService";
 import { geocodageService } from "../services/geocodageService";
 import { ErreurApi } from "../services/api";
@@ -91,6 +91,33 @@ export const useRechercheForm = () => {
       }
     );
   }, [rayonKm, lancerRecherche]);
+
+  // Recherche automatique au chargement de l'écran, via la géolocalisation du
+  // navigateur — sans attendre un clic. Le navigateur affiche quand même sa
+  // propre demande de permission (impossible à éviter), mais si elle est
+  // refusée ou indisponible, on ne l'affiche pas comme une erreur : l'écran
+  // reste utilisable via la recherche manuelle par adresse.
+  useEffect(() => {
+    if (!("geolocation" in navigator)) return;
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const point: PointRecherche = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          libelle: "Ma position",
+        };
+        setPointRecherche(point);
+        void lancerRecherche(point, RAYON_DEFAUT_KM);
+      },
+      () => {
+        // Refusée ou indisponible au chargement : pas d'erreur affichée.
+      }
+    );
+    // Volontairement une seule fois, au montage — pas de dépendance sur
+    // lancerRecherche (référence stable, useCallback sans dépendances).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Change le rayon et relance la recherche si un point est déjà défini.
   const definirRayon = useCallback(
