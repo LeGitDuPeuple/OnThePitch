@@ -102,3 +102,36 @@
   display: flex;
   gap: 0.5rem;
 }
+
+/* Mobile (cf. CLAUDE.md, "Responsive") : moins de marge, libellés au-dessus des
+   valeurs, ligne de demande qui s'empile plutôt que de déborder. */
+@media (max-width: 599px) {
+  .page-fiche {
+    padding: 1rem;
+  }
+
+  .details-evenement {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .details-evenement dd {
+    margin-bottom: 0.5rem;
+  }
+
+  .ligne-demande {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* Boutons pleine largeur, cibles tactiles confortables — sauf ceux qui vivent
+     déjà dans une rangée à deux boutons (chacun prend sa moitié). */
+  .page-fiche > button {
+    width: 100%;
+  }
+
+  .actions-formulaire button,
+  .actions-demande button {
+    flex: 1;
+  }
+}

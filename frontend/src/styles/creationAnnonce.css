@@ -35,3 +35,23 @@
 .message-erreur {
   color: #b3261e;
 }
+
+.page-creation button[type="submit"] {
+  padding: 0.6rem 1rem;
+}
+
+/* Mobile (cf. CLAUDE.md, "Responsive") : moins de marge, blocs resserrés,
+   bouton de soumission pleine largeur pour une cible tactile confortable. */
+@media (max-width: 599px) {
+  .page-creation {
+    padding: 1rem;
+  }
+
+  .page-creation fieldset {
+    padding: 0.75rem;
+  }
+
+  .page-creation button[type="submit"] {
+    width: 100%;
+  }
+}

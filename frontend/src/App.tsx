@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { useHydrateAuth } from "./hooks/useHydrateAuth";
+import { Entete } from "./components/Entete";
 import { CarteRecherche } from "./pages/CarteRecherche";
 import { FicheEvenement } from "./pages/FicheEvenement";
 import { CreationAnnonce } from "./pages/CreationAnnonce";
@@ -11,12 +12,15 @@ export const App = () => {
   useHydrateAuth();
 
   return (
-    <Routes>
-      <Route path="/" element={<CarteRecherche />} />
-      <Route path="/evenements/:id" element={<FicheEvenement />} />
-      <Route path="/creer" element={<CreationAnnonce />} />
-      <Route path="/connexion" element={<Connexion />} />
-      <Route path="/admin" element={<Admin />} />
-    </Routes>
+    <>
+      <Entete />
+      <Routes>
+        <Route path="/" element={<CarteRecherche />} />
+        <Route path="/evenements/:id" element={<FicheEvenement />} />
+        <Route path="/creer" element={<CreationAnnonce />} />
+        <Route path="/connexion" element={<Connexion />} />
+        <Route path="/admin" element={<Admin />} />
+      </Routes>
+    </>
   );
 };
