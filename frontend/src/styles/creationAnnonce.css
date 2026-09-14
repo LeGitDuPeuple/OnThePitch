@@ -1,54 +1,229 @@
 .page-creation {
-  max-width: 640px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 1.5rem;
-  font-family: system-ui, sans-serif;
+  padding: 1.25rem 1.5rem 3rem;
+}
+
+.page-creation h1 {
+  margin-bottom: 0.25rem;
+}
+
+.texte-accroche {
+  color: var(--texte-attenue);
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+.texte-attenue {
+  color: var(--texte-attenue);
+  font-size: 0.85rem;
+}
+
+.mise-en-page-creation {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .page-creation fieldset {
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
   margin-bottom: 1rem;
-  padding: 1rem;
+  padding: 1.25rem;
+  box-shadow: var(--ombre-carte);
+}
+
+.page-creation legend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  padding: 0 0.3rem;
+}
+
+.numero-bloc {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: var(--vert-marque);
+  color: #fff;
+  font-size: 0.75rem;
 }
 
 .page-creation label {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
+  gap: 0.3rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texte-attenue);
 }
 
-.page-creation label.option-visibilite {
+.ligne-champs {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ligne-champs > label {
+  flex: 1;
+  min-width: 140px;
+}
+
+.options-visibilite {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.option-visibilite {
+  flex: 1;
+  min-width: 220px;
   flex-direction: row;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: flex-start;
+  gap: 0.6rem;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 0.75rem;
+  margin-bottom: 0;
+  cursor: pointer;
 }
 
-.page-creation input,
-.page-creation select,
-.page-creation textarea {
-  font: inherit;
-  padding: 0.4rem;
+.option-visibilite--choisie {
+  border-color: var(--vert-marque);
+  background: var(--vert-clair);
 }
 
-.message-erreur {
-  color: #b3261e;
+.option-visibilite input {
+  margin-top: 0.2rem;
+}
+
+.option-visibilite span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-weight: 400;
+}
+
+.option-visibilite strong {
+  color: var(--texte);
+  font-weight: 700;
 }
 
 .page-creation button[type="submit"] {
-  padding: 0.6rem 1rem;
+  padding: 0.65rem 1.5rem;
+}
+
+/* Aperçu — réutilise le vocabulaire visuel des résultats de recherche
+   (date-badge, badge) sans importer la feuille de style de cet écran. */
+.apercu-creation h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--texte-attenue);
+  margin-top: 0;
+}
+
+.carte-apercu {
+  display: flex;
+  gap: 0.75rem;
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 0.85rem;
+  box-shadow: var(--ombre-carte);
+}
+
+.date-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+  line-height: 1.1;
+}
+
+.date-badge strong {
+  font-size: 1.1rem;
+}
+
+.date-badge span {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: var(--texte-attenue);
+}
+
+.carte-apercu-corps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.carte-evenement-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.encart-info {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--fond);
+  border-radius: var(--rayon);
+}
+
+.encart-info h3 {
+  font-size: 0.8rem;
+  margin: 0 0 0.4rem;
+}
+
+.encart-info p {
+  margin: 0;
+}
+
+.message-erreur {
+  color: var(--rouge);
+}
+
+/* Desktop/tablette : formulaire + aperçu côte à côte (cf. maquette 2.2.c). */
+@media (min-width: 900px) {
+  .mise-en-page-creation {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .mise-en-page-creation form {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .apercu-creation {
+    width: 280px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 1.25rem;
+  }
 }
 
 /* Mobile (cf. CLAUDE.md, "Responsive") : moins de marge, blocs resserrés,
    bouton de soumission pleine largeur pour une cible tactile confortable. */
 @media (max-width: 599px) {
   .page-creation {
-    padding: 1rem;
+    padding: 1rem 1rem 2rem;
   }
 
   .page-creation fieldset {
-    padding: 0.75rem;
+    padding: 0.85rem;
   }
 
   .page-creation button[type="submit"] {

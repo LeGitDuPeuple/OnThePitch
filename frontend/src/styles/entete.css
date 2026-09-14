@@ -2,58 +2,121 @@
    mobile < 600px, tablette 600–1023px, desktop >= 1024px. */
 
 .entete {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--bordure);
   background: #fff;
-  font-family: system-ui, sans-serif;
 }
 
 .entete-barre {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.5rem;
+  gap: 1rem;
+  padding: 0.85rem 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.entete-gauche {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
 }
 
 .entete-logo {
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 1.1rem;
   text-decoration: none;
-  color: inherit;
-}
-
-.entete-bouton-menu {
-  display: none;
-  font-size: 1.25rem;
-  background: none;
-  border: 1px solid #999;
-  border-radius: 4px;
-  padding: 0.2rem 0.6rem;
+  color: var(--vert-fonce);
+  letter-spacing: -0.01em;
 }
 
 .entete-nav {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding: 0 1.5rem 0.75rem;
+  gap: 1.5rem;
 }
 
 .entete-nav a {
-  color: inherit;
+  color: var(--texte-attenue);
   text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.entete-nav a.actif {
+  color: var(--texte);
+  font-weight: 700;
 }
 
 .entete-nav a:hover {
-  text-decoration: underline;
+  color: var(--texte);
+}
+
+.entete-droite {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bouton-creer {
+  background: var(--vert-marque);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--rayon);
+}
+
+.bouton-creer:hover {
+  background: var(--vert-marque-hover);
 }
 
 .entete-compte {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-left: auto;
+  gap: 0.6rem;
+  font-size: 0.85rem;
 }
 
-/* Mobile : le menu se replie derrière le bouton ☰ (cf. CLAUDE.md — navigation en menu). */
+.entete-compte a {
+  color: var(--texte-attenue);
+  text-decoration: none;
+}
+
+.entete-compte--mobile {
+  display: none;
+}
+
+.entete-bouton-menu {
+  display: none;
+  background: none;
+  border: 1px solid var(--bordure);
+  color: var(--texte);
+  font-size: 1.1rem;
+  padding: 0.3rem 0.6rem;
+}
+
+/* Mobile : le menu (liens + compte) se replie derrière le bouton ☰. */
 @media (max-width: 599px) {
+  .entete-barre {
+    flex-wrap: wrap;
+    padding: 0.75rem 1rem;
+  }
+
+  .entete-droite {
+    gap: 0.5rem;
+  }
+
+  .bouton-creer {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .entete-compte--desktop {
+    display: none;
+  }
+
   .entete-bouton-menu {
     display: block;
   }
@@ -63,14 +126,18 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
-    padding: 0 1.5rem 1rem;
+    width: 100%;
+    order: 3;
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+    border-top: 1px solid var(--bordure);
   }
 
   .entete-nav--ouvert {
     display: flex;
   }
 
-  .entete-compte {
-    margin-left: 0;
+  .entete-compte--mobile {
+    display: flex;
   }
 }
