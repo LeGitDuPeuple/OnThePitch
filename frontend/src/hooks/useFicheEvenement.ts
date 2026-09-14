@@ -29,6 +29,9 @@ export const useFicheEvenement = () => {
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
   const [actionEnCours, setActionEnCours] = useState(false);
+  // Idle, sauf pendant le traitement d'une demande précise (organisateur) — permet
+  // de ne désactiver que le bouton concerné, pas toute la liste des inscrits.
+  const [idJoueurEnValidation, setIdJoueurEnValidation] = useState<number | null>(null);
 
   const charger = useCallback(async () => {
     setErreur(null);
@@ -94,6 +97,25 @@ export const useFicheEvenement = () => {
     }
   }, [idEvenement, charger]);
 
+  // Accepter/refuser une demande — réservé à l'organisateur, événement privé
+  // (cf. CLAUDE.md, section 6). La liste complète des inscrits est déjà chargée :
+  // on y retrouve les demandes en_attente sans requête supplémentaire.
+  const validerDemande = useCallback(
+    async (idJoueur: number, accepter: boolean) => {
+      setIdJoueurEnValidation(idJoueur);
+      setErreur(null);
+      try {
+        await inscriptionService.validerDemande(idEvenement, idJoueur, accepter);
+        await charger();
+      } catch (erreurRequete) {
+        setErreur(erreurRequete instanceof ErreurApi ? erreurRequete.message : "Une erreur est survenue");
+      } finally {
+        setIdJoueurEnValidation(null);
+      }
+    },
+    [idEvenement, charger]
+  );
+
   return {
     evenement,
     inscrits,
@@ -103,5 +125,10 @@ export const useFicheEvenement = () => {
     actionEnCours,
     rejoindre,
     seDesinscrire,
+    idJoueurEnValidation,
+    validerDemande,
+    // Exposé pour que useModificationEvenementForm recharge la fiche après succès,
+    // sans dupliquer la logique de chargement dans un second hook.
+    rafraichir: charger,
   };
 };

@@ -23,6 +23,17 @@ export type CreationEvenement = {
   niveauRequis: NiveauRequis;
 };
 
+// Corps de PATCH /evenements/:id — modification partielle, jamais l'adresse
+// (voir schemas/evenementSchema.ts côté back).
+export type ModificationEvenement = {
+  titre?: string;
+  description?: string;
+  dateDebut?: Date;
+  dateFin?: Date;
+  nombrePlaces?: number;
+  niveauRequis?: NiveauRequis;
+};
+
 export const evenementService = {
   rechercher: (parametres: ParametresRecherche): Promise<EvenementProche[]> => {
     const params = new URLSearchParams({
@@ -40,6 +51,9 @@ export const evenementService = {
   trouverParId: (id: number): Promise<EvenementDetail> => appelApi(`/evenements/${id}`),
 
   creer: (donnees: CreationEvenement): Promise<Evenement> => appelApi("/evenements", { methode: "POST", corps: donnees }),
+
+  modifier: (id: number, donnees: ModificationEvenement): Promise<Evenement> =>
+    appelApi(`/evenements/${id}`, { methode: "PATCH", corps: donnees }),
 
   // Pas de fetch ici : consommée directement comme src d'une balise <img>.
   urlPhoto: (id: number): string => `${URL_BASE}/evenements/${id}/photo`,
