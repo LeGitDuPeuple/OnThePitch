@@ -3,7 +3,8 @@ import { useConnexionForm } from "../hooks/useConnexionForm";
 import "../styles/connexion.css";
 
 export const Connexion = () => {
-  const { email, setEmail, motDePasse, setMotDePasse, erreur, chargement, soumettre } = useConnexionForm();
+  const { email, setEmail, motDePasse, setMotDePasse, erreurEmail, validerChampEmail, erreur, chargement, soumettre } =
+    useConnexionForm();
 
   return (
     <main className="page-connexion">
@@ -11,7 +12,18 @@ export const Connexion = () => {
       <form onSubmit={soumettre}>
         <label>
           Email
-          <input type="email" value={email} onChange={(evenement) => setEmail(evenement.target.value)} required />
+          <input
+            type="email"
+            value={email}
+            onChange={(evenement) => setEmail(evenement.target.value)}
+            onBlur={validerChampEmail}
+            required
+          />
+          {erreurEmail && (
+            <span role="alert" className="message-erreur-champ">
+              {erreurEmail}
+            </span>
+          )}
         </label>
         <label>
           Mot de passe
