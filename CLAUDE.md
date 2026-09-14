@@ -109,6 +109,13 @@ terminé et testé.
       le cookie httpOnly ne peut pas être lu directement par le front)
 - [x] Écran connexion — formulaire fonctionnel (`useConnexionForm`), connecté au
       cookie httpOnly, testé manuellement de bout en bout
+- [x] Écran création de compte (`/inscription`, demandé le 14/09/2026 — absent
+      des 4 écrans de la section 9, `POST /auth/inscription` existait côté back
+      sans écran dédié) — `useInscriptionForm` : inscrit puis enchaîne
+      automatiquement la connexion (`POST /auth/inscription` ne pose pas de
+      cookie, voir CLAUDE.md section 2) pour éviter de refaire saisir les
+      identifiants. Lien réciproque connexion ↔ inscription. Testé de bout en
+      bout contre la vraie API
 - [x] Identité visuelle — maquettes retrouvées le 14/09/2026 (`~/Téléchargements/
       OnThePitch-maquettes-planche.png` + `OnThePitch-wireframes.pdf`, fournies par
       le porteur de projet, jamais versionnées dans le dépôt : premier passage du

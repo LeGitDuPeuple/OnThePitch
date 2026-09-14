@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useConnexionForm } from "../hooks/useConnexionForm";
 import "../styles/connexion.css";
 
@@ -32,6 +33,10 @@ export const Connexion = () => {
           {chargement ? "Connexion…" : "Se connecter"}
         </button>
       </form>
+
+      <p className="lien-bas-formulaire">
+        Pas encore de compte ? <Link to="/inscription">Créer un compte</Link>
+      </p>
     </main>
   );
 };
