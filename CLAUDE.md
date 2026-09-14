@@ -151,7 +151,14 @@ terminé et testé.
 - [x] Génération du jeton QR côté serveur — `GET /evenements/:id/presences/jeton`,
       testée (JWT court avec `type:"presence"`, refusé si pas le jour de l'événement
       ou pas inscrit/accepté)
-- [ ] Affichage du QR côté joueur — dépend du front, pas commencé
+- [x] Affichage du QR côté joueur — sur la fiche événement, visible seulement le
+      jour de l'événement pour un joueur inscrit et accepté (même règle que le
+      serveur, dupliquée côté front pour éviter un bouton qui échouerait
+      systématiquement en dehors de ce jour). Jeton demandé à la demande (pas au
+      chargement de la fiche), encodé en QR via `qrcode.react` (nouvelle
+      dépendance, cf. CLAUDE.md section 7). Testé de bout en bout contre la vraie
+      API : refusé hors du jour de l'événement, refusé si pas inscrit/accepté,
+      jeton obtenu pour un joueur inscrit le jour même
 - [x] Scan côté organisateur — `POST /evenements/:id/presences/scan`, testé (200,
       403 si pas l'organisateur, 400 si jeton invalide/expiré/mauvais événement,
       400 si un jeton d'authentification classique est présenté à la place)

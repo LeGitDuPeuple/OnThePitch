@@ -1,13 +1,20 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { QRCodeSVG } from "qrcode.react";
 import { useFicheEvenement } from "../hooks/useFicheEvenement";
 import { useModificationEvenementForm } from "../hooks/useModificationEvenementForm";
+import { useQrPresence } from "../hooks/useQrPresence";
 import { evenementService } from "../services/evenementService";
 import { LIBELLES_NIVEAU, type Evenement, type InscritDetail, type NiveauRequis } from "../types/evenement";
 import "../styles/ficheEvenement.css";
 
 const formaterDate = (date: string) =>
   new Date(date).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" });
+
+// Même méthode que le back (comparaison de la date au format ISO, voir
+// PresenceService.estAujourdhui côté serveur) : évite de proposer un bouton qui
+// échouerait systématiquement en dehors du jour de l'événement.
+const estAujourdhui = (date: string) => new Date(date).toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10);
 
 export const FicheEvenement = () => {
   const {
@@ -94,6 +101,8 @@ export const FicheEvenement = () => {
           )}
 
           <BoutonInscription etat={etat} actionEnCours={actionEnCours} rejoindre={rejoindre} seDesinscrire={seDesinscrire} />
+
+          {etat === "inscrit" && <QrPresence idEvenement={evenement.id} dateDebut={evenement.dateDebut} />}
 
           {estOrganisateur && evenement.statut !== "Termine" && (
             <button type="button" className="bouton-secondaire" onClick={() => setModeEdition(true)}>
@@ -306,3 +315,46 @@ const DemandesEnAttente = ({ demandes, idJoueurEnValidation, valider }: PropsDem
     </ul>
   </section>
 );
+
+type PropsQrPresence = {
+  idEvenement: number;
+  dateDebut: string;
+};
+
+// Le joueur affiche son QR, l'organisateur le scanne (cf. CLAUDE.md section 7 —
+// choix retenu pour que l'organisateur constate visuellement chaque présence).
+// Le jeton n'est demandé qu'au clic, jamais préchargé : inutile tant que le
+// joueur ne veut pas afficher son QR, et de toute façon refusé par le serveur
+// en dehors du jour de l'événement.
+const QrPresence = ({ idEvenement, dateDebut }: PropsQrPresence) => {
+  const { jeton, chargement, erreur, afficher, masquer } = useQrPresence(idEvenement);
+
+  if (!estAujourdhui(dateDebut)) {
+    return <p className="info-organisateur">Votre QR de présence sera disponible le jour de l'événement.</p>;
+  }
+
+  if (jeton) {
+    return (
+      <div className="bloc-qr-presence">
+        <QRCodeSVG value={jeton} size={200} />
+        <p>Présentez ce QR à l'organisateur pour être marqué présent.</p>
+        <button type="button" className="bouton-secondaire" onClick={masquer}>
+          Masquer
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bloc-qr-presence">
+      <button type="button" onClick={afficher} disabled={chargement}>
+        {chargement ? "…" : "Afficher mon QR de présence"}
+      </button>
+      {erreur && (
+        <p role="alert" className="message-erreur">
+          {erreur}
+        </p>
+      )}
+    </div>
+  );
+};
