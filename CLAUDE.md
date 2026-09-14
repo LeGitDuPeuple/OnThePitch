@@ -108,14 +108,22 @@ terminé et testé.
       Hydratation de la session au démarrage via `useHydrateAuth` (`GET /auth/profil`,
       le cookie httpOnly ne peut pas être lu directement par le front)
 - [x] Écran connexion — formulaire fonctionnel (`useConnexionForm`), connecté au
-      cookie httpOnly, testé manuellement de bout en bout
+      cookie httpOnly, testé manuellement de bout en bout. Email validé par
+      regex au blur et à la soumission (message rouge sous le champ,
+      `utils/validation.ts`) ; le mot de passe n'y est volontairement pas
+      soumis à un regex de complexité — un compte existant peut avoir été créé
+      avant une règle plus stricte, la connexion ne doit pas se mettre à le
+      refuser
 - [x] Écran création de compte (`/inscription`, demandé le 14/09/2026 — absent
       des 4 écrans de la section 9, `POST /auth/inscription` existait côté back
       sans écran dédié) — `useInscriptionForm` : inscrit puis enchaîne
       automatiquement la connexion (`POST /auth/inscription` ne pose pas de
       cookie, voir CLAUDE.md section 2) pour éviter de refaire saisir les
-      identifiants. Lien réciproque connexion ↔ inscription. Testé de bout en
-      bout contre la vraie API
+      identifiants. Lien réciproque connexion ↔ inscription. Email et mot de
+      passe validés par regex au blur et à la soumission (`utils/validation.ts` :
+      email standard, mot de passe 8 caractères + majuscule + minuscule +
+      chiffre — plus strict que le `min(8)` du schéma Zod côté back, jamais
+      moins). Testé de bout en bout contre la vraie API
 - [x] Identité visuelle — maquettes retrouvées le 14/09/2026 (`~/Téléchargements/
       OnThePitch-maquettes-planche.png` + `OnThePitch-wireframes.pdf`, fournies par
       le porteur de projet, jamais versionnées dans le dépôt : premier passage du

@@ -29,6 +29,14 @@
   margin: 0;
 }
 
+/* Erreur de champ (regex email/mot de passe) — sous le champ concerné, pas
+   dans le bloc d'erreur général qui reste réservé aux réponses du serveur. */
+.message-erreur-champ {
+  color: var(--rouge);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
 .page-connexion .ligne-champs {
   display: flex;
   gap: 0.75rem;

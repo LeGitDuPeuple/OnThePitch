@@ -3,8 +3,25 @@ import { useInscriptionForm } from "../hooks/useInscriptionForm";
 import "../styles/connexion.css";
 
 export const Inscription = () => {
-  const { nom, setNom, prenom, setPrenom, email, setEmail, motDePasse, setMotDePasse, ville, setVille, erreur, chargement, soumettre } =
-    useInscriptionForm();
+  const {
+    nom,
+    setNom,
+    prenom,
+    setPrenom,
+    email,
+    setEmail,
+    motDePasse,
+    setMotDePasse,
+    ville,
+    setVille,
+    erreurEmail,
+    erreurMotDePasse,
+    validerChampEmail,
+    validerChampMotDePasse,
+    erreur,
+    chargement,
+    soumettre,
+  } = useInscriptionForm();
 
   return (
     <main className="page-connexion">
@@ -22,7 +39,12 @@ export const Inscription = () => {
         </div>
         <label>
           Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onBlur={validerChampEmail} required />
+          {erreurEmail && (
+            <span role="alert" className="message-erreur-champ">
+              {erreurEmail}
+            </span>
+          )}
         </label>
         <label>
           Mot de passe
@@ -30,10 +52,16 @@ export const Inscription = () => {
             type="password"
             value={motDePasse}
             onChange={(e) => setMotDePasse(e.target.value)}
+            onBlur={validerChampMotDePasse}
             required
             minLength={8}
             autoComplete="new-password"
           />
+          {erreurMotDePasse && (
+            <span role="alert" className="message-erreur-champ">
+              {erreurMotDePasse}
+            </span>
+          )}
         </label>
         <label>
           Ville (facultatif)
