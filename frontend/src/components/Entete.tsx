@@ -57,7 +57,7 @@ export const Entete = () => {
           <div className="entete-compte entete-compte--desktop">
             {utilisateur ? (
               <>
-                <Avatar nom={utilisateur.nom} prenom={utilisateur.prenom} />
+                <Avatar nom={utilisateur.nom} prenom={utilisateur.prenom} neutre />
                 <button type="button" className="bouton-secondaire" onClick={() => void deconnecter()} disabled={deconnexionEnCours}>
                   Se déconnecter
                 </button>

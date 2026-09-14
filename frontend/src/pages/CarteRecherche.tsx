@@ -138,11 +138,12 @@ export const CarteRecherche = () => {
             longitude={pointRecherche.longitude}
             rayonKm={rayonKm}
             hauteur="100%"
+            afficherLegende
             points={resultats.map((evenement) => ({
               id: evenement.id,
               latitude: evenement.latitude,
               longitude: evenement.longitude,
-              label: evenement.titre,
+              label: `${evenement.titre} · ${new Date(evenement.dateDebut).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`,
               onClick: () => navigate(`/evenements/${evenement.id}`),
             }))}
           />

@@ -13,6 +13,7 @@ export type ParametresRecherche = {
 export type CreationEvenement = {
   titre: string;
   description?: string;
+  format?: string;
   adresse: string;
   nomLieu?: string;
   dateDebut: Date;
@@ -28,6 +29,7 @@ export type CreationEvenement = {
 export type ModificationEvenement = {
   titre?: string;
   description?: string;
+  format?: string;
   dateDebut?: Date;
   dateFin?: Date;
   nombrePlaces?: number;
