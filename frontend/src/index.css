@@ -135,6 +135,15 @@ textarea:focus {
   border-color: transparent;
 }
 
+/* Ancre de positionnement pour une liste de suggestions d'adresse (voir
+   components/SuggestionsAdresse.tsx) — globale et non dupliquée par page :
+   une classe utilitaire identique partout n'a aucune raison de diverger, et
+   la dupliquer par fichier CSS de page a déjà causé une vraie collision
+   (voir .ligne-champs, corrigé le 15/09/2026). */
+.champ-avec-suggestions {
+  position: relative;
+}
+
 /* Avatar rond à initiales — couleur dérivée du nom (voir components/Avatar.tsx),
    pas de champ "photo de profil" dans le MCD. */
 .avatar {

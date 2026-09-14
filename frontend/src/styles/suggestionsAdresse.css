@@ -1,0 +1,38 @@
+.suggestions-adresse {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem;
+  background: var(--fond-carte, #fff);
+  border: 1px solid var(--bordure, #ddd);
+  border-radius: var(--rayon, 8px);
+  box-shadow: var(--ombre-carte, 0 2px 8px rgba(0, 0, 0, 0.1));
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.suggestions-adresse li + li {
+  margin-top: 1px;
+}
+
+.suggestions-adresse button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.suggestions-adresse button:hover,
+.suggestions-adresse button:focus-visible {
+  background: var(--fond, #f2f2f2);
+}

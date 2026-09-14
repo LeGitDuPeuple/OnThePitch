@@ -15,4 +15,11 @@ export const geocodageService = {
     const params = new URLSearchParams({ adresse });
     return appelApi<Coordonnees>(`/evenements/geocoder?${params.toString()}`);
   },
+
+  // Autocomplétion pendant la saisie — jusqu'à 5 candidats, jamais d'erreur
+  // si rien ne correspond encore (voir GeocodageService.suggerer côté back).
+  suggerer: (adresse: string): Promise<Coordonnees[]> => {
+    const params = new URLSearchParams({ adresse });
+    return appelApi<Coordonnees[]>(`/evenements/geocoder/suggestions?${params.toString()}`);
+  },
 };
