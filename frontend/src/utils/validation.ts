@@ -15,7 +15,7 @@ const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REGEX_MOT_DE_PASSE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 export const validerEmail = (valeur: string): string | null => {
-  if (!REGEX_EMAIL.test(valeur)) return "Adresse email invalide";
+  if (!REGEX_EMAIL.test(valeur)) return "Adresse email invalide (format attendu : nom@domaine.fr)";
   return null;
 };
 
