@@ -11,6 +11,7 @@ export const registerEvenementRoutes = (controller: EvenementController, geocoda
   // Déclarées avant "/:id" : sinon Express interprète ces segments comme un identifiant.
   evenementRoutes.get("/recherche", controller.rechercher);
   evenementRoutes.get("/geocoder", geocodageController.geocoder);
+  evenementRoutes.get("/geocoder/suggestions", geocodageController.suggerer);
 
   evenementRoutes.post("/", authentifier, verifierRole("joueur"), controller.creer);
   evenementRoutes.get("/:id", controller.trouverParId);
