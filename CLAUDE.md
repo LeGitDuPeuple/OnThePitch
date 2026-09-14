@@ -94,6 +94,13 @@ terminé et testé.
       Testé avec Chrome headless (géolocalisation simulée)
 - [x] Point de recherche par saisie manuelle d'adresse — testé, via la nouvelle route
       `GET /evenements/geocoder` (front + back)
+- [x] Autocomplétion d'adresse (15/09/2026, à la demande du porteur de projet —
+      visible sur la maquette 2.2.c, jamais câblée) — `GET /evenements/geocoder/suggestions`
+      (jusqu'à 5 candidats, jamais d'erreur si rien ne correspond encore).
+      Front : `useSuggestionsAdresse`, débounce 300 ms, seuil 5 caractères.
+      Sur la recherche, choisir une suggestion lance la recherche directement
+      (coordonnées déjà connues, pas de second géocodage). Sur la création
+      d'annonce, remplit seulement le champ. Testé (3 tests + Chrome headless)
 - [ ] Performance vérifiée (< 500 ms sur 1 000 événements)
 
 ### Inscriptions
