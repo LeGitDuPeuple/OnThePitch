@@ -5,11 +5,15 @@ import { useFicheEvenement } from "../hooks/useFicheEvenement";
 import { useModificationEvenementForm } from "../hooks/useModificationEvenementForm";
 import { useQrPresence } from "../hooks/useQrPresence";
 import { evenementService } from "../services/evenementService";
+import { CarteInteractive } from "../components/CarteInteractive";
+import { Avatar } from "../components/Avatar";
 import { LIBELLES_NIVEAU, type Evenement, type InscritDetail, type NiveauRequis } from "../types/evenement";
 import "../styles/ficheEvenement.css";
 
-const formaterDate = (date: string) =>
-  new Date(date).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" });
+const formaterDateLongue = (date: string) =>
+  new Date(date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+const formaterHeure = (date: string) => new Date(date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
 // Même méthode que le back (comparaison de la date au format ISO, voir
 // PresenceService.estAujourdhui côté serveur) : évite de proposer un bouton qui
@@ -48,19 +52,14 @@ export const FicheEvenement = () => {
   const inscritsAcceptes = inscrits.filter((inscrit) => inscrit.statut === "acceptee");
   const demandesEnAttente = inscrits.filter((inscrit) => inscrit.statut === "en_attente");
   const estOrganisateur = etat === "organisateur";
+  const placesOccupees = evenement.nombrePlaces - evenement.placesRestantes;
+  const pourcentageRempli = Math.round((placesOccupees / evenement.nombrePlaces) * 100);
 
   return (
     <main className="page-fiche">
-      <Link to="/">&larr; Retour à la recherche</Link>
-
-      {evenement.lieu.aUnePhoto && (
-        <img className="photo-lieu" src={evenementService.urlPhoto(evenement.id)} alt={evenement.lieu.nom ?? "Lieu de l'événement"} />
-      )}
-
-      <h1>
-        {evenement.titre}
-        {evenement.estPrive && <span className="badge-prive">privé</span>}
-      </h1>
+      <Link to="/" className="lien-retour">
+        ← Retour aux résultats
+      </Link>
 
       {modeEdition ? (
         <FormulaireModification
@@ -72,64 +71,118 @@ export const FicheEvenement = () => {
           onAnnuler={() => setModeEdition(false)}
         />
       ) : (
-        <>
-          <dl className="details-evenement">
-            <dt>Date</dt>
-            <dd>{formaterDate(evenement.dateDebut)}</dd>
+        <div className="mise-en-page-fiche">
+          <div className="contenu-fiche">
+            {evenement.lieu.aUnePhoto && (
+              <img
+                className="photo-lieu"
+                src={evenementService.urlPhoto(evenement.id)}
+                alt={evenement.lieu.nom ?? "Lieu de l'événement"}
+              />
+            )}
 
-            <dt>Lieu</dt>
-            <dd>
-              {evenement.lieu.nom && <>{evenement.lieu.nom} — </>}
-              {evenement.lieu.adresse}, {evenement.lieu.ville}
-            </dd>
+            <div className="badges-fiche">
+              <span className="badge">{evenement.estPrive ? "Événement privé" : "Événement public"}</span>
+              <span className="badge badge--marque">{LIBELLES_NIVEAU[evenement.niveauRequis]}</span>
+              {evenement.statut === "Termine" && <span className="badge">Terminé</span>}
+            </div>
 
-            <dt>Niveau requis</dt>
-            <dd>{LIBELLES_NIVEAU[evenement.niveauRequis]}</dd>
+            <h1>{evenement.titre}</h1>
 
-            <dt>Places</dt>
-            <dd>
-              {evenement.placesRestantes} / {evenement.nombrePlaces} restantes — statut : {evenement.statut}
-            </dd>
-          </dl>
+            <div className="organisateur-fiche">
+              <Avatar nom={evenement.organisateur.nom} prenom={evenement.organisateur.prenom} />
+              <span>
+                Organisé par {evenement.organisateur.prenom} {evenement.organisateur.nom}
+              </span>
+            </div>
 
-          {evenement.description && <p className="description-evenement">{evenement.description}</p>}
+            <div className="infos-fiche">
+              <div>
+                <span className="libelle-info">Date</span>
+                <strong>{formaterDateLongue(evenement.dateDebut)}</strong>
+              </div>
+              <div>
+                <span className="libelle-info">Horaire</span>
+                <strong>
+                  {formaterHeure(evenement.dateDebut)} — {formaterHeure(evenement.dateFin)}
+                </strong>
+              </div>
+              <div>
+                <span className="libelle-info">Niveau</span>
+                <strong>{LIBELLES_NIVEAU[evenement.niveauRequis]}</strong>
+              </div>
+            </div>
 
-          {erreur && (
-            <p role="alert" className="message-erreur">
-              {erreur}
-            </p>
-          )}
+            {evenement.description && (
+              <section>
+                <h2>Description</h2>
+                <p className="description-evenement">{evenement.description}</p>
+              </section>
+            )}
 
-          <BoutonInscription etat={etat} actionEnCours={actionEnCours} rejoindre={rejoindre} seDesinscrire={seDesinscrire} />
+            <section>
+              <h2>Lieu</h2>
+              <CarteInteractive latitude={evenement.lieu.latitude} longitude={evenement.lieu.longitude} hauteur={220} />
+              <p className="adresse-lieu">
+                {evenement.lieu.nom && <>{evenement.lieu.nom} — </>}
+                {evenement.lieu.adresse}, {evenement.lieu.ville}
+              </p>
+            </section>
 
-          {etat === "inscrit" && <QrPresence idEvenement={evenement.id} dateDebut={evenement.dateDebut} />}
+            {erreur && (
+              <p role="alert" className="message-erreur">
+                {erreur}
+              </p>
+            )}
 
-          {estOrganisateur && evenement.statut !== "Termine" && (
-            <button type="button" className="bouton-secondaire" onClick={() => setModeEdition(true)}>
-              Modifier l'événement
-            </button>
-          )}
-        </>
+            {estOrganisateur && evenement.estPrive && demandesEnAttente.length > 0 && (
+              <DemandesEnAttente demandes={demandesEnAttente} idJoueurEnValidation={idJoueurEnValidation} valider={validerDemande} />
+            )}
+          </div>
+
+          <aside className="barre-laterale-fiche">
+            <div className="carte-places">
+              <div className="places-chiffre">
+                <strong>{evenement.placesRestantes}</strong> places restantes sur {evenement.nombrePlaces}
+              </div>
+              <div className="barre-progression">
+                <div style={{ width: `${pourcentageRempli}%` }} />
+              </div>
+              <div className="texte-attenue">{inscritsAcceptes.length} joueur(s) inscrit(s)</div>
+
+              <BoutonInscription etat={etat} actionEnCours={actionEnCours} rejoindre={rejoindre} seDesinscrire={seDesinscrire} />
+
+              {etat === "inscrit" && <QrPresence idEvenement={evenement.id} dateDebut={evenement.dateDebut} />}
+
+              {estOrganisateur && evenement.statut !== "Termine" && (
+                <button type="button" className="bouton-secondaire" onClick={() => setModeEdition(true)}>
+                  Modifier l'événement
+                </button>
+              )}
+            </div>
+
+            <div className="carte-joueurs">
+              <div className="entete-carte-joueurs">
+                <h2>Joueurs inscrits</h2>
+                <span className="texte-attenue">
+                  {inscritsAcceptes.length}/{evenement.nombrePlaces}
+                </span>
+              </div>
+              <ul className="liste-inscrits">
+                {inscritsAcceptes.map((inscrit) => (
+                  <li key={inscrit.idJoueur}>
+                    <Avatar nom={inscrit.nom} prenom={inscrit.prenom} />
+                    <span>
+                      {inscrit.prenom} {inscrit.nom}
+                    </span>
+                  </li>
+                ))}
+                {inscritsAcceptes.length === 0 && <li className="texte-attenue">Aucun joueur inscrit pour l'instant.</li>}
+              </ul>
+            </div>
+          </aside>
+        </div>
       )}
-
-      {estOrganisateur && evenement.estPrive && demandesEnAttente.length > 0 && (
-        <DemandesEnAttente
-          demandes={demandesEnAttente}
-          idJoueurEnValidation={idJoueurEnValidation}
-          valider={validerDemande}
-        />
-      )}
-
-      <section aria-label="Inscrits">
-        <h2>Inscrits ({inscritsAcceptes.length})</h2>
-        <ul className="liste-inscrits">
-          {inscritsAcceptes.map((inscrit) => (
-            <li key={inscrit.idJoueur}>
-              {inscrit.prenom} {inscrit.nom}
-            </li>
-          ))}
-        </ul>
-      </section>
     </main>
   );
 };
@@ -163,13 +216,13 @@ const BoutonInscription = ({ etat, actionEnCours, rejoindre, seDesinscrire }: Pr
       );
     case "en_attente":
       return (
-        <button type="button" onClick={seDesinscrire} disabled={actionEnCours}>
+        <button type="button" className="bouton-secondaire" onClick={seDesinscrire} disabled={actionEnCours}>
           {actionEnCours ? "…" : "Annuler ma demande"}
         </button>
       );
     case "inscrit":
       return (
-        <button type="button" onClick={seDesinscrire} disabled={actionEnCours}>
+        <button type="button" className="bouton-secondaire" onClick={seDesinscrire} disabled={actionEnCours}>
           {actionEnCours ? "…" : "Se désinscrire"}
         </button>
       );
@@ -182,7 +235,7 @@ const BoutonInscription = ({ etat, actionEnCours, rejoindre, seDesinscrire }: Pr
     case "inscription_possible":
       return (
         <button type="button" onClick={rejoindre} disabled={actionEnCours}>
-          {actionEnCours ? "…" : "Rejoindre"}
+          {actionEnCours ? "…" : "S'inscrire à cet événement"}
         </button>
       );
   }
@@ -222,6 +275,7 @@ const FormulaireModification = ({ evenement, onSuccess, onAnnuler }: PropsFormul
 
   return (
     <form className="formulaire-modification" onSubmit={soumettre}>
+      <h1>Modifier l'événement</h1>
       <label>
         Titre
         <input type="text" value={titre} onChange={(e) => setTitre(e.target.value)} required minLength={3} maxLength={50} />
@@ -298,7 +352,8 @@ const DemandesEnAttente = ({ demandes, idJoueurEnValidation, valider }: PropsDem
         const enCours = idJoueurEnValidation === demande.idJoueur;
         return (
           <li key={demande.idJoueur} className="ligne-demande">
-            <span>
+            <span className="ligne-demande-identite">
+              <Avatar nom={demande.nom} prenom={demande.prenom} />
               {demande.prenom} {demande.nom}
             </span>
             <span className="actions-demande">
@@ -336,8 +391,8 @@ const QrPresence = ({ idEvenement, dateDebut }: PropsQrPresence) => {
   if (jeton) {
     return (
       <div className="bloc-qr-presence">
-        <QRCodeSVG value={jeton} size={200} />
-        <p>Présentez ce QR à l'organisateur pour être marqué présent.</p>
+        <QRCodeSVG value={jeton} size={180} />
+        <p className="texte-attenue">Présentez ce QR à l'organisateur pour être marqué présent.</p>
         <button type="button" className="bouton-secondaire" onClick={masquer}>
           Masquer
         </button>
@@ -347,7 +402,7 @@ const QrPresence = ({ idEvenement, dateDebut }: PropsQrPresence) => {
 
   return (
     <div className="bloc-qr-presence">
-      <button type="button" onClick={afficher} disabled={chargement}>
+      <button type="button" className="bouton-secondaire" onClick={afficher} disabled={chargement}>
         {chargement ? "…" : "Afficher mon QR de présence"}
       </button>
       {erreur && (

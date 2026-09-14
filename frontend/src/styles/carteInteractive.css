@@ -1,0 +1,27 @@
+.conteneur-carte {
+  border-radius: var(--rayon);
+  overflow: hidden;
+  border: 1px solid var(--bordure);
+}
+
+/* Le conteneur Leaflet n'hérite pas du border-radius du parent par défaut. */
+.conteneur-carte .leaflet-container {
+  height: 100%;
+  width: 100%;
+  font-family: var(--police);
+}
+
+.marqueur-carte span {
+  display: block;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(14, 59, 42, 0.45);
+}
+
+.etiquette-carte {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--vert-texte);
+  border: none;
+  box-shadow: 0 1px 3px rgba(14, 59, 42, 0.2);
+}

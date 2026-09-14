@@ -75,7 +75,9 @@ terminé et testé.
 
 ### Recherche géolocalisée
 - [x] Requête PostGIS `ST_DWithin` + `ST_Distance` dans le repository — testée contre
-      la vraie base (résultat trié par distance, zone vide → liste vide, pas une erreur)
+      la vraie base (résultat trié par distance, zone vide → liste vide, pas une erreur).
+      Renvoie aussi `latitude`/`longitude` par événement depuis le 14/09/2026 (pour
+      poser un marqueur par résultat sur la carte interactive du front)
 - [x] Index GIST créé
 - [x] Règles métier du service (rayon par défaut, conversions) — testées via
       `GET /evenements/recherche` (défaut 10 km, refus > 100 km)
@@ -107,43 +109,70 @@ terminé et testé.
       le cookie httpOnly ne peut pas être lu directement par le front)
 - [x] Écran connexion — formulaire fonctionnel (`useConnexionForm`), connecté au
       cookie httpOnly, testé manuellement de bout en bout
-- [x] Écran carte de recherche — fonctionnel : adresse (géocodée côté serveur) ou
-      géolocalisation navigateur, rayon ajustable, liste triée par distance. Pas
-      encore de carte visuelle interactive (Leaflet à ajouter), style minimal
-- [x] Écran fiche événement — fonctionnel : infos, lieu, photo si présente, liste
-      des inscrits, bouton d'inscription (états : non connecté / organisateur /
-      rejoindre / demander à rejoindre / en attente / inscrit / complet / terminé).
+- [x] Identité visuelle — maquettes retrouvées le 14/09/2026 (`~/Téléchargements/
+      OnThePitch-maquettes-planche.png` + `OnThePitch-wireframes.pdf`, fournies par
+      le porteur de projet, jamais versionnées dans le dépôt : premier passage du
+      front fait sans elles, d'où un décalage visuel signalé par le porteur de
+      projet et corrigé dans la foulée). Jetons de design dans `index.css`
+      (`--vert-marque`, `--fond-carte`, `--rayon`, etc.), boutons/inputs/badges de
+      base globaux, `components/Avatar.tsx` (initiales, couleur dérivée du nom —
+      pas de photo de profil dans le MCD)
+- [x] Carte interactive — `components/CarteInteractive.tsx` (Leaflet + tuiles
+      OpenStreetMap, `react-leaflet`), remplace le placeholder texte initial.
+      Marqueurs cliquables (clic → fiche événement), cercle de rayon sur la
+      recherche. Nécessitait les coordonnées par événement dans la réponse de
+      recherche (absentes jusqu'ici, ajoutées côté back — voir section Recherche)
+- [x] Écran carte de recherche — adresse (géocodée côté serveur) ou géolocalisation
+      navigateur, rayon ajustable, liste triée par distance, carte interactive avec
+      un marqueur par résultat
+- [x] Écran fiche événement — infos, lieu (carte interactive), photo si présente,
+      organisateur (avatar + nom — `EvenementDetail.organisateur`, ajouté côté
+      back), barre de progression des places, liste des inscrits en avatars,
+      bouton d'inscription (états : non connecté / organisateur / rejoindre /
+      demander à rejoindre / en attente / inscrit / complet / terminé).
       Organisateur : modification de l'événement (`useModificationEvenementForm`,
       mêmes champs qu'à la création sans l'adresse) et validation des demandes en
-      attente sur un événement privé (accepter/refuser, `PATCH .../inscriptions/:idJoueur`).
-      Testé manuellement de bout en bout contre la vraie API (inscription,
-      désinscription, demande/validation privée, modification). Carte visuelle
-      pas encore ajoutée (dépend de Leaflet, voir écran carte de recherche)
+      attente sur un événement privé (accepter/refuser). QR de présence affiché
+      pour un joueur inscrit, le jour de l'événement. Testé manuellement de bout
+      en bout contre la vraie API. Non fait, volontairement (voir Écran création
+      d'annonce et note ci-dessous) : "Signaler un problème sur cette annonce"
+      visible sur la maquette — nécessite une route `GET` listant les motifs,
+      absente du back ; pas construite pour ne pas coder une liste de motifs
+      en dur côté front
 - [x] Écran création d'annonce — formulaire en trois blocs (`useCreationEvenementForm`),
-      accessible depuis la carte de recherche, garde de rôle (`joueur` uniquement,
-      cf. tableau des droits — un visiteur ou un administrateur ne voit pas le
-      formulaire). Testé manuellement de bout en bout contre la vraie API
-      (création, redirection vers la fiche événement créée). Écart signalé : la
-      maquette du bloc "Caractéristiques" mentionne un champ "format", absent du
-      MCD — remplacé par le champ existant `typeTerrain` (rattaché au bloc "Lieu
-      et date", où il a plus de sens)
+      aperçu live du résultat de recherche à droite (desktop/tablette, cf. maquette),
+      garde de rôle (`joueur` uniquement, cf. tableau des droits). Testé
+      manuellement de bout en bout contre la vraie API. Écart signalé : la maquette
+      du bloc "Caractéristiques" mentionne un champ "format" (ex. "5 contre 5"),
+      absent du MCD — remplacé par le champ existant `typeTerrain` (rattaché au
+      bloc "Lieu et date", où il a plus de sens). Pas encore corrigé en ajoutant
+      un vrai champ `format` : à faire si le porteur de projet le confirme
 - [x] Écran tableau de bord admin (`/admin`) — connexion dédiée réutilisant
-      `POST /auth/connexion` (même compte, pas de second système), garde de rôle
-      côté front (confort d'usage, la vraie protection reste `verifierRole`
-      côté API). Liste des signalements en attente, deux actions par événement
-      (désactiver + avertir / rejeter le signalement). Testé manuellement de bout
-      en bout contre la vraie API (connexion admin, signalement, sanction — 404
-      ensuite sur l'événement —, rejet — événement inchangé)
+      `POST /auth/connexion`, garde de rôle côté front (confort d'usage, la vraie
+      protection reste `verifierRole` côté API). Liste des signalements en attente,
+      deux actions par événement (désactiver + avertir / rejeter le signalement).
+      Pas maquetté : style aligné sur les jetons de design communs, sans mise en
+      page dédiée. Testé manuellement de bout en bout contre la vraie API
 - [x] Responsive (desktop / tablette / mobile) — points de rupture mobile < 600px,
       tablette 600–1023px, desktop ≥ 1024px, sur les 3 écrans concernés (recherche,
-      fiche événement, création). En-tête commun (`Entete.tsx`), navigation en menu
-      replié sur mobile. Carte de recherche : desktop = carte et liste côte à côte,
-      tablette = liste sous la carte, mobile = bascule par onglets. La "carte" est
-      un bloc `.zone-carte` placeholder — pas encore Leaflet (voir écran carte de
-      recherche) ; la mise en page responsive est en place, prête à recevoir la
-      vraie carte. Vérifié par lecture du CSS et build, pas de vérification
-      visuelle en navigateur réel (outil d'automatisation indisponible cette
-      session — à confirmer visuellement)
+      fiche événement, création). En-tête commun (`Entete.tsx`, `--vert-marque`),
+      menu replié sur mobile — un seul système de navigation (pas de barre
+      d'onglets basse séparée comme sur la maquette mobile : les pages "Mes
+      événements"/"Profil" qu'elle y montre n'existent pas dans le périmètre
+      actuel, cf. note ci-dessous). Carte de recherche : desktop = carte et liste
+      côte à côte, tablette = liste sous la carte, mobile = bascule par onglets.
+      Vérifié par build ; pas de vérification visuelle en navigateur réel cette
+      session (outil d'automatisation indisponible) —à confirmer visuellement
+
+> **Écart de périmètre entre la maquette et ce fichier** (relevé le 14/09/2026,
+> à signaler avant d'aller plus loin sur le sujet) : la maquette fournie montre
+> des pages "Mes événements" et "Profil" (nav + barre d'onglets mobile), ainsi
+> qu'un score de **"Fiabilité"** par joueur affiché à côté de chaque inscrit. Ni
+> l'un ni l'autre n'existe dans le périmètre actuel des 4 écrans (section 9) : la
+> fiabilité dépendrait d'un système de notation entre joueurs, déjà noté plus bas
+> comme "hors périmètre initial" (table `evaluation` non câblée) — ne pas
+> l'inventer avec des données fictives. Non construits pour l'instant ; à
+> discuter si le porteur de projet souhaite les intégrer au périmètre.
 
 ### Présences
 - [x] Marquage manuel (secours) — `POST /evenements/:id/presences/manuel`, testé

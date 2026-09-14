@@ -1,93 +1,201 @@
 .page-fiche {
-  max-width: 640px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 1.5rem;
-  font-family: system-ui, sans-serif;
+  padding: 1.25rem 1.5rem 3rem;
 }
 
-.page-fiche h1 {
-  margin-bottom: 0;
+.lien-retour {
+  display: inline-block;
+  color: var(--texte-attenue);
+  text-decoration: none;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.lien-retour:hover {
+  color: var(--texte);
+}
+
+.mise-en-page-fiche {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.contenu-fiche {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 1.5rem;
+  box-shadow: var(--ombre-carte);
+}
+
+.contenu-fiche h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.contenu-fiche h2 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
 }
 
 .photo-lieu {
   width: 100%;
   max-height: 280px;
   object-fit: cover;
-  border-radius: 8px;
-  margin: 1rem 0;
+  border-radius: var(--rayon);
+  margin: -0.5rem -0.5rem 0;
 }
 
-.badge-prive {
-  margin-left: 0.5rem;
-  font-size: 0.75rem;
-  background: #eee;
-  border-radius: 4px;
-  padding: 0.1rem 0.4rem;
-  vertical-align: middle;
+.badges-fiche {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
-.message-erreur {
-  color: #b3261e;
+.organisateur-fiche {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+  color: var(--texte-attenue);
 }
 
-.details-evenement {
+.infos-fiche {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.25rem 1rem;
-  margin: 1rem 0;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--fond);
+  border-radius: var(--rayon);
 }
 
-.details-evenement dt {
-  font-weight: 600;
+.infos-fiche > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
-.details-evenement dd {
-  margin: 0;
+.libelle-info {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--texte-attenue);
 }
 
 .description-evenement {
   white-space: pre-wrap;
+  margin: 0;
+}
+
+.adresse-lieu {
+  margin: 0.6rem 0 0;
+  color: var(--texte-attenue);
+  font-size: 0.9rem;
+}
+
+.message-erreur {
+  color: var(--rouge);
+}
+
+.texte-attenue {
+  color: var(--texte-attenue);
+  font-size: 0.85rem;
+}
+
+/* Barre latérale — cartes indépendantes (places/inscription, joueurs inscrits). */
+.barre-laterale-fiche {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.carte-places,
+.carte-joueurs {
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 1.25rem;
+  box-shadow: var(--ombre-carte);
+}
+
+.carte-places {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.carte-places > button {
+  width: 100%;
+}
+
+.places-chiffre {
+  font-size: 0.95rem;
+}
+
+.places-chiffre strong {
+  font-size: 1.4rem;
+  margin-right: 0.3rem;
+}
+
+.barre-progression {
+  height: 6px;
+  border-radius: var(--rayon-pilule);
+  background: var(--bordure);
+  overflow: hidden;
+}
+
+.barre-progression > div {
+  height: 100%;
+  background: var(--vert-marque);
 }
 
 .info-organisateur {
   font-style: italic;
+  color: var(--texte-attenue);
+  margin: 0;
+}
+
+.entete-carte-joueurs {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.entete-carte-joueurs h2 {
+  margin: 0;
+  font-size: 1rem;
 }
 
 .liste-inscrits {
   list-style: none;
   padding: 0;
-}
-
-.bouton-secondaire {
-  background: none;
-  border: 1px solid #999;
-}
-
-.formulaire-modification,
-.demandes-attente {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1rem;
-  margin: 1rem 0;
-}
-
-.formulaire-modification label {
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
+  gap: 0.65rem;
 }
 
-.formulaire-modification input,
-.formulaire-modification select,
-.formulaire-modification textarea {
-  font: inherit;
-  padding: 0.4rem;
-}
-
-.actions-formulaire {
+.liste-inscrits li {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.demandes-attente {
+  border-top: 1px solid var(--bordure);
+  padding-top: 1.25rem;
+}
+
+.demandes-attente h2 {
+  font-size: 1rem;
 }
 
 .ligne-demande {
@@ -98,33 +206,98 @@
   padding: 0.4rem 0;
 }
 
+.ligne-demande-identite {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
 .actions-demande {
   display: flex;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .bloc-qr-presence {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem;
-  margin-top: 0.75rem;
+  text-align: center;
 }
 
-/* Mobile (cf. CLAUDE.md, "Responsive") : moins de marge, libellés au-dessus des
-   valeurs, ligne de demande qui s'empile plutôt que de déborder. */
+.bloc-qr-presence > button {
+  width: 100%;
+}
+
+/* Formulaire de modification — même carte que le contenu, en pleine largeur. */
+.formulaire-modification {
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 1.5rem;
+  box-shadow: var(--ombre-carte);
+}
+
+.formulaire-modification h1 {
+  font-size: 1.3rem;
+  margin-top: 0;
+}
+
+.formulaire-modification label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texte-attenue);
+}
+
+.actions-formulaire {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actions-formulaire button {
+  flex: 1;
+}
+
+/* Tablette et plus : deux colonnes (contenu + barre latérale). */
+@media (min-width: 900px) {
+  .mise-en-page-fiche {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .contenu-fiche {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .barre-laterale-fiche {
+    width: 320px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 1.25rem;
+  }
+}
+
+/* Mobile (cf. CLAUDE.md, "Responsive") : moins de marge, libellés empilés,
+   boutons pleine largeur pour une cible tactile confortable. */
 @media (max-width: 599px) {
   .page-fiche {
+    padding: 1rem 1rem 2rem;
+  }
+
+  .contenu-fiche {
     padding: 1rem;
   }
 
-  .details-evenement {
+  .infos-fiche {
     grid-template-columns: 1fr;
-    gap: 0;
-  }
-
-  .details-evenement dd {
-    margin-bottom: 0.5rem;
   }
 
   .ligne-demande {
@@ -132,13 +305,6 @@
     align-items: flex-start;
   }
 
-  /* Boutons pleine largeur, cibles tactiles confortables — sauf ceux qui vivent
-     déjà dans une rangée à deux boutons (chacun prend sa moitié). */
-  .page-fiche > button {
-    width: 100%;
-  }
-
-  .actions-formulaire button,
   .actions-demande button {
     flex: 1;
   }

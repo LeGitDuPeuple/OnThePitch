@@ -23,11 +23,14 @@ export type Evenement = {
   idOrganisateur: number;
 };
 
-// Résultat de la recherche géolocalisée : un événement, enrichi de sa distance.
+// Résultat de la recherche géolocalisée : un événement, enrichi de sa distance
+// et des coordonnées de son lieu (pour le marqueur sur la carte).
 export type EvenementProche = Evenement & {
   distanceKm: number;
   ville: string;
   adresse: string;
+  latitude: number;
+  longitude: number;
 };
 
 // Détail du lieu, renvoyé avec l'événement pour la fiche événement (GET /evenements/:id).
@@ -42,7 +45,12 @@ export type LieuDetail = {
   aUnePhoto: boolean;
 };
 
-export type EvenementDetail = Evenement & { lieu: LieuDetail };
+export type OrganisateurDetail = {
+  nom: string;
+  prenom: string;
+};
+
+export type EvenementDetail = Evenement & { lieu: LieuDetail; organisateur: OrganisateurDetail };
 
 // Un inscrit tel que renvoyé par GET /evenements/:id/inscriptions.
 export type InscritDetail = {
