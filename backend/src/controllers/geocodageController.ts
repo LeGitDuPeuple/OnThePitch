@@ -17,4 +17,18 @@ export class GeocodageController {
       next(erreur);
     }
   };
+
+  // GET /evenements/geocoder/suggestions — autocomplétion pendant la saisie
+  // (recherche géolocalisée, création d'événement). Jamais appelée directement
+  // par le front autrement que via cette route (même contrainte que geocoder).
+  suggerer = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { adresse } = geocodageQuerySchema.parse(req.query);
+      const suggestions = await this.geocodeur.suggerer(adresse);
+
+      res.json(suggestions);
+    } catch (erreur) {
+      next(erreur);
+    }
+  };
 }

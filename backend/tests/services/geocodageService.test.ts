@@ -48,4 +48,44 @@ describe("GeocodageService", () => {
 
     await expect(service.geocoder("10 Rue de Rivoli, Paris")).rejects.toBeInstanceOf(ServiceIndisponible);
   });
+
+  describe("suggerer", () => {
+    it("renvoie plusieurs candidats pour l'autocomplétion", async () => {
+      global.fetch = jest.fn().mockResolvedValue(
+        simulerReponse({
+          features: [
+            {
+              geometry: { coordinates: [2.3522, 48.8566] },
+              properties: { label: "10 Rue de Rivoli 75004 Paris", city: "Paris", postcode: "75004" },
+            },
+            {
+              geometry: { coordinates: [2.36, 48.86] },
+              properties: { label: "10 Rue de Rivoli 75001 Paris", city: "Paris", postcode: "75001" },
+            },
+          ],
+        })
+      );
+      const service = new GeocodageService();
+
+      const suggestions = await service.suggerer("10 Rue de Rivoli");
+
+      expect(suggestions).toHaveLength(2);
+      expect(suggestions[0].adresse).toBe("10 Rue de Rivoli 75004 Paris");
+      expect(suggestions[1].codePostal).toBe("75001");
+    });
+
+    it("renvoie une liste vide plutôt qu'une erreur si rien ne correspond encore", async () => {
+      global.fetch = jest.fn().mockResolvedValue(simulerReponse({ features: [] }));
+      const service = new GeocodageService();
+
+      await expect(service.suggerer("azertyuiop")).resolves.toEqual([]);
+    });
+
+    it("signale un service indisponible si la requête échoue", async () => {
+      global.fetch = jest.fn().mockRejectedValue(new Error("network down"));
+      const service = new GeocodageService();
+
+      await expect(service.suggerer("10 Rue de Rivoli")).rejects.toBeInstanceOf(ServiceIndisponible);
+    });
+  });
 });

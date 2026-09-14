@@ -11,6 +11,13 @@ export class GeocodeurFake implements GeocodeurInterface {
     }
     return this.resultat;
   }
+
+  async suggerer(): Promise<Coordonnees[]> {
+    if (this.resultat instanceof Error) {
+      throw this.resultat;
+    }
+    return [this.resultat];
+  }
 }
 
 export const coordonneesTest: Coordonnees = {
