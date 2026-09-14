@@ -72,6 +72,11 @@ terminé et testé.
       exposé sur la création, la consultation et la recherche
 - [x] Photo du lieu — testée (upload multipart par l'organisateur, 401/403/400,
       récupération avec octets identiques). Écart au MCD documenté (section `lieu`)
+- [x] Format de jeu (`evenement.format`, ex. "5 contre 5") — ajouté le
+      15/09/2026, présent dans la maquette (blocs "Caractéristiques" et fiche
+      événement), jamais modélisé jusqu'ici. Libre comme `lieu.typeTerrain`,
+      pas de table de référence dédiée. Testé (69/69 tests + contre la vraie
+      API). Écart au MCD documenté (section `evenement`)
 
 ### Recherche géolocalisée
 - [x] Requête PostGIS `ST_DWithin` + `ST_Distance` dans le repository — testée contre
@@ -156,12 +161,16 @@ terminé et testé.
       en dur côté front
 - [x] Écran création d'annonce — formulaire en trois blocs (`useCreationEvenementForm`),
       aperçu live du résultat de recherche à droite (desktop/tablette, cf. maquette),
-      garde de rôle (`joueur` uniquement, cf. tableau des droits). Testé
-      manuellement de bout en bout contre la vraie API. Écart signalé : la maquette
-      du bloc "Caractéristiques" mentionne un champ "format" (ex. "5 contre 5"),
-      absent du MCD — remplacé par le champ existant `typeTerrain` (rattaché au
-      bloc "Lieu et date", où il a plus de sens). Pas encore corrigé en ajoutant
-      un vrai champ `format` : à faire si le porteur de projet le confirme
+      garde de rôle (`joueur` uniquement, cf. tableau des droits). Bloc
+      "Caractéristiques" : Format / Nombre de places / Niveau attendu sur une
+      même ligne (`FORMATS_COURANTS`, comme la maquette 2.2.c). Testé
+      manuellement de bout en bout contre la vraie API
+- [x] Rapprochement visuel de la maquette (15/09/2026, à la demande du porteur
+      de projet — première passe jugée trop éloignée) : champ `format` ajouté
+      au modèle (voir section Événements), étiquettes des marqueurs de la carte
+      toujours visibles + légende, avatar neutre pour "mon compte" dans l'en-tête
+      (distinct des avatars colorés des autres joueurs), sous-textes "Dans N
+      jours"/"X h de jeu" sur la fiche événement
 - [x] Écran tableau de bord admin (`/admin`) — connexion dédiée réutilisant
       `POST /auth/connexion`, garde de rôle côté front (confort d'usage, la vraie
       protection reste `verifierRole` côté API). Liste des signalements en attente,
