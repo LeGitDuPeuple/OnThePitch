@@ -14,7 +14,11 @@ const icone = (couleur: string, taille: number) =>
     iconAnchor: [taille / 2, taille / 2],
   });
 
-const ICONE_POINT_RECHERCHE = icone("#0e3b2a", 16);
+// Bleu plutôt qu'une couleur de la palette de marque : convention universelle
+// (Google Maps, Apple Plans...) pour "position actuelle", plus reconnaissable
+// qu'un vert foncé proche du noir (signalé le 15/09/2026 par le porteur de
+// projet — confondu avec un simple point neutre).
+const ICONE_POINT_RECHERCHE = icone("#2563eb", 16);
 const ICONE_EVENEMENT = icone("#1c7a44", 24);
 
 // Rayon en km -> niveau de zoom approximatif, pour que le cercle de recherche
