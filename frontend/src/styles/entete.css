@@ -79,7 +79,7 @@
   font-size: 0.85rem;
 }
 
-.entete-compte a {
+.entete-compte a:not(.bouton-secondaire) {
   color: var(--texte-attenue);
   text-decoration: none;
 }
