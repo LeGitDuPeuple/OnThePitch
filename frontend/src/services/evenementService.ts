@@ -61,6 +61,16 @@ export const evenementService = {
   // administrateur (modération, voir CLAUDE.md tableau des rôles).
   annuler: (id: number): Promise<void> => appelApi(`/evenements/${id}`, { methode: "DELETE" }),
 
+  // Dépose (ou remplace) la photo du lieu — réservée à l'organisateur. Champ
+  // multipart "photo", jpeg/png/webp uniquement, 2 Mo max (contrôlé côté
+  // serveur, voir routes/photoRoute.ts — le front ne fait qu'un contrôle
+  // indicatif sur l'extension via l'attribut accept du champ fichier).
+  televerserPhoto: (id: number, fichier: File): Promise<void> => {
+    const donnees = new FormData();
+    donnees.append("photo", fichier);
+    return appelApi(`/evenements/${id}/photo`, { methode: "POST", corps: donnees });
+  },
+
   // Pas de fetch ici : consommée directement comme src d'une balise <img>.
   urlPhoto: (id: number): string => `${URL_BASE}/evenements/${id}/photo`,
 };

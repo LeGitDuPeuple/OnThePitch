@@ -38,6 +38,12 @@ export const useCreationEvenementForm = () => {
   // Bloc 3 — visibilité
   const [estPrive, setEstPrive] = useState(false);
 
+  // Photo du lieu — facultative, envoyée après coup (voir soumettre) : la
+  // création de l'événement et le dépôt de la photo sont deux appels API
+  // distincts côté back (POST /evenements puis POST /evenements/:id/photo),
+  // pas un seul formulaire multipart.
+  const [photo, setPhoto] = useState<File | null>(null);
+
   const [erreur, setErreur] = useState<string | null>(null);
   // Une entrée par champ fautif (adresse introuvable, date passée...) — voir
   // ErreurApi.erreursChamps. Affichée sous le champ concerné, pas dans le
@@ -76,7 +82,26 @@ export const useCreationEvenementForm = () => {
           typeTerrain: typeTerrain.trim() || undefined,
           niveauRequis,
         });
-        navigate(`/evenements/${evenementCree.id}`);
+
+        if (!photo) {
+          navigate(`/evenements/${evenementCree.id}`);
+          return;
+        }
+
+        // La photo est facultative : un échec à cette étape ne doit pas
+        // remettre en cause l'événement déjà créé, seulement le signaler
+        // (l'organisateur pourra réessayer plus tard).
+        try {
+          await evenementService.televerserPhoto(evenementCree.id, photo);
+          navigate(`/evenements/${evenementCree.id}`);
+        } catch {
+          navigate(`/evenements/${evenementCree.id}`, {
+            state: {
+              messageConfirmation: "Événement créé, mais la photo n'a pas pu être enregistrée. Vous pourrez réessayer depuis la fiche.",
+              typeMessageConfirmation: "avertissement",
+            },
+          });
+        }
       } catch (erreurRequete) {
         if (erreurRequete instanceof ErreurApi) {
           setErreur(erreurRequete.message);
@@ -105,6 +130,7 @@ export const useCreationEvenementForm = () => {
       estPrive,
       typeTerrain,
       niveauRequis,
+      photo,
       navigate,
     ]
   );
@@ -134,6 +160,8 @@ export const useCreationEvenementForm = () => {
     setNiveauRequis,
     estPrive,
     setEstPrive,
+    photo,
+    setPhoto,
     erreur,
     erreursChamps,
     chargement,

@@ -36,6 +36,8 @@ export const CreationAnnonce = () => {
     setNiveauRequis,
     estPrive,
     setEstPrive,
+    photo,
+    setPhoto,
     erreur,
     erreursChamps,
     chargement,
@@ -110,6 +112,15 @@ export const CreationAnnonce = () => {
                 value={typeTerrain}
                 onChange={(evenement) => setTypeTerrain(evenement.target.value)}
               />
+            </label>
+            <label>
+              Photo du lieu (facultative)
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(evenement) => setPhoto(evenement.target.files?.[0] ?? null)}
+              />
+              {photo && <span className="texte-attenue">{photo.name}</span>}
             </label>
             <div className="ligne-champs">
               <label>

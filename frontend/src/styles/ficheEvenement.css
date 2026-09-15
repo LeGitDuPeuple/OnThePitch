@@ -51,6 +51,21 @@
   margin: -0.5rem -0.5rem 0;
 }
 
+/* Ajout/remplacement de la photo du lieu, organisateur uniquement — voir
+   PhotoLieu dans FicheEvenement.tsx. */
+.bloc-photo-lieu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.edition-photo-lieu {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .badges-fiche {
   display: flex;
   flex-wrap: wrap;

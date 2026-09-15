@@ -23,8 +23,16 @@ import { registerPhotoRoutes } from "./routes/photoRoute";
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
 
-// Sécurité et parsers — avant toute route
-app.use(helmet());
+// Sécurité et parsers — avant toute route.
+// crossOriginResourcePolicy: Helmet pose "same-origin" par défaut, qui bloque
+// silencieusement le chargement de la photo du lieu par le <img> du front
+// (localhost:5173 → localhost:3000, deux origines distinctes) — repéré en
+// testant l'upload de photo, la requête réussissait (200) mais l'image ne
+// s'affichait jamais. Sans risque ici : la photo est publique par conception
+// (servie par une route dédiée, sans authentification, voir CLAUDE.md section
+// "Photo du lieu"), et les routes qui doivent rester restreintes le sont déjà
+// par CORS (origin unique + credentials) et par le cookie httpOnly.
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

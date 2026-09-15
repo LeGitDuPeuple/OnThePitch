@@ -1,19 +1,23 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-type EtatNavigation = { messageConfirmation?: string } | null;
+export type TypeMessageConfirmation = "succes" | "avertissement";
 
-// Lit un message de confirmation passé via navigate(url, { state: {...} }) —
-// utile quand l'écran source disparaît après l'action (ex. fiche d'un
-// événement qu'on vient d'annuler, qui renvoie 404 ensuite) et ne peut donc
-// pas afficher lui-même la confirmation. Générique, réutilisable par n'importe
-// quel écran de destination, pas seulement la carte de recherche.
+type EtatNavigation = { messageConfirmation?: string; typeMessageConfirmation?: TypeMessageConfirmation } | null;
+
+// Lit un message de confirmation (ou d'avertissement) passé via
+// navigate(url, { state: {...} }) — utile quand l'écran source disparaît après
+// l'action (ex. fiche d'un événement qu'on vient d'annuler, qui renvoie 404
+// ensuite) et ne peut donc pas afficher lui-même le message. Générique,
+// réutilisable par n'importe quel écran de destination.
 export const useMessageConfirmation = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [message, setMessage] = useState<string | null>(
-    (location.state as EtatNavigation)?.messageConfirmation ?? null
-  );
+  const etatInitial = location.state as EtatNavigation;
+  const [message, setMessage] = useState<string | null>(etatInitial?.messageConfirmation ?? null);
+  // Pas de setter : le type n'a de sens que tant que le message l'accompagne,
+  // fixé une fois pour toutes à la lecture du state de navigation.
+  const [type] = useState<TypeMessageConfirmation>(etatInitial?.typeMessageConfirmation ?? "succes");
 
   useEffect(() => {
     if (!(location.state as EtatNavigation)?.messageConfirmation) return;
@@ -26,5 +30,5 @@ export const useMessageConfirmation = () => {
 
   const effacer = () => setMessage(null);
 
-  return { message, effacer };
+  return { message, type, effacer };
 };
