@@ -76,7 +76,7 @@ export const CarteRecherche = () => {
             <ErreurChamp message={erreursChamps.adresse} />
           </label>
           <button type="button" className="bouton-secondaire bouton-position" onClick={rechercherParPosition}>
-            📍 Utiliser ma position
+             Utiliser ma position
           </button>
           <label className="champ-filtre">
             <span>Rayon</span>

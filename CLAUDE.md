@@ -860,6 +860,30 @@ identifiants email. Périmètre volontairement limité à ce seul cas (pas de
 notification à l'acceptation, pas de système de notification général) pour
 ne pas dériver.
 
+**Signaler à l'organisateur qu'une demande d'inscription l'attend** (discuté
+le 15/09/2026, mis de côté volontairement — même raison que ci-dessus). Sur
+un événement privé, une demande passe en `en_attente` sans que l'organisateur
+en soit informé autrement qu'en rouvrant la fiche de cet événement précis et
+en regardant la section "Demandes en attente". Aggravé par l'absence d'écran
+"Mes événements" dans le périmètre actuel (voir l'écart de périmètre maquette
+noté en section Front React) : un organisateur avec plusieurs événements
+privés n'a même pas d'endroit centralisé où revenir vérifier — il doit se
+souvenir de chaque URL. À rediscuter avec la notification d'annulation
+ci-dessus une fois la recette manuelle terminée : un simple badge (sur la
+fiche ou l'en-tête) pourrait suffire, ou bien passer par le même mécanisme
+d'email selon ce qui est décidé pour l'annulation.
+
+**Couleur du badge "Privé"** (discuté le 15/09/2026, mis de côté volontairement
+— priorité à la recette manuelle en cours). Le badge est aujourd'hui gris
+neutre (classe `.badge`), aux 3 endroits où il apparaît (`CarteRecherche.tsx`,
+`CreationAnnonce.tsx`, `FicheEvenement.tsx`). Piste envisagée : le distinguer
+visuellement en rouge — écartée en l'état, ce rouge (`.badge--alerte`) est
+déjà utilisé pour le badge "Complet" (état bloquant, on ne peut pas rejoindre)
+et réutiliser la même couleur mélangerait deux badges de nature différente
+sur la même carte ("Privé" se rejoint très bien, juste sur validation). Si le
+besoin de distinguer "Privé" reste, repartir sur une couleur à part (ambre,
+déjà dans les tokens `index.css`) plutôt que le rouge existant.
+
 ---
 
 ## Instructions pour Claude Code
