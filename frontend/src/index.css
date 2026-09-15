@@ -155,6 +155,19 @@ textarea:focus {
   border-color: transparent;
 }
 
+/* Erreur sous un champ précis (regex email/mot de passe, ou erreur serveur
+   rattachée à ce champ — voir components/ErreurChamp.tsx et ErreurApi côté
+   services/api.ts) — pas dans le message général, réservé aux erreurs qui ne
+   se rattachent à aucun champ précis. Globale, pas dupliquée par page : même
+   raison que .champ-avec-suggestions juste en dessous. */
+.message-erreur-champ {
+  display: block;
+  color: var(--rouge);
+  font-size: 0.78rem;
+  font-weight: 400;
+  margin-top: 0.2rem;
+}
+
 /* Ancre de positionnement pour une liste de suggestions d'adresse (voir
    components/SuggestionsAdresse.tsx) — globale et non dupliquée par page :
    une classe utilitaire identique partout n'a aucune raison de diverger, et

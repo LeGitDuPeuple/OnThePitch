@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useInscriptionForm } from "../hooks/useInscriptionForm";
+import { ErreurChamp } from "../components/ErreurChamp";
 import "../styles/connexion.css";
 
 export const Inscription = () => {
@@ -40,11 +41,7 @@ export const Inscription = () => {
         <label>
           Email
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onBlur={validerChampEmail} required />
-          {erreurEmail && (
-            <span role="alert" className="message-erreur-champ">
-              {erreurEmail}
-            </span>
-          )}
+          <ErreurChamp message={erreurEmail ?? undefined} />
         </label>
         <label>
           Mot de passe
@@ -57,11 +54,7 @@ export const Inscription = () => {
             minLength={8}
             autoComplete="new-password"
           />
-          {erreurMotDePasse && (
-            <span role="alert" className="message-erreur-champ">
-              {erreurMotDePasse}
-            </span>
-          )}
+          <ErreurChamp message={erreurMotDePasse ?? undefined} />
         </label>
         <label>
           Ville (facultatif)

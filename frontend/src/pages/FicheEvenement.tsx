@@ -7,6 +7,7 @@ import { useQrPresence } from "../hooks/useQrPresence";
 import { evenementService } from "../services/evenementService";
 import { CarteInteractive } from "../components/CarteInteractive";
 import { Avatar } from "../components/Avatar";
+import { ErreurChamp } from "../components/ErreurChamp";
 import { FORMATS_COURANTS, LIBELLES_NIVEAU, type Evenement, type InscritDetail, type NiveauRequis } from "../types/evenement";
 import "../styles/ficheEvenement.css";
 
@@ -288,6 +289,7 @@ const FormulaireModification = ({ evenement, onSuccess, onAnnuler }: PropsFormul
     heureFin,
     setHeureFin,
     erreur,
+    erreursChamps,
     chargement,
     soumettre,
   } = useModificationEvenementForm(evenement, onSuccess);
@@ -298,6 +300,7 @@ const FormulaireModification = ({ evenement, onSuccess, onAnnuler }: PropsFormul
       <label>
         Titre
         <input type="text" value={titre} onChange={(e) => setTitre(e.target.value)} required minLength={3} maxLength={50} />
+        <ErreurChamp message={erreursChamps.titre} />
       </label>
       <label>
         Format
@@ -317,6 +320,7 @@ const FormulaireModification = ({ evenement, onSuccess, onAnnuler }: PropsFormul
       <label>
         Date
         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+        <ErreurChamp message={erreursChamps.date} />
       </label>
       <label>
         Heure de début
@@ -325,6 +329,7 @@ const FormulaireModification = ({ evenement, onSuccess, onAnnuler }: PropsFormul
       <label>
         Heure de fin
         <input type="time" value={heureFin} onChange={(e) => setHeureFin(e.target.value)} required />
+        <ErreurChamp message={erreursChamps.heureFin} />
       </label>
       <label>
         Nombre de places
@@ -336,6 +341,7 @@ const FormulaireModification = ({ evenement, onSuccess, onAnnuler }: PropsFormul
           max={30}
           required
         />
+        <ErreurChamp message={erreursChamps.nombrePlaces} />
       </label>
       <label>
         Niveau requis

@@ -4,6 +4,7 @@ import { useRechercheForm } from "../hooks/useRechercheForm";
 import { useSuggestionsAdresse } from "../hooks/useSuggestionsAdresse";
 import { CarteInteractive } from "../components/CarteInteractive";
 import { SuggestionsAdresse } from "../components/SuggestionsAdresse";
+import { ErreurChamp } from "../components/ErreurChamp";
 import { LIBELLES_NIVEAU } from "../types/evenement";
 import "../styles/carteRecherche.css";
 
@@ -31,6 +32,7 @@ export const CarteRecherche = () => {
     resultats,
     chargement,
     erreur,
+    erreursChamps,
     rechercherParAdresse,
     rechercherParPosition,
     rechercherSuggestion,
@@ -67,6 +69,7 @@ export const CarteRecherche = () => {
                 rechercherSuggestion(suggestion);
               }}
             />
+            <ErreurChamp message={erreursChamps.adresse} />
           </label>
           <button type="button" className="bouton-secondaire bouton-position" onClick={rechercherParPosition}>
             📍 Utiliser ma position

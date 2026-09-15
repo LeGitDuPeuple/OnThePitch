@@ -13,6 +13,15 @@ const versChampsDate = (date: Date) => {
   };
 };
 
+// Même éclatement dateDebut/dateFin -> date/heureDebut/heureFin qu'à la
+// création (voir useCreationEvenementForm) : une erreur sur "dateDebut" doit
+// s'afficher sous "Date", une sur "dateFin" sous "Heure de fin".
+const normaliserChampDate = (champ: string): string => {
+  if (champ === "dateDebut") return "date";
+  if (champ === "dateFin") return "heureFin";
+  return champ;
+};
+
 // Formulaire de modification (organisateur uniquement) : mêmes champs qu'à la
 // création, sans l'adresse (cf. CLAUDE.md — redéclencherait un géocodage, hors
 // périmètre). Le composant ne monte ce hook que pendant l'édition, ce qui donne
@@ -31,12 +40,14 @@ export const useModificationEvenementForm = (evenement: Evenement, onSuccess: ()
   const [heureFin, setHeureFin] = useState(fin.heure);
 
   const [erreur, setErreur] = useState<string | null>(null);
+  const [erreursChamps, setErreursChamps] = useState<Record<string, string>>({});
   const [chargement, setChargement] = useState(false);
 
   const soumettre = useCallback(
     async (evenementFormulaire: FormEvent) => {
       evenementFormulaire.preventDefault();
       setErreur(null);
+      setErreursChamps({});
 
       if (!date || !heureDebut || !heureFin) {
         setErreur("La date et les heures de début et de fin sont obligatoires");
@@ -56,7 +67,16 @@ export const useModificationEvenementForm = (evenement: Evenement, onSuccess: ()
         });
         onSuccess();
       } catch (erreurRequete) {
-        setErreur(erreurRequete instanceof ErreurApi ? erreurRequete.message : "Une erreur est survenue");
+        if (erreurRequete instanceof ErreurApi) {
+          setErreur(erreurRequete.message);
+          const champsNormalises: Record<string, string> = {};
+          Object.entries(erreurRequete.erreursChamps).forEach(([champ, message]) => {
+            champsNormalises[normaliserChampDate(champ)] = message;
+          });
+          setErreursChamps(champsNormalises);
+        } else {
+          setErreur("Une erreur est survenue");
+        }
       } finally {
         setChargement(false);
       }
@@ -82,6 +102,7 @@ export const useModificationEvenementForm = (evenement: Evenement, onSuccess: ()
     heureFin,
     setHeureFin,
     erreur,
+    erreursChamps,
     chargement,
     soumettre,
   };

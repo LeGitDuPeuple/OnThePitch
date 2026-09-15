@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useConnexionForm } from "../hooks/useConnexionForm";
+import { ErreurChamp } from "../components/ErreurChamp";
 import "../styles/connexion.css";
 
 export const Connexion = () => {
@@ -19,11 +20,7 @@ export const Connexion = () => {
             onBlur={validerChampEmail}
             required
           />
-          {erreurEmail && (
-            <span role="alert" className="message-erreur-champ">
-              {erreurEmail}
-            </span>
-          )}
+          <ErreurChamp message={erreurEmail ?? undefined} />
         </label>
         <label>
           Mot de passe

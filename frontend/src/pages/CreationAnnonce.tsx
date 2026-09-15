@@ -3,6 +3,7 @@ import { useAppSelector } from "../store/hooks";
 import { useCreationEvenementForm } from "../hooks/useCreationEvenementForm";
 import { useSuggestionsAdresse } from "../hooks/useSuggestionsAdresse";
 import { SuggestionsAdresse } from "../components/SuggestionsAdresse";
+import { ErreurChamp } from "../components/ErreurChamp";
 import { FORMATS_COURANTS, LIBELLES_NIVEAU, type NiveauRequis } from "../types/evenement";
 import "../styles/creationAnnonce.css";
 
@@ -36,6 +37,7 @@ export const CreationAnnonce = () => {
     estPrive,
     setEstPrive,
     erreur,
+    erreursChamps,
     chargement,
     soumettre,
   } = useCreationEvenementForm();
@@ -94,6 +96,7 @@ export const CreationAnnonce = () => {
                 minLength={5}
               />
               <SuggestionsAdresse suggestions={suggestions} onChoisir={(suggestion) => setAdresse(choisir(suggestion))} />
+              <ErreurChamp message={erreursChamps.adresse} />
             </label>
             <label>
               Nom du lieu (facultatif)
@@ -112,6 +115,7 @@ export const CreationAnnonce = () => {
               <label>
                 Date
                 <input type="date" value={date} onChange={(evenement) => setDate(evenement.target.value)} required />
+                <ErreurChamp message={erreursChamps.date} />
               </label>
               <label>
                 Heure de début
@@ -120,6 +124,7 @@ export const CreationAnnonce = () => {
               <label>
                 Heure de fin
                 <input type="time" value={heureFin} onChange={(evenement) => setHeureFin(evenement.target.value)} required />
+                <ErreurChamp message={erreursChamps.heureFin} />
               </label>
             </div>
           </fieldset>
@@ -138,6 +143,7 @@ export const CreationAnnonce = () => {
                 minLength={3}
                 maxLength={50}
               />
+              <ErreurChamp message={erreursChamps.titre} />
             </label>
             <div className="ligne-champs">
               <label>
@@ -161,6 +167,7 @@ export const CreationAnnonce = () => {
                   max={30}
                   required
                 />
+                <ErreurChamp message={erreursChamps.nombrePlaces} />
               </label>
               <label>
                 Niveau attendu
