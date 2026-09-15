@@ -89,6 +89,26 @@ button.bouton-secondaire:hover:not(:disabled) {
   border-color: #ccc;
 }
 
+/* Même style que .bouton-secondaire, pour un lien (ex. "Connexion" dans
+   l'en-tête) plutôt qu'un <button> — un lien n'hérite pas du reset ci-dessus. */
+a.bouton-secondaire {
+  display: inline-block;
+  text-decoration: none;
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--bordure);
+  background: #fff;
+  color: var(--texte);
+  border-radius: var(--rayon);
+  padding: 0.55rem 1.1rem;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+a.bouton-secondaire:hover {
+  background: var(--fond);
+  border-color: #ccc;
+}
+
 input,
 select,
 textarea {

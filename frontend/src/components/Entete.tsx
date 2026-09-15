@@ -41,7 +41,7 @@ export const Entete = () => {
                   Se déconnecter
                 </button>
               ) : (
-                <Link to="/connexion" onClick={fermerMenu}>
+                <Link to="/connexion" className="bouton-secondaire" onClick={fermerMenu}>
                   Connexion
                 </Link>
               )}
@@ -63,7 +63,9 @@ export const Entete = () => {
                 </button>
               </>
             ) : (
-              <Link to="/connexion">Connexion</Link>
+              <Link to="/connexion" className="bouton-secondaire">
+                Connexion
+              </Link>
             )}
           </div>
 
