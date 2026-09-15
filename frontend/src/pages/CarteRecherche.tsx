@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useRechercheForm } from "../hooks/useRechercheForm";
 import { useSuggestionsAdresse } from "../hooks/useSuggestionsAdresse";
+import { useMessageConfirmation } from "../hooks/useMessageConfirmation";
 import { CarteInteractive } from "../components/CarteInteractive";
 import { SuggestionsAdresse } from "../components/SuggestionsAdresse";
 import { ErreurChamp } from "../components/ErreurChamp";
+import { MessageConfirmation } from "../components/MessageConfirmation";
 import { LIBELLES_NIVEAU } from "../types/evenement";
 import "../styles/carteRecherche.css";
 
@@ -38,12 +40,14 @@ export const CarteRecherche = () => {
     rechercherSuggestion,
   } = useRechercheForm();
   const { suggestions, choisir, fermer } = useSuggestionsAdresse(adresse);
+  const { message: messageConfirmation, effacer: effacerConfirmation } = useMessageConfirmation();
   const [vue, setVue] = useState<Vue>("liste");
   const navigate = useNavigate();
 
   return (
     <main className="page-recherche">
       <h1 className="sr-only">Rechercher un événement</h1>
+      <MessageConfirmation message={messageConfirmation} onFermer={effacerConfirmation} />
       <div className="panneau-recherche">
         <form
           className="filtres-recherche"

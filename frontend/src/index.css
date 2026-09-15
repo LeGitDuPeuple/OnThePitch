@@ -168,6 +168,31 @@ textarea:focus {
   border-color: transparent;
 }
 
+/* Confirmation d'une action réussie (ex. "Événement annulé.") — pendant du
+   .message-erreur, même traitement (bandeau, bouton pour fermer) en vert
+   plutôt qu'en rouge. Globale : voir components/MessageConfirmation.tsx. */
+.message-confirmation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--vert-texte);
+  background: var(--vert-clair);
+  border: 1px solid transparent;
+  border-radius: var(--rayon);
+  padding: 0.65rem 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.message-confirmation button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+}
+
 /* Erreur sous un champ précis (regex email/mot de passe, ou erreur serveur
    rattachée à ce champ — voir components/ErreurChamp.tsx et ErreurApi côté
    services/api.ts) — pas dans le message général, réservé aux erreurs qui ne

@@ -126,7 +126,9 @@ export const useFicheEvenement = () => {
     setErreur(null);
     try {
       await evenementService.annuler(idEvenement);
-      navigate("/");
+      // Confirmation lue par CarteRecherche via useLocation — la fiche elle-même
+      // disparaît (404 ensuite), impossible d'y afficher quoi que ce soit après.
+      navigate("/", { state: { messageConfirmation: "Événement annulé." } });
     } catch (erreurRequete) {
       setErreur(erreurRequete instanceof ErreurApi ? erreurRequete.message : "Une erreur est survenue");
       setActionEnCours(false);
