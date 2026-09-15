@@ -19,7 +19,7 @@ export class RechercheEvenementService {
 
     // Rayon plafonné : au-delà, le volume de résultats devient inexploitable.
     if (rayonKm <= 0 || rayonKm > RAYON_MAXIMUM_KM) {
-      throw new RequeteInvalide(`Le rayon doit être compris entre 1 et ${RAYON_MAXIMUM_KM} km`);
+      throw new RequeteInvalide(`Le rayon doit être compris entre 1 et ${RAYON_MAXIMUM_KM} km`, "rayonKm");
     }
 
     // PostGIS raisonne en mètres : la conversion est une règle métier.

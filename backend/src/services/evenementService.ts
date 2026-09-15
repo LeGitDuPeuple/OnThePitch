@@ -41,7 +41,7 @@ export class EvenementService {
   async creer(demande: DemandeCreation, idOrganisateur: number): Promise<Evenement> {
     // Un événement ne peut pas être créé dans le passé.
     if (demande.dateDebut <= new Date()) {
-      throw new RequeteInvalide("La date de début doit être dans le futur");
+      throw new RequeteInvalide("La date de début doit être dans le futur", "dateDebut");
     }
 
     // Sans coordonnées, l'événement serait invisible dans toutes les recherches.
@@ -105,19 +105,20 @@ export class EvenementService {
 
     // Même règle qu'à la création : un événement ne peut pas être déplacé dans le passé.
     if (demande.dateDebut && demande.dateDebut <= new Date()) {
-      throw new RequeteInvalide("La date de début doit être dans le futur");
+      throw new RequeteInvalide("La date de début doit être dans le futur", "dateDebut");
     }
 
     const dateDebutEffective = demande.dateDebut ?? evenement.dateDebut;
     const dateFinEffective = demande.dateFin ?? evenement.dateFin;
     if (dateFinEffective <= dateDebutEffective) {
-      throw new RequeteInvalide("La date de fin doit suivre la date de début");
+      throw new RequeteInvalide("La date de fin doit suivre la date de début", "dateFin");
     }
 
     // On ne peut pas réduire les places sous le nombre de joueurs déjà acceptés.
     if (demande.nombrePlaces !== undefined && demande.nombrePlaces < evenement.nombreInscrits) {
       throw new RequeteInvalide(
-        `Le nombre de places ne peut pas être inférieur au nombre d'inscrits (${evenement.nombreInscrits})`
+        `Le nombre de places ne peut pas être inférieur au nombre d'inscrits (${evenement.nombreInscrits})`,
+        "nombrePlaces"
       );
     }
 

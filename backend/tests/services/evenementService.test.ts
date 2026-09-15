@@ -35,6 +35,13 @@ describe("EvenementService", () => {
       await expect(service.creer(demande, 1)).rejects.toBeInstanceOf(RequeteInvalide);
     });
 
+    it("rattache l'erreur de date passée au champ dateDebut", async () => {
+      const service = new EvenementService(new EvenementRepositoryFake(), new GeocodeurFake(coordonneesTest));
+      const demande = { ...demandeValide(), dateDebut: new Date(Date.now() - 1000) };
+
+      await expect(service.creer(demande, 1)).rejects.toMatchObject({ champ: "dateDebut" });
+    });
+
     it("refuse la création si l'adresse ne peut pas être géocodée", async () => {
       const erreurGeocodage = new RequeteInvalide("Adresse introuvable, vérifiez la saisie");
       const service = new EvenementService(new EvenementRepositoryFake(), new GeocodeurFake(erreurGeocodage));
@@ -142,6 +149,20 @@ describe("EvenementService", () => {
       ).rejects.toBeInstanceOf(RequeteInvalide);
     });
 
+    it("rattache les erreurs de date au bon champ selon celui qui est fautif", async () => {
+      const evenementRepository = new EvenementRepositoryFake();
+      const service = new EvenementService(evenementRepository, new GeocodeurFake(coordonneesTest));
+      const evenement = await service.creer(demandeValide(), 1);
+
+      await expect(
+        service.modifier(evenement.id, { dateDebut: new Date(Date.now() - 1000) }, 1)
+      ).rejects.toMatchObject({ champ: "dateDebut" });
+
+      await expect(
+        service.modifier(evenement.id, { dateFin: new Date(evenement.dateDebut) }, 1)
+      ).rejects.toMatchObject({ champ: "dateFin" });
+    });
+
     it("refuse de réduire le nombre de places sous le nombre d'inscrits", async () => {
       const evenementRepository = new EvenementRepositoryFake();
       const service = new EvenementService(evenementRepository, new GeocodeurFake(coordonneesTest));
@@ -151,6 +172,7 @@ describe("EvenementService", () => {
       evenement.nombreInscrits = 5;
 
       await expect(service.modifier(evenement.id, { nombrePlaces: 4 }, 1)).rejects.toBeInstanceOf(RequeteInvalide);
+      await expect(service.modifier(evenement.id, { nombrePlaces: 4 }, 1)).rejects.toMatchObject({ champ: "nombrePlaces" });
     });
   });
 
