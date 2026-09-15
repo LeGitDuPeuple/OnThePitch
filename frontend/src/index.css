@@ -89,6 +89,19 @@ button.bouton-secondaire:hover:not(:disabled) {
   border-color: #ccc;
 }
 
+/* Action destructive (annuler un événement...) — même gabarit que les autres
+   boutons, couleur d'alerte pour se distinguer sans dépendre d'un texte seul. */
+button.bouton-danger {
+  background: #fff;
+  color: var(--rouge);
+  border-color: var(--rouge-clair);
+}
+
+button.bouton-danger:hover:not(:disabled) {
+  background: var(--rouge-clair);
+  border-color: var(--rouge);
+}
+
 /* Même style que .bouton-secondaire, pour un lien (ex. "Connexion" dans
    l'en-tête) plutôt qu'un <button> — un lien n'hérite pas du reset ci-dessus. */
 a.bouton-secondaire {
