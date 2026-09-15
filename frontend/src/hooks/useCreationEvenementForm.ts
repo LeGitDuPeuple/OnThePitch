@@ -6,6 +6,16 @@ import type { NiveauRequis } from "../types/evenement";
 
 const NIVEAU_DEFAUT: NiveauRequis = "tous_niveaux";
 
+// Le formulaire éclate la date/heure du back (dateDebut/dateFin, deux Date
+// complètes) en trois champs distincts (date, heureDebut, heureFin) : une
+// erreur sur "dateDebut" doit s'afficher sous "Date", une sur "dateFin" sous
+// "Heure de fin" (c'est elle qui la précède, le plus souvent en cause).
+const normaliserChampDate = (champ: string): string => {
+  if (champ === "dateDebut") return "date";
+  if (champ === "dateFin") return "heureFin";
+  return champ;
+};
+
 // Toute la logique du formulaire en trois blocs (lieu et date, caractéristiques,
 // visibilité — voir CLAUDE.md section 5) : le composant CreationAnnonce ne fait
 // qu'afficher ce que ce hook expose (voir CLAUDE.md, "Front React").
@@ -29,6 +39,11 @@ export const useCreationEvenementForm = () => {
   const [estPrive, setEstPrive] = useState(false);
 
   const [erreur, setErreur] = useState<string | null>(null);
+  // Une entrée par champ fautif (adresse introuvable, date passée...) — voir
+  // ErreurApi.erreursChamps. Affichée sous le champ concerné, pas dans le
+  // message général : sur un formulaire à 3 blocs, un message générique en
+  // bas peut passer inaperçu (signalé par le porteur de projet).
+  const [erreursChamps, setErreursChamps] = useState<Record<string, string>>({});
   const [chargement, setChargement] = useState(false);
   const navigate = useNavigate();
 
@@ -36,6 +51,7 @@ export const useCreationEvenementForm = () => {
     async (evenement: FormEvent) => {
       evenement.preventDefault();
       setErreur(null);
+      setErreursChamps({});
 
       if (!date || !heureDebut || !heureFin) {
         setErreur("La date et les heures de début et de fin sont obligatoires");
@@ -62,7 +78,16 @@ export const useCreationEvenementForm = () => {
         });
         navigate(`/evenements/${evenementCree.id}`);
       } catch (erreurRequete) {
-        setErreur(erreurRequete instanceof ErreurApi ? erreurRequete.message : "Une erreur est survenue");
+        if (erreurRequete instanceof ErreurApi) {
+          setErreur(erreurRequete.message);
+          const champsNormalises: Record<string, string> = {};
+          Object.entries(erreurRequete.erreursChamps).forEach(([champ, message]) => {
+            champsNormalises[normaliserChampDate(champ)] = message;
+          });
+          setErreursChamps(champsNormalises);
+        } else {
+          setErreur("Une erreur est survenue");
+        }
       } finally {
         setChargement(false);
       }
@@ -110,6 +135,7 @@ export const useCreationEvenementForm = () => {
     estPrive,
     setEstPrive,
     erreur,
+    erreursChamps,
     chargement,
     soumettre,
   };

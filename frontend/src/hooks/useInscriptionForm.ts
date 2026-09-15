@@ -53,7 +53,14 @@ export const useInscriptionForm = () => {
         dispatch(connexionReussie(utilisateur));
         navigate("/");
       } catch (erreurRequete) {
-        setErreur(erreurRequete instanceof ErreurApi ? erreurRequete.message : "Une erreur est survenue");
+        if (erreurRequete instanceof ErreurApi) {
+          setErreur(erreurRequete.message);
+          // "Email déjà utilisé" (back) rejoint le même emplacement que la
+          // validation de format (front) — un seul endroit à regarder.
+          if (erreurRequete.erreursChamps["email"]) setErreurEmail(erreurRequete.erreursChamps["email"]);
+        } else {
+          setErreur("Une erreur est survenue");
+        }
       } finally {
         setChargement(false);
       }

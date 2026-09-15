@@ -21,6 +21,7 @@ export const useRechercheForm = () => {
   const [resultats, setResultats] = useState<EvenementProche[]>([]);
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [erreursChamps, setErreursChamps] = useState<Record<string, string>>({});
 
   const lancerRecherche = useCallback(async (point: PointRecherche, rayon: number) => {
     setChargement(true);
@@ -42,6 +43,8 @@ export const useRechercheForm = () => {
 
   // Recherche à partir de l'adresse saisie : géocodée côté serveur, jamais côté client.
   const rechercherParAdresse = useCallback(async () => {
+    setErreursChamps({});
+
     if (adresse.trim().length < 5) {
       setErreur("Saisissez une adresse ou une ville");
       return;
@@ -60,7 +63,12 @@ export const useRechercheForm = () => {
       setPointRecherche(point);
       await lancerRecherche(point, rayonKm);
     } catch (erreurRequete) {
-      setErreur(erreurRequete instanceof ErreurApi ? erreurRequete.message : "Une erreur est survenue");
+      if (erreurRequete instanceof ErreurApi) {
+        setErreur(erreurRequete.message);
+        setErreursChamps(erreurRequete.erreursChamps);
+      } else {
+        setErreur("Une erreur est survenue");
+      }
       setChargement(false);
     }
   }, [adresse, rayonKm, lancerRecherche]);
@@ -151,6 +159,7 @@ export const useRechercheForm = () => {
     resultats,
     chargement,
     erreur,
+    erreursChamps,
     rechercherParAdresse,
     rechercherParPosition,
     rechercherSuggestion,
