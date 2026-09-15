@@ -61,7 +61,9 @@ export const Inscription = () => {
           <input type="text" value={ville} onChange={(e) => setVille(e.target.value)} maxLength={50} />
         </label>
 
-        {erreur && (
+        {/* Pas de doublon : "email déjà utilisé" est déjà affiché sous le champ
+            email (erreurEmail) — ce message ne sert que pour les autres erreurs. */}
+        {erreur && !erreurEmail && (
           <p role="alert" className="message-erreur">
             {erreur}
           </p>

@@ -214,7 +214,10 @@ export const CreationAnnonce = () => {
             </div>
           </fieldset>
 
-          {erreur && (
+          {/* Pas de doublon : une erreur déjà affichée sous son champ (adresse,
+              date...) ne se répète pas ici — ce message ne sert que pour les
+              erreurs sans champ précis (dates/heures manquantes, panne serveur). */}
+          {erreur && Object.keys(erreursChamps).length === 0 && (
             <p role="alert" className="message-erreur">
               {erreur}
             </p>

@@ -89,7 +89,10 @@ export const CarteRecherche = () => {
           </button>
         </form>
 
-        {erreur && (
+        {/* Pas de doublon : une erreur déjà affichée sous le champ adresse ne
+            se répète pas ici — ce message ne sert que pour les autres erreurs
+            (ex. géolocalisation refusée). */}
+        {erreur && Object.keys(erreursChamps).length === 0 && (
           <p role="alert" className="message-erreur">
             {erreur}
           </p>

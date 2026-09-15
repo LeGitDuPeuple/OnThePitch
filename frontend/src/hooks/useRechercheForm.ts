@@ -26,6 +26,10 @@ export const useRechercheForm = () => {
   const lancerRecherche = useCallback(async (point: PointRecherche, rayon: number) => {
     setChargement(true);
     setErreur(null);
+    // Efface une éventuelle erreur de champ laissée par une action précédente
+    // (ex. "adresse introuvable") — sinon elle resterait affichée à tort et
+    // masquerait le message général d'une nouvelle erreur sans rapport.
+    setErreursChamps({});
 
     try {
       const donnees = await evenementService.rechercher({
@@ -89,11 +93,13 @@ export const useRechercheForm = () => {
   const rechercherParPosition = useCallback(() => {
     if (!("geolocation" in navigator)) {
       setErreur("La géolocalisation n'est pas disponible sur cet appareil");
+      setErreursChamps({});
       return;
     }
 
     setChargement(true);
     setErreur(null);
+    setErreursChamps({});
 
     navigator.geolocation.getCurrentPosition(
       (position) => {

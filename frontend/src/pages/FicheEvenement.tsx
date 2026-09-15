@@ -354,7 +354,7 @@ const FormulaireModification = ({ evenement, onSuccess, onAnnuler }: PropsFormul
         </select>
       </label>
 
-      {erreur && (
+      {erreur && Object.keys(erreursChamps).length === 0 && (
         <p role="alert" className="message-erreur">
           {erreur}
         </p>
