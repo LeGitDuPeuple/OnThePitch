@@ -19,6 +19,9 @@
   --rouge: #b3261e;
   --rouge-clair: #fbeae9;
 
+  --ambre-texte: #7a4a00;
+  --ambre-clair: #fdf0dc;
+
   --rayon: 10px;
   --rayon-pilule: 999px;
   --ombre-carte: 0 1px 2px rgba(14, 59, 42, 0.06);
@@ -182,6 +185,11 @@ textarea:focus {
   border-radius: var(--rayon);
   padding: 0.65rem 0.9rem;
   margin-bottom: 1rem;
+}
+
+.message-confirmation--avertissement {
+  color: var(--ambre-texte);
+  background: var(--ambre-clair);
 }
 
 .message-confirmation button {

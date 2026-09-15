@@ -4,10 +4,12 @@ import { QRCodeSVG } from "qrcode.react";
 import { useFicheEvenement } from "../hooks/useFicheEvenement";
 import { useModificationEvenementForm } from "../hooks/useModificationEvenementForm";
 import { useQrPresence } from "../hooks/useQrPresence";
+import { useMessageConfirmation } from "../hooks/useMessageConfirmation";
 import { evenementService } from "../services/evenementService";
 import { CarteInteractive } from "../components/CarteInteractive";
 import { Avatar } from "../components/Avatar";
 import { ErreurChamp } from "../components/ErreurChamp";
+import { MessageConfirmation } from "../components/MessageConfirmation";
 import { FORMATS_COURANTS, LIBELLES_NIVEAU, type Evenement, type InscritDetail, type NiveauRequis } from "../types/evenement";
 import "../styles/ficheEvenement.css";
 
@@ -54,6 +56,9 @@ export const FicheEvenement = () => {
   // Confirmation en deux temps avant l'annulation (destructive) — pas de
   // window.confirm() natif, pour rester cohérent avec le reste de l'appli.
   const [confirmationAnnulation, setConfirmationAnnulation] = useState(false);
+  // Avertissement post-création si la photo du lieu n'a pas pu être déposée
+  // (voir useCreationEvenementForm.soumettre) — récupérable ici, voir PhotoLieu.
+  const { message: messageConfirmation, type: typeMessageConfirmation, effacer: effacerMessageConfirmation } = useMessageConfirmation();
 
   if (chargement) return <p className="page-fiche">Chargement…</p>;
 
@@ -80,6 +85,8 @@ export const FicheEvenement = () => {
         ← Retour aux résultats
       </Link>
 
+      <MessageConfirmation message={messageConfirmation} type={typeMessageConfirmation} onFermer={effacerMessageConfirmation} />
+
       {modeEdition ? (
         <FormulaireModification
           evenement={evenement}
@@ -92,13 +99,7 @@ export const FicheEvenement = () => {
       ) : (
         <div className="mise-en-page-fiche">
           <div className="contenu-fiche">
-            {evenement.lieu.aUnePhoto && (
-              <img
-                className="photo-lieu"
-                src={evenementService.urlPhoto(evenement.id)}
-                alt={evenement.lieu.nom ?? "Lieu de l'événement"}
-              />
-            )}
+            <PhotoLieu idEvenement={evenement.id} nomLieu={evenement.lieu.nom} aUnePhoto={evenement.lieu.aUnePhoto} estOrganisateur={estOrganisateur} />
 
             <div className="badges-fiche">
               <span className="badge">{evenement.estPrive ? "Événement privé" : "Événement public"}</span>
@@ -235,6 +236,78 @@ export const FicheEvenement = () => {
         </div>
       )}
     </main>
+  );
+};
+
+type PropsPhotoLieu = {
+  idEvenement: number;
+  nomLieu: string | null;
+  aUnePhoto: boolean;
+  estOrganisateur: boolean;
+};
+
+// Affiche la photo du lieu si elle existe. Pour l'organisateur, permet aussi
+// de la déposer ou la remplacer sans repasser par la modification de l'événement
+// (chemin de récupération si l'envoi avait échoué à la création — voir
+// useCreationEvenementForm.soumettre — et confort au-delà de ce cas).
+const PhotoLieu = ({ idEvenement, nomLieu, aUnePhoto, estOrganisateur }: PropsPhotoLieu) => {
+  const [enEdition, setEnEdition] = useState(false);
+  const [chargement, setChargement] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+  // Change à chaque dépôt réussi pour invalider le cache navigateur de l'<img>
+  // (même URL sinon — voir evenementService.urlPhoto).
+  const [version, setVersion] = useState(0);
+
+  const televerser = async (fichier: File) => {
+    setChargement(true);
+    setErreur(null);
+    try {
+      await evenementService.televerserPhoto(idEvenement, fichier);
+      setVersion((precedente) => precedente + 1);
+      setEnEdition(false);
+    } catch {
+      setErreur("La photo n'a pas pu être enregistrée (2 Mo max, jpeg/png/webp).");
+    } finally {
+      setChargement(false);
+    }
+  };
+
+  const photoActuelle = (aUnePhoto || version > 0) && (
+    <img className="photo-lieu" src={`${evenementService.urlPhoto(idEvenement)}?v=${version}`} alt={nomLieu ?? "Lieu de l'événement"} />
+  );
+
+  if (!estOrganisateur) return photoActuelle || null;
+
+  return (
+    <div className="bloc-photo-lieu">
+      {photoActuelle}
+      {enEdition ? (
+        <div className="edition-photo-lieu">
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            disabled={chargement}
+            onChange={(evenement) => {
+              const fichier = evenement.target.files?.[0];
+              if (fichier) void televerser(fichier);
+            }}
+          />
+          <button type="button" className="bouton-secondaire" onClick={() => setEnEdition(false)} disabled={chargement}>
+            Annuler
+          </button>
+          {chargement && <span className="texte-attenue">Envoi…</span>}
+          {erreur && (
+            <p role="alert" className="message-erreur">
+              {erreur}
+            </p>
+          )}
+        </div>
+      ) : (
+        <button type="button" className="bouton-secondaire" onClick={() => setEnEdition(true)}>
+          {aUnePhoto || version > 0 ? "Remplacer la photo du lieu" : "Ajouter une photo du lieu"}
+        </button>
+      )}
+    </div>
   );
 };
 

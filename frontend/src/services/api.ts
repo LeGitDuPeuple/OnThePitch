@@ -58,8 +58,12 @@ const extraireErreursChamps = (donnees: ReponseErreur): Record<string, string> =
 // dans le code (voir CLAUDE.md).
 export const appelApi = async <T>(chemin: string, options: OptionsRequete = {}): Promise<T> => {
   const entetes: Record<string, string> = {};
+  // Upload de fichier (photo du lieu) : le navigateur pose lui-même le
+  // Content-Type avec la bonne boundary multipart — ne jamais le forcer, ni
+  // sérialiser le FormData en JSON.
+  const corpsEstFormData = options.corps instanceof FormData;
 
-  if (options.corps !== undefined) {
+  if (options.corps !== undefined && !corpsEstFormData) {
     entetes["Content-Type"] = "application/json";
   }
 
@@ -69,7 +73,7 @@ export const appelApi = async <T>(chemin: string, options: OptionsRequete = {}):
       method: options.methode ?? "GET",
       headers: entetes,
       credentials: "include",
-      body: options.corps !== undefined ? JSON.stringify(options.corps) : undefined,
+      body: options.corps === undefined ? undefined : corpsEstFormData ? (options.corps as FormData) : JSON.stringify(options.corps),
     });
   } catch {
     throw new ErreurApi("Impossible de contacter le serveur", 0);

@@ -177,6 +177,22 @@ terminé et testé.
       "Caractéristiques" : Format / Nombre de places / Niveau attendu sur une
       même ligne (`FORMATS_COURANTS`, comme la maquette 2.2.c). Testé
       manuellement de bout en bout contre la vraie API
+- [x] Dépôt de la photo du lieu (15/09/2026 — jusqu'ici le back exposait
+      `POST /evenements/:id/photo` sans qu'aucun écran ne le propose). Champ
+      fichier facultatif sur la création (`CreationAnnonce`), envoyé après coup
+      une fois l'événement créé — un échec à cette étape n'annule pas
+      l'événement, juste un avertissement (`MessageConfirmation`, nouvelle
+      variante ambre) invitant à réessayer depuis la fiche. Sur la fiche,
+      l'organisateur peut aussi déposer/remplacer la photo directement
+      (`PhotoLieu`), ce qui sert à la fois de rattrapage et d'usage courant.
+      `services/api.ts` géré pour accepter un corps `FormData` (pas de
+      sérialisation JSON, pas de `Content-Type` forcé). Bug annexe découvert en
+      testant : Helmet posait `Cross-Origin-Resource-Policy: same-origin` par
+      défaut, qui bloquait silencieusement le chargement de l'`<img>` en
+      cross-origin (front :5173, back :3000) — corrigé en
+      `crossOriginResourcePolicy: { policy: "cross-origin" }` (`server.ts`),
+      sans impact sur les autres routes (déjà protégées par CORS + cookie
+      httpOnly)
 - [x] Rapprochement visuel de la maquette (15/09/2026, à la demande du porteur
       de projet — première passe jugée trop éloignée) : champ `format` ajouté
       au modèle (voir section Événements), étiquettes des marqueurs de la carte
