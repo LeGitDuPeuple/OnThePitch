@@ -45,11 +45,15 @@ export const FicheEvenement = () => {
     actionEnCours,
     rejoindre,
     seDesinscrire,
+    annulerEvenement,
     idJoueurEnValidation,
     validerDemande,
     rafraichir,
   } = useFicheEvenement();
   const [modeEdition, setModeEdition] = useState(false);
+  // Confirmation en deux temps avant l'annulation (destructive) — pas de
+  // window.confirm() natif, pour rester cohérent avec le reste de l'appli.
+  const [confirmationAnnulation, setConfirmationAnnulation] = useState(false);
 
   if (chargement) return <p className="page-fiche">Chargement…</p>;
 
@@ -176,6 +180,35 @@ export const FicheEvenement = () => {
                 <button type="button" className="bouton-secondaire" onClick={() => setModeEdition(true)}>
                   Modifier l'événement
                 </button>
+              )}
+
+              {estOrganisateur && evenement.statut !== "Termine" && (
+                <div className="bloc-annulation">
+                  {confirmationAnnulation ? (
+                    <>
+                      <p className="texte-attenue">
+                        Les joueurs inscrits ne seront plus prévenus autrement que par la disparition de l'événement. Confirmer ?
+                      </p>
+                      <div className="actions-formulaire">
+                        <button type="button" className="bouton-danger" onClick={annulerEvenement} disabled={actionEnCours}>
+                          {actionEnCours ? "…" : "Oui, annuler l'événement"}
+                        </button>
+                        <button
+                          type="button"
+                          className="bouton-secondaire"
+                          onClick={() => setConfirmationAnnulation(false)}
+                          disabled={actionEnCours}
+                        >
+                          Non
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <button type="button" className="bouton-danger" onClick={() => setConfirmationAnnulation(true)}>
+                      Annuler l'événement
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 

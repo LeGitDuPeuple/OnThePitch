@@ -134,6 +134,23 @@
   width: 100%;
 }
 
+.bloc-annulation {
+  border-top: 1px solid var(--bordure);
+  padding-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bloc-annulation > button,
+.bloc-annulation .actions-formulaire {
+  width: 100%;
+}
+
+.bloc-annulation .actions-formulaire button {
+  flex: 1;
+}
+
 .places-chiffre {
   font-size: 0.95rem;
 }

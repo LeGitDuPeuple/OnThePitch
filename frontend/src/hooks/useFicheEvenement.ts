@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { evenementService } from "../services/evenementService";
 import { inscriptionService } from "../services/inscriptionService";
 import { ErreurApi } from "../services/api";
@@ -23,6 +23,7 @@ export const useFicheEvenement = () => {
   const { id } = useParams<{ id: string }>();
   const idEvenement = Number(id);
   const utilisateur = useAppSelector((state) => state.auth.utilisateur);
+  const navigate = useNavigate();
 
   const [evenement, setEvenement] = useState<EvenementDetail | null>(null);
   const [inscrits, setInscrits] = useState<InscritDetail[]>([]);
@@ -116,6 +117,22 @@ export const useFicheEvenement = () => {
     [idEvenement, charger]
   );
 
+  // Annulation (soft delete) — réservée à l'organisateur (cf. BoutonInscription :
+  // le bouton n'est visible que dans cet état). L'événement disparaît de toutes
+  // les recherches et sa fiche renvoie 404 ensuite : retour à la carte de
+  // recherche, rester dessus n'aurait plus de sens.
+  const annulerEvenement = useCallback(async () => {
+    setActionEnCours(true);
+    setErreur(null);
+    try {
+      await evenementService.annuler(idEvenement);
+      navigate("/");
+    } catch (erreurRequete) {
+      setErreur(erreurRequete instanceof ErreurApi ? erreurRequete.message : "Une erreur est survenue");
+      setActionEnCours(false);
+    }
+  }, [idEvenement, navigate]);
+
   return {
     evenement,
     inscrits,
@@ -125,6 +142,7 @@ export const useFicheEvenement = () => {
     actionEnCours,
     rejoindre,
     seDesinscrire,
+    annulerEvenement,
     idJoueurEnValidation,
     validerDemande,
     // Exposé pour que useModificationEvenementForm recharge la fiche après succès,

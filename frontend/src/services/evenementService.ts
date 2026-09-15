@@ -57,6 +57,10 @@ export const evenementService = {
   modifier: (id: number, donnees: ModificationEvenement): Promise<Evenement> =>
     appelApi(`/evenements/${id}`, { methode: "PATCH", corps: donnees }),
 
+  // Annulation (soft delete) — réservée à l'organisateur, ou à un
+  // administrateur (modération, voir CLAUDE.md tableau des rôles).
+  annuler: (id: number): Promise<void> => appelApi(`/evenements/${id}`, { methode: "DELETE" }),
+
   // Pas de fetch ici : consommée directement comme src d'une balise <img>.
   urlPhoto: (id: number): string => `${URL_BASE}/evenements/${id}/photo`,
 };
