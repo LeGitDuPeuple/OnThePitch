@@ -831,6 +831,19 @@ les mettre en cache reviendrait à servir des données fausses.
 
 **Système d'évaluation entre joueurs** (table `evaluation` déjà modélisée).
 
+**Notification par email lors de l'annulation d'un événement** (discuté le
+15/09/2026, mis de côté volontairement — priorité donnée à la recette manuelle
+en cours). Prévenir les joueurs acceptés (pas ceux en attente, jamais garantis
+une place) quand l'organisateur annule — aujourd'hui ils n'ont aucun signal
+autre que la disparition de l'événement. Faisable sans gros chantier : même
+pattern que `GeocodageService` (`NotificationInterface`, implémentation
+Nodemailer, double de test) déjà en place dans le projet. Pour le
+développement/la démo, un compte SMTP factice Nodemailer (Ethereal — gratuit,
+sans inscription, lien de prévisualisation) évite d'avoir besoin de vrais
+identifiants email. Périmètre volontairement limité à ce seul cas (pas de
+notification à l'acceptation, pas de système de notification général) pour
+ne pas dériver.
+
 ---
 
 ## Instructions pour Claude Code
