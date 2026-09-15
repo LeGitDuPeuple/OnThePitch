@@ -26,6 +26,7 @@ describe("AuthService", () => {
       await service.inscrire(donneesInscription);
 
       await expect(service.inscrire(donneesInscription)).rejects.toBeInstanceOf(Conflit);
+      await expect(service.inscrire(donneesInscription)).rejects.toMatchObject({ champ: "email" });
     });
   });
 

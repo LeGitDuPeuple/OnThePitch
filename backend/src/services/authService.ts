@@ -17,7 +17,7 @@ export class AuthService {
     const existant = await this.utilisateurRepository.trouverParEmail(donnees.email);
 
     if (existant) {
-      throw new Conflit("Un compte existe déjà avec cet email");
+      throw new Conflit("Un compte existe déjà avec cet email", "email");
     }
 
     const motDePasseHache = await bcrypt.hash(donnees.motDePasse, COUT_BCRYPT);

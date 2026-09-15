@@ -5,7 +5,15 @@
 export abstract class ErreurMetier extends Error {
   abstract readonly statut: number;
 
-  constructor(message: string) {
+  // Nom du champ de formulaire concerné, quand la règle violée pointe sans
+  // ambiguïté vers un seul champ (ex. "adresse" pour un géocodage qui échoue).
+  // Facultatif : une erreur de permission ou d'état n'en a pas — pas de faux
+  // rattachement, et pour la connexion, jamais rempli volontairement (ne pas
+  // révéler si c'est l'email ou le mot de passe qui est en cause).
+  constructor(
+    message: string,
+    public readonly champ?: string
+  ) {
     super(message);
     this.name = this.constructor.name;
   }

@@ -35,6 +35,18 @@ describe("GeocodageService", () => {
     await expect(service.geocoder("adresse inexistante")).rejects.toBeInstanceOf(RequeteInvalide);
   });
 
+  it("rattache l'erreur au champ adresse — pour l'afficher sous le bon champ côté front", async () => {
+    global.fetch = jest.fn().mockResolvedValue(simulerReponse({ features: [] }));
+    const service = new GeocodageService();
+
+    try {
+      await service.geocoder("adresse inexistante");
+      fail("aurait dû lever une erreur");
+    } catch (erreur) {
+      expect((erreur as RequeteInvalide).champ).toBe("adresse");
+    }
+  });
+
   it("signale un service indisponible si la requête échoue", async () => {
     global.fetch = jest.fn().mockRejectedValue(new Error("network down"));
     const service = new GeocodageService();

@@ -29,7 +29,7 @@ export class GeocodageService implements GeocodeurInterface {
 
     // L'API renvoie une liste vide quand elle ne reconnaît pas l'adresse.
     if (!resultat) {
-      throw new RequeteInvalide("Adresse introuvable, vérifiez la saisie");
+      throw new RequeteInvalide("Adresse introuvable, vérifiez la saisie", "adresse");
     }
 
     return resultat;

@@ -15,7 +15,7 @@ export const errorHandlerMiddleware = (
   _next: NextFunction
 ) => {
   if (erreur instanceof ErreurMetier) {
-    return res.status(erreur.statut).json({ message: erreur.message });
+    return res.status(erreur.statut).json({ message: erreur.message, ...(erreur.champ && { champ: erreur.champ }) });
   }
 
   // Fichier trop volumineux, champ inattendu, etc. — voir routes/photoRoute.ts.
