@@ -81,7 +81,11 @@ model Lieu {
   nom         String? @db.VarChar(100)
   region      String? @db.VarChar(50)
   ville       String  @db.VarChar(50)
-  adresse     String  @db.VarChar(50)
+  // 255 et non 50 (écart au MCD, voir CLAUDE.md section "lieu") : stocke le
+  // `label` complet renvoyé par l'API Adresse (numéro + rue + code postal +
+  // ville), qui dépasse régulièrement 50 caractères — provoquait un 500 à la
+  // création pour toute adresse un peu longue (P2000, valeur trop longue).
+  adresse     String  @db.VarChar(255)
   codePostal  String  @map("code_postal") @db.VarChar(50)
   typeTerrain String? @map("type_terrain") @db.VarChar(50)
   latitude    Decimal @db.Decimal(10, 7)
