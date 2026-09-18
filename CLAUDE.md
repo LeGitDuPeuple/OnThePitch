@@ -510,7 +510,7 @@ id_joueur            INT FK → utilisateur  (organisateur)
 id_lieu       INT PK
 region        VARCHAR(50)
 ville         VARCHAR(50)
-adresse       VARCHAR(50)
+adresse       VARCHAR(255)    -- 255 et non 50 : voir note ci-dessous
 code_postal   VARCHAR(50)
 type_terrain  VARCHAR(50)
 latitude      DECIMAL(10,7)   -- issu du géocodage
@@ -520,6 +520,15 @@ photo_type    VARCHAR(100)    -- type MIME de la photo ; À AJOUTER au MCD
 ```
 
 > La position géographique est portée par **lieu**, pas par evenement.
+
+> **`lieu.adresse` en VARCHAR(255) et non 50** (corrigé le 18/09/2026, bug
+> trouvé en testant : création d'événement en `500` pour toute adresse un peu
+> longue). La colonne stocke le `label` complet renvoyé par l'API Adresse du
+> gouvernement (numéro + rue + code postal + ville, ex. "Avenue du Maréchal
+> Foch, Boulogne-Billancourt"), qui dépasse régulièrement 50 caractères —
+> l'insertion Prisma échouait côté PostgreSQL (`P2000`, valeur trop longue),
+> remontée en `500` générique sans message utile côté front. `ville` et
+> `code_postal` restent à 50 : jamais aussi longs en pratique.
 
 > **Photo du lieu** (ajoutée le 11/09/2026, à la demande du porteur de projet) :
 > stockée en base (`bytea`), pas de service de stockage de fichiers (S3-like) —

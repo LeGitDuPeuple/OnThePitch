@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "lieu" ALTER COLUMN "adresse" SET DATA TYPE VARCHAR(255);
