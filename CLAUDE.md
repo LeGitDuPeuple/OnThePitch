@@ -71,7 +71,15 @@ terminé et testé.
       testé (valeur par défaut `tous_niveaux`, valeur explicite, 400 si invalide),
       exposé sur la création, la consultation et la recherche
 - [x] Photo du lieu — testée (upload multipart par l'organisateur, 401/403/400,
-      récupération avec octets identiques). Écart au MCD documenté (section `lieu`)
+      récupération avec octets identiques). Écart au MCD documenté (section `lieu`).
+      Faille corrigée le 18/09/2026, trouvée en testant SEC-05 (cahier de
+      recette) : Multer ne filtrait que sur `fichier.mimetype`, une valeur
+      déclarée par le client donc falsifiable — un exécutable renommé en
+      `.jpg` était accepté (`204`) et stocké tel quel. `PhotoService.televerser`
+      vérifie maintenant les premiers octets du fichier (signatures
+      jpeg/png/webp) avant tout enregistrement, indépendamment du Content-Type
+      annoncé. Vérification maison (3 signatures) plutôt qu'une dépendance
+      (`file-type` récent est ESM-only, friction inutile ici)
 - [x] Format de jeu (`evenement.format`, ex. "5 contre 5") — ajouté le
       15/09/2026, présent dans la maquette (blocs "Caractéristiques" et fiche
       événement), jamais modélisé jusqu'ici. Libre comme `lieu.typeTerrain`,
@@ -258,7 +266,7 @@ terminé et testé.
       testé (événement inchangé, signalements retirés)
 
 ### Qualité et déploiement
-- [x] Tests Jest sur la couche Service — 69 tests, 8 services (Auth, Evenement,
+- [x] Tests Jest sur la couche Service — 76 tests, 8 services (Auth, Evenement,
       RechercheEvenement, Inscription, Presence, Moderation, Geocodage, Photo), repositories
       substitués par des doubles en mémoire (`tests/doubles/`) implémentant les
       interfaces du domaine. Transform `@swc/jest` (rapide, pas de vérification de
