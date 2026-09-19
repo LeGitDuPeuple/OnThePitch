@@ -66,6 +66,26 @@
   gap: 0.5rem;
 }
 
+/* Formulaire de signalement (voir Signalement dans FicheEvenement.tsx) — même
+   gabarit de label que .formulaire-modification, sans la carte pleine largeur
+   (reste inséré dans le flux de la fiche). */
+.bloc-signalement {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  max-width: 420px;
+}
+
+.bloc-signalement label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texte-attenue);
+}
+
 .badges-fiche {
   display: flex;
   flex-wrap: wrap;

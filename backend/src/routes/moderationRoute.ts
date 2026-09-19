@@ -14,6 +14,10 @@ export const registerSignalementRoutes = (router: Router, controller: Moderation
 export const moderationRoutes = Router();
 
 export const registerModerationRoutes = (controller: ModerationController) => {
+  // Public : sert juste à peupler le formulaire de signalement, aucune
+  // donnée sensible (voir ModerationController.listerMotifs).
+  moderationRoutes.get("/motifs", controller.listerMotifs);
+
   moderationRoutes.get("/signalements", authentifier, verifierRole("administrateur"), controller.lister);
 
   moderationRoutes.post(

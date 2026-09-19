@@ -5,7 +5,9 @@ import { useFicheEvenement } from "../hooks/useFicheEvenement";
 import { useModificationEvenementForm } from "../hooks/useModificationEvenementForm";
 import { useQrPresence } from "../hooks/useQrPresence";
 import { useMessageConfirmation } from "../hooks/useMessageConfirmation";
+import { useSignalement } from "../hooks/useSignalement";
 import { evenementService } from "../services/evenementService";
+import { useAppSelector } from "../store/hooks";
 import { CarteInteractive } from "../components/CarteInteractive";
 import { Avatar } from "../components/Avatar";
 import { ErreurChamp } from "../components/ErreurChamp";
@@ -59,6 +61,7 @@ export const FicheEvenement = () => {
   // Avertissement post-création si la photo du lieu n'a pas pu être déposée
   // (voir useCreationEvenementForm.soumettre) — récupérable ici, voir PhotoLieu.
   const { message: messageConfirmation, type: typeMessageConfirmation, effacer: effacerMessageConfirmation } = useMessageConfirmation();
+  const utilisateur = useAppSelector((state) => state.auth.utilisateur);
 
   if (chargement) return <p className="page-fiche">Chargement…</p>;
 
@@ -158,6 +161,11 @@ export const FicheEvenement = () => {
               </p>
             )}
 
+            {/* Réservé à un joueur connecté, pas à l'organisateur lui-même
+                (verifierRole("joueur") revérifie côté back de toute façon —
+                voir CLAUDE.md section 8). */}
+            {utilisateur?.role === "joueur" && !estOrganisateur && <Signalement idEvenement={evenement.id} />}
+
             {estOrganisateur && evenement.estPrive && demandesEnAttente.length > 0 && (
               <DemandesEnAttente demandes={demandesEnAttente} idJoueurEnValidation={idJoueurEnValidation} valider={validerDemande} />
             )}
@@ -236,6 +244,86 @@ export const FicheEvenement = () => {
         </div>
       )}
     </main>
+  );
+};
+
+type PropsSignalement = {
+  idEvenement: number;
+};
+
+// "Signaler un problème sur cette annonce" (maquette) — manquait la route
+// listant les motifs côté back (voir GET /moderation/motifs, CLAUDE.md
+// section "Front React", écart désormais comblé le 19/09/2026).
+const Signalement = ({ idEvenement }: PropsSignalement) => {
+  const { motifs, chargementMotifs, envoiEnCours, erreur, envoye, signaler } = useSignalement(idEvenement);
+  const [ouvert, setOuvert] = useState(false);
+  const [idMotif, setIdMotif] = useState<number | "">("");
+  const [texteLibre, setTexteLibre] = useState("");
+
+  if (envoye) {
+    return <p className="texte-attenue">Signalement envoyé, merci — un administrateur va l'examiner.</p>;
+  }
+
+  if (!ouvert) {
+    return (
+      <button type="button" className="bouton-secondaire" onClick={() => setOuvert(true)}>
+        Signaler un problème sur cette annonce
+      </button>
+    );
+  }
+
+  return (
+    <form
+      className="bloc-signalement"
+      onSubmit={(evenementForm) => {
+        evenementForm.preventDefault();
+        if (idMotif !== "") void signaler(idMotif, texteLibre.trim() || undefined);
+      }}
+    >
+      <label>
+        Motif
+        <select
+          value={idMotif}
+          onChange={(evenementChange) => setIdMotif(Number(evenementChange.target.value))}
+          required
+          disabled={chargementMotifs || envoiEnCours}
+        >
+          <option value="" disabled>
+            Choisissez un motif
+          </option>
+          {motifs.map((motif) => (
+            <option key={motif.id} value={motif.id}>
+              {motif.libelle}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Précisions (facultatif)
+        <textarea
+          value={texteLibre}
+          onChange={(evenementChange) => setTexteLibre(evenementChange.target.value)}
+          maxLength={255}
+          rows={2}
+          disabled={envoiEnCours}
+        />
+      </label>
+
+      {erreur && (
+        <p role="alert" className="message-erreur">
+          {erreur}
+        </p>
+      )}
+
+      <div className="actions-formulaire">
+        <button type="submit" disabled={envoiEnCours || idMotif === ""}>
+          {envoiEnCours ? "Envoi…" : "Envoyer le signalement"}
+        </button>
+        <button type="button" className="bouton-secondaire" onClick={() => setOuvert(false)} disabled={envoiEnCours}>
+          Annuler
+        </button>
+      </div>
+    </form>
   );
 };
 

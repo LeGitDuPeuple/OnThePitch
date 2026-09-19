@@ -173,12 +173,14 @@ terminé et testé.
       Organisateur : modification de l'événement (`useModificationEvenementForm`,
       mêmes champs qu'à la création sans l'adresse) et validation des demandes en
       attente sur un événement privé (accepter/refuser). QR de présence affiché
-      pour un joueur inscrit, le jour de l'événement. Testé manuellement de bout
-      en bout contre la vraie API. Non fait, volontairement (voir Écran création
-      d'annonce et note ci-dessous) : "Signaler un problème sur cette annonce"
-      visible sur la maquette — nécessite une route `GET` listant les motifs,
-      absente du back ; pas construite pour ne pas coder une liste de motifs
-      en dur côté front
+      pour un joueur inscrit, le jour de l'événement. "Signaler un problème sur
+      cette annonce" (19/09/2026 — manquait `GET /moderation/motifs`, ajoutée
+      côté back pour ne pas coder la liste des motifs en dur côté front ;
+      `ModerationService.listerMotifs`, `SignalementRepositoryDatabase`,
+      testé) : réservé à un joueur connecté non-organisateur
+      (`useSignalement`), formulaire motif + précisions facultatives, vérifié
+      de bout en bout (signalement visible ensuite dans le tableau de bord
+      admin). Testé manuellement de bout en bout contre la vraie API
 - [x] Écran création d'annonce — formulaire en trois blocs (`useCreationEvenementForm`),
       aperçu live du résultat de recherche à droite (desktop/tablette, cf. maquette),
       garde de rôle (`joueur` uniquement, cf. tableau des droits). Bloc

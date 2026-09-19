@@ -3,7 +3,14 @@ import {
   SignalementRepositoryInterface,
   NouveauSignalement,
   SignalementDetaille,
+  MotifSignalement,
 } from "../../src/domain/interface/signalementRepositoryInterface";
+
+const MOTIFS_TEST: MotifSignalement[] = [
+  { id: 1, libelle: "Contenu inapproprié" },
+  { id: 2, libelle: "Événement inexistant" },
+  { id: 3, libelle: "Autre" },
+];
 
 export class SignalementRepositoryFake implements SignalementRepositoryInterface {
   private signalements: Signalement[] = [];
@@ -24,5 +31,9 @@ export class SignalementRepositoryFake implements SignalementRepositoryInterface
 
   async retirer(idEvenement: number): Promise<void> {
     this.signalements = this.signalements.filter((signalement) => signalement.idEvenement !== idEvenement);
+  }
+
+  async listerMotifs(): Promise<MotifSignalement[]> {
+    return MOTIFS_TEST;
   }
 }

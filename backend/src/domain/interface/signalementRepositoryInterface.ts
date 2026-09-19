@@ -1,5 +1,12 @@
 import { Signalement } from "../entities/Signalement";
 
+// Motif de signalement (table de référence `motif`) — libellés fixes, gérés
+// en base, pas en dur côté front (voir CLAUDE.md, "Front React").
+export type MotifSignalement = {
+  id: number;
+  libelle: string;
+};
+
 export type NouveauSignalement = {
   idJoueur: number;
   idEvenement: number;
@@ -25,4 +32,7 @@ export interface SignalementRepositoryInterface {
 
   // Retire tous les signalements d'un événement (faux signalement).
   retirer(idEvenement: number): Promise<void>;
+
+  // Liste des motifs disponibles pour signaler un événement (table de référence).
+  listerMotifs(): Promise<MotifSignalement[]>;
 }
