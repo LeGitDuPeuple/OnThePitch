@@ -50,6 +50,7 @@ export const FicheEvenement = () => {
     rejoindre,
     seDesinscrire,
     annulerEvenement,
+    terminerEvenement,
     idJoueurEnValidation,
     validerDemande,
     rafraichir,
@@ -58,6 +59,7 @@ export const FicheEvenement = () => {
   // Confirmation en deux temps avant l'annulation (destructive) — pas de
   // window.confirm() natif, pour rester cohérent avec le reste de l'appli.
   const [confirmationAnnulation, setConfirmationAnnulation] = useState(false);
+  const [confirmationFin, setConfirmationFin] = useState(false);
   // Avertissement post-création si la photo du lieu n'a pas pu être déposée
   // (voir useCreationEvenementForm.soumettre) — récupérable ici, voir PhotoLieu.
   const { message: messageConfirmation, type: typeMessageConfirmation, effacer: effacerMessageConfirmation } = useMessageConfirmation();
@@ -78,7 +80,17 @@ export const FicheEvenement = () => {
 
   const inscritsAcceptes = inscrits.filter((inscrit) => inscrit.statut === "acceptee");
   const demandesEnAttente = inscrits.filter((inscrit) => inscrit.statut === "en_attente");
-  const estOrganisateur = etat === "organisateur";
+  // Identité, pas `etat === "organisateur"` : cet état retombe sur "termine"
+  // une fois l'événement clos, pour tout le monde (organisateur inclus) — un
+  // test basé dessus aurait fait réapparaître "Signaler" pour l'organisateur
+  // lui-même sur son propre événement terminé (bug trouvé en testant le
+  // 19/09/2026). Les boutons d'action organisateur restent par ailleurs tous
+  // gardés par `evenement.statut !== "Termine"`, indépendamment de ceci.
+  const estOrganisateur = utilisateur?.id === evenement.idOrganisateur;
+  // "Terminer l'événement" ne se propose qu'une fois tous les joueurs acceptés
+  // pointés (scan QR ou marquage manuel) — demandé le 19/09/2026 par le porteur
+  // de projet : pas de sens à clôturer avant d'avoir relevé les présences.
+  const tousPresents = inscritsAcceptes.length > 0 && inscritsAcceptes.every((inscrit) => inscrit.presence !== null);
   const placesOccupees = evenement.nombrePlaces - evenement.placesRestantes;
   const pourcentageRempli = Math.round((placesOccupees / evenement.nombrePlaces) * 100);
 
@@ -189,6 +201,42 @@ export const FicheEvenement = () => {
                 <button type="button" className="bouton-secondaire" onClick={() => setModeEdition(true)}>
                   Modifier l'événement
                 </button>
+              )}
+
+              {estOrganisateur && evenement.statut !== "Termine" && tousPresents && (
+                <div className="bloc-fin-evenement">
+                  {confirmationFin ? (
+                    <>
+                      <p className="texte-attenue">Les places et inscriptions restent visibles, mais l'événement ne sera plus modifiable. Confirmer ?</p>
+                      <div className="actions-formulaire">
+                        <button type="button" onClick={terminerEvenement} disabled={actionEnCours}>
+                          {actionEnCours ? "…" : "Oui, terminer l'événement"}
+                        </button>
+                        <button
+                          type="button"
+                          className="bouton-secondaire"
+                          onClick={() => setConfirmationFin(false)}
+                          disabled={actionEnCours}
+                        >
+                          Non
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <button type="button" className="bouton-secondaire" onClick={() => setConfirmationFin(true)}>
+                      Terminer l'événement
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Présences pas encore toutes relevées : explique pourquoi le
+                  bouton ci-dessus n'apparaît pas encore, plutôt que de le
+                  cacher sans un mot (cf. QrPresence, même principe). */}
+              {estOrganisateur && evenement.statut !== "Termine" && !tousPresents && inscritsAcceptes.length > 0 && (
+                <p className="info-organisateur">
+                  "Terminer l'événement" sera disponible une fois tous les joueurs inscrits marqués présents.
+                </p>
               )}
 
               {estOrganisateur && evenement.statut !== "Termine" && (

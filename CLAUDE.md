@@ -254,7 +254,18 @@ terminé et testé.
       403 si pas l'organisateur, 400 si jeton invalide/expiré/mauvais événement,
       400 si un jeton d'authentification classique est présenté à la place)
 - [x] Passage en statut "Terminé" — `POST /evenements/:id/terminer`, testé (204,
-      403 si pas l'organisateur, 409 si déjà terminé)
+      403 si pas l'organisateur, 409 si déjà terminé). Bouton "Terminer
+      l'événement" ajouté côté front le 19/09/2026 (jusqu'ici accessible par
+      API seulement) : visible pour l'organisateur seulement une fois tous
+      les inscrits acceptés marqués présents (scan ou manuel), confirmation en
+      deux temps comme l'annulation. A nécessité d'exposer `presence` dans
+      `GET /evenements/:id/inscriptions` (absent jusqu'ici, `InscritDetail`).
+      Bug corrigé au passage : `estOrganisateur` se basait sur `etat`
+      (`useFicheEvenement`), qui retombe à `"termine"` pour tout le monde une
+      fois l'événement clos — faisait réapparaître le bouton "Signaler" pour
+      l'organisateur sur son propre événement terminé. Recalculé sur
+      l'identité (`utilisateur.id === evenement.idOrganisateur`), stable quel
+      que soit le statut. Vérifié de bout en bout (Puppeteer + vraie API)
 
 ### Modération
 - [x] Signalement d'un événement — `POST /evenements/:id/signalements`, testé

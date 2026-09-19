@@ -61,6 +61,10 @@ export const evenementService = {
   // administrateur (modération, voir CLAUDE.md tableau des rôles).
   annuler: (id: number): Promise<void> => appelApi(`/evenements/${id}`, { methode: "DELETE" }),
 
+  // Clôture l'événement une fois les présences relevées — réservée à
+  // l'organisateur (voir CLAUDE.md section 7).
+  terminer: (id: number): Promise<void> => appelApi(`/evenements/${id}/terminer`, { methode: "POST" }),
+
   // Dépose (ou remplace) la photo du lieu — réservée à l'organisateur. Champ
   // multipart "photo", jpeg/png/webp uniquement, 2 Mo max (contrôlé côté
   // serveur, voir routes/photoRoute.ts — le front ne fait qu'un contrôle

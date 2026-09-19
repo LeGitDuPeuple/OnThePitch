@@ -36,6 +36,7 @@ export class InscriptionRepositoryDatabase implements InscriptionRepositoryInter
       nom: ligne.joueur.nom,
       prenom: ligne.joueur.prenom,
       statut: ligne.statutInscription as StatutInscription,
+      presence: ligne.presence,
     }));
   }
 

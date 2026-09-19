@@ -135,6 +135,22 @@ export const useFicheEvenement = () => {
     }
   }, [idEvenement, navigate]);
 
+  // Clôture l'événement une fois les présences relevées (cf. CLAUDE.md
+  // section 7). Contrairement à l'annulation, la fiche reste consultable
+  // ensuite (l'événement n'est pas désactivé) : un simple rechargement suffit.
+  const terminerEvenement = useCallback(async () => {
+    setActionEnCours(true);
+    setErreur(null);
+    try {
+      await evenementService.terminer(idEvenement);
+      await charger();
+    } catch (erreurRequete) {
+      setErreur(erreurRequete instanceof ErreurApi ? erreurRequete.message : "Une erreur est survenue");
+    } finally {
+      setActionEnCours(false);
+    }
+  }, [idEvenement, charger]);
+
   return {
     evenement,
     inscrits,
@@ -145,6 +161,7 @@ export const useFicheEvenement = () => {
     rejoindre,
     seDesinscrire,
     annulerEvenement,
+    terminerEvenement,
     idJoueurEnValidation,
     validerDemande,
     // Exposé pour que useModificationEvenementForm recharge la fiche après succès,

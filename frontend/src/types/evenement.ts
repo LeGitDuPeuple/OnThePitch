@@ -64,4 +64,6 @@ export type InscritDetail = {
   nom: string;
   prenom: string;
   statut: StatutInscription;
+  // Date du scan QR (ou marquage manuel), null tant qu'il n'a pas eu lieu.
+  presence: string | null;
 };
