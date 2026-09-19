@@ -25,6 +25,21 @@ const creerEvenement = async (evenementRepository: EvenementRepositoryFake) => {
 };
 
 describe("ModerationService", () => {
+  describe("listerMotifs", () => {
+    it("renvoie les motifs disponibles pour signaler un événement", async () => {
+      const service = new ModerationService(
+        new SignalementRepositoryFake(),
+        new EvenementRepositoryFake(),
+        new UtilisateurRepositoryFake()
+      );
+
+      const motifs = await service.listerMotifs();
+
+      expect(motifs.length).toBeGreaterThan(0);
+      expect(motifs[0]).toEqual(expect.objectContaining({ id: expect.any(Number), libelle: expect.any(String) }));
+    });
+  });
+
   describe("signaler", () => {
     it("enregistre le signalement d'un événement actif", async () => {
       const evenementRepository = new EvenementRepositoryFake();

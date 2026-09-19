@@ -6,6 +6,18 @@ import { RequeteInvalide } from "../domain/erreurMetier";
 export class ModerationController {
   constructor(private readonly moderationService: ModerationService) {}
 
+  // GET /moderation/motifs — motifs disponibles pour signaler un événement
+  // (public, comme la liste des événements : aucune donnée sensible, sert
+  // juste à peupler le formulaire de signalement côté front)
+  listerMotifs = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const motifs = await this.moderationService.listerMotifs();
+      res.json(motifs);
+    } catch (erreur) {
+      next(erreur);
+    }
+  };
+
   // POST /evenements/:id/signalements — un joueur signale un événement
   signaler = async (req: Request, res: Response, next: NextFunction) => {
     try {

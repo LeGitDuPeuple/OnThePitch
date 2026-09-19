@@ -2,6 +2,7 @@ import { Signalement } from "../domain/entities/Signalement";
 import {
   SignalementRepositoryInterface,
   SignalementDetaille,
+  MotifSignalement,
 } from "../domain/interface/signalementRepositoryInterface";
 import { EvenementRepositoryInterface } from "../domain/interface/evenementRepositoryInterface";
 import { UtilisateurRepositoryInterface } from "../domain/interface/utilisateurRepositoryInterface";
@@ -13,6 +14,12 @@ export class ModerationService {
     private readonly evenementRepository: EvenementRepositoryInterface,
     private readonly utilisateurRepository: UtilisateurRepositoryInterface
   ) {}
+
+  // Motifs disponibles pour signaler un événement — le front n'a pas à coder
+  // cette liste en dur (voir CLAUDE.md, "Front React").
+  async listerMotifs(): Promise<MotifSignalement[]> {
+    return this.signalementRepository.listerMotifs();
+  }
 
   // Un joueur signale un événement.
   async signaler(idEvenement: number, idJoueur: number, idMotif: number, texteLibre?: string): Promise<Signalement> {

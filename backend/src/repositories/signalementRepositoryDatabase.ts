@@ -5,6 +5,7 @@ import {
   SignalementRepositoryInterface,
   NouveauSignalement,
   SignalementDetaille,
+  MotifSignalement,
 } from "../domain/interface/signalementRepositoryInterface";
 import { Conflit } from "../domain/erreurMetier";
 
@@ -53,6 +54,11 @@ export class SignalementRepositoryDatabase implements SignalementRepositoryInter
 
   async retirer(idEvenement: number): Promise<void> {
     await prisma.signal.deleteMany({ where: { idEvenement } });
+  }
+
+  async listerMotifs(): Promise<MotifSignalement[]> {
+    const motifs = await prisma.motif.findMany({ orderBy: { idMotif: "asc" } });
+    return motifs.map((motif) => ({ id: motif.idMotif, libelle: motif.libelle }));
   }
 
   private versEntite(ligne: LigneSignal): Signalement {
