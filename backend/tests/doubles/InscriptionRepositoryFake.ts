@@ -17,6 +17,7 @@ export class InscriptionRepositoryFake implements InscriptionRepositoryInterface
       .map((inscription) => ({
         idJoueur: inscription.idJoueur,
         statut: inscription.statut,
+        presence: inscription.presence,
         ...(IDENTITES_JOUEURS[inscription.idJoueur] ?? { nom: "Joueur", prenom: `#${inscription.idJoueur}` }),
       }));
   }

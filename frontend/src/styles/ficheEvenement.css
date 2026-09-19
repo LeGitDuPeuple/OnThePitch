@@ -169,7 +169,8 @@
   width: 100%;
 }
 
-.bloc-annulation {
+.bloc-annulation,
+.bloc-fin-evenement {
   border-top: 1px solid var(--bordure);
   padding-top: 0.6rem;
   display: flex;
@@ -178,11 +179,14 @@
 }
 
 .bloc-annulation > button,
-.bloc-annulation .actions-formulaire {
+.bloc-annulation .actions-formulaire,
+.bloc-fin-evenement > button,
+.bloc-fin-evenement .actions-formulaire {
   width: 100%;
 }
 
-.bloc-annulation .actions-formulaire button {
+.bloc-annulation .actions-formulaire button,
+.bloc-fin-evenement .actions-formulaire button {
   flex: 1;
 }
 

@@ -8,6 +8,10 @@ export type InscritDetail = {
   nom: string;
   prenom: string;
   statut: StatutInscription;
+  // Date du scan QR (ou marquage manuel), null tant qu'il n'a pas eu lieu —
+  // sert au front à savoir si tous les inscrits acceptés ont été pointés
+  // avant de proposer "Terminer l'événement" (voir FicheEvenement.tsx).
+  presence: Date | null;
 };
 
 export interface InscriptionRepositoryInterface {
