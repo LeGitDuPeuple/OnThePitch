@@ -58,6 +58,17 @@ export type OrganisateurDetail = {
 
 export type EvenementDetail = Evenement & { lieu: LieuDetail; organisateur: OrganisateurDetail };
 
+// Réponse de POST .../presences/scan ou .../presences/manuel — pas de nom/prénom
+// ici (Inscription.versReponse côté back), à retrouver dans la liste des
+// inscrits déjà chargée via idJoueur si besoin de l'afficher.
+export type PresenceReponse = {
+  idJoueur: number;
+  idEvenement: number;
+  dateInscription: string;
+  statut: StatutInscription;
+  presence: string | null;
+};
+
 // Un inscrit tel que renvoyé par GET /evenements/:id/inscriptions.
 export type InscritDetail = {
   idJoueur: number;

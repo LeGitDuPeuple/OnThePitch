@@ -286,6 +286,28 @@
   width: 100%;
 }
 
+/* Scan de présence, organisateur (pendant du bloc-qr-presence ci-dessus) —
+   html5-qrcode injecte sa propre vidéo dans #lecteur-qr (voir
+   useScannerPresence), on ne fait que lui donner une taille et des coins
+   arrondis cohérents avec le reste de l'appli. */
+.bloc-scanner-presence {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.bloc-scanner-presence > button {
+  width: 100%;
+}
+
+.lecteur-qr {
+  width: 100%;
+  border-radius: var(--rayon);
+  overflow: hidden;
+}
+
 /* Formulaire de modification — même carte que le contenu, en pleine largeur. */
 .formulaire-modification {
   max-width: 640px;

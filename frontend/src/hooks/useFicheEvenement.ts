@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { evenementService } from "../services/evenementService";
 import { inscriptionService } from "../services/inscriptionService";
+import { presenceService } from "../services/presenceService";
 import { ErreurApi } from "../services/api";
 import { useAppSelector } from "../store/hooks";
-import type { EvenementDetail, InscritDetail } from "../types/evenement";
+import type { EvenementDetail, InscritDetail, PresenceReponse } from "../types/evenement";
 
 // États du bouton d'inscription (cf. CLAUDE.md, section 9 — "Fiche événement").
 export type EtatInscription =
@@ -117,6 +118,35 @@ export const useFicheEvenement = () => {
     [idEvenement, charger]
   );
 
+  // Marquage manuel d'une présence — en secours du scan QR (caméra en panne,
+  // joueur sans téléphone... cf. CLAUDE.md section 7). Réservé à l'organisateur.
+  const [idJoueurEnMarquage, setIdJoueurEnMarquage] = useState<number | null>(null);
+  const marquerPresent = useCallback(
+    async (idJoueur: number) => {
+      setIdJoueurEnMarquage(idJoueur);
+      setErreur(null);
+      try {
+        await presenceService.marquerManuellement(idEvenement, idJoueur);
+        await charger();
+      } catch (erreurRequete) {
+        setErreur(erreurRequete instanceof ErreurApi ? erreurRequete.message : "Une erreur est survenue");
+      } finally {
+        setIdJoueurEnMarquage(null);
+      }
+    },
+    [idEvenement, charger]
+  );
+
+  // Après un scan QR réussi (voir useScannerPresence, composant ScannerPresence) :
+  // la présence est déjà enregistrée côté serveur, il ne reste qu'à rafraîchir
+  // la liste des inscrits pour refléter le nouveau statut.
+  const apresScan = useCallback(
+    (_reponse: PresenceReponse) => {
+      void charger();
+    },
+    [charger]
+  );
+
   // Annulation (soft delete) — réservée à l'organisateur (cf. BoutonInscription :
   // le bouton n'est visible que dans cet état). L'événement disparaît de toutes
   // les recherches et sa fiche renvoie 404 ensuite : retour à la carte de
@@ -164,6 +194,9 @@ export const useFicheEvenement = () => {
     terminerEvenement,
     idJoueurEnValidation,
     validerDemande,
+    idJoueurEnMarquage,
+    marquerPresent,
+    apresScan,
     // Exposé pour que useModificationEvenementForm recharge la fiche après succès,
     // sans dupliquer la logique de chargement dans un second hook.
     rafraichir: charger,

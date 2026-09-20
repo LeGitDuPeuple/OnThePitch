@@ -252,7 +252,21 @@ terminé et testé.
       jeton obtenu pour un joueur inscrit le jour même
 - [x] Scan côté organisateur — `POST /evenements/:id/presences/scan`, testé (200,
       403 si pas l'organisateur, 400 si jeton invalide/expiré/mauvais événement,
-      400 si un jeton d'authentification classique est présenté à la place)
+      400 si un jeton d'authentification classique est présenté à la place).
+      Écran caméra ajouté côté front le 20/09/2026 (jusqu'ici testé par API
+      seulement, comme le marquage manuel, malgré le choix
+      `html5-qrcode` déjà acté en section 7 : repéré en accompagnant le
+      porteur de projet, qui pensait le blocage lié à l'API en local plutôt
+      qu'à un écran manquant). `useScannerPresence` pilote `html5-qrcode`
+      (nouvelle dépendance), scan en continu (plusieurs joueurs à la suite
+      sans rouvrir l'écran). Bouton "Marquer présent" ajouté au même moment
+      dans la liste des inscrits (existait côté API, jamais câblé non plus).
+      Les deux réservés à l'organisateur, jour de l'événement seulement (même
+      fenêtre que la génération du jeton). Vérifié : marquage manuel de bout
+      en bout (vraie API), ouverture/fermeture caméra sans plantage
+      (Puppeteer, caméra virtuelle Chrome) — la lecture réelle d'un QR par une
+      caméra physique n'est pas simulable en environnement de test, mais
+      repose sur le même endpoint déjà validé par curl (PRES-04)
 - [x] Passage en statut "Terminé" — `POST /evenements/:id/terminer`, testé (204,
       403 si pas l'organisateur, 409 si déjà terminé). Bouton "Terminer
       l'événement" ajouté côté front le 19/09/2026 (jusqu'ici accessible par
