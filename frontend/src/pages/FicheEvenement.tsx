@@ -87,10 +87,10 @@ export const FicheEvenement = () => {
   // 19/09/2026). Les boutons d'action organisateur restent par ailleurs tous
   // gardés par `evenement.statut !== "Termine"`, indépendamment de ceci.
   const estOrganisateur = utilisateur?.id === evenement.idOrganisateur;
-  // "Terminer l'événement" ne se propose qu'une fois tous les joueurs acceptés
-  // pointés (scan QR ou marquage manuel) — demandé le 19/09/2026 par le porteur
-  // de projet : pas de sens à clôturer avant d'avoir relevé les présences.
-  const tousPresents = inscritsAcceptes.length > 0 && inscritsAcceptes.every((inscrit) => inscrit.presence !== null);
+  // Nombre de présents pointés (scan QR ou marquage manuel) — affiché à titre
+  // indicatif au moment de terminer l'événement, jamais une condition
+  // bloquante (revu le 20/09/2026 : un absent ne doit pas empêcher de clôturer).
+  const presentsCount = inscritsAcceptes.filter((inscrit) => inscrit.presence !== null).length;
   const placesOccupees = evenement.nombrePlaces - evenement.placesRestantes;
   const pourcentageRempli = Math.round((placesOccupees / evenement.nombrePlaces) * 100);
 
@@ -203,11 +203,21 @@ export const FicheEvenement = () => {
                 </button>
               )}
 
-              {estOrganisateur && evenement.statut !== "Termine" && tousPresents && (
+              {/* Toujours disponible pour l'organisateur, jamais bloqué par les
+                  présences (revu le 20/09/2026 — un simple absent aurait sinon
+                  empêché de clôturer l'événement pour toujours). Le nombre de
+                  présents n'est qu'une information, affichée au moment de
+                  confirmer, jamais une condition. */}
+              {estOrganisateur && evenement.statut !== "Termine" && (
                 <div className="bloc-fin-evenement">
                   {confirmationFin ? (
                     <>
-                      <p className="texte-attenue">Les places et inscriptions restent visibles, mais l'événement ne sera plus modifiable. Confirmer ?</p>
+                      <p className="texte-attenue">
+                        {inscritsAcceptes.length > 0 && presentsCount < inscritsAcceptes.length
+                          ? `${presentsCount} joueur(s) sur ${inscritsAcceptes.length} marqué(s) présent(s) — les autres seront considérés absents. `
+                          : ""}
+                        L'événement ne sera plus modifiable ensuite. Confirmer ?
+                      </p>
                       <div className="actions-formulaire">
                         <button type="button" onClick={terminerEvenement} disabled={actionEnCours}>
                           {actionEnCours ? "…" : "Oui, terminer l'événement"}
@@ -228,15 +238,6 @@ export const FicheEvenement = () => {
                     </button>
                   )}
                 </div>
-              )}
-
-              {/* Présences pas encore toutes relevées : explique pourquoi le
-                  bouton ci-dessus n'apparaît pas encore, plutôt que de le
-                  cacher sans un mot (cf. QrPresence, même principe). */}
-              {estOrganisateur && evenement.statut !== "Termine" && !tousPresents && inscritsAcceptes.length > 0 && (
-                <p className="info-organisateur">
-                  "Terminer l'événement" sera disponible une fois tous les joueurs inscrits marqués présents.
-                </p>
               )}
 
               {estOrganisateur && evenement.statut !== "Termine" && (
