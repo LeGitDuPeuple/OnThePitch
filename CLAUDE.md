@@ -878,7 +878,13 @@ sont créés au même endroit (terrain municipal, city stade régulier). À ne p
 aux événements eux-mêmes : places restantes et inscriptions évoluent en permanence,
 les mettre en cache reviendrait à servir des données fausses.
 
-**Système d'évaluation entre joueurs** (table `evaluation` déjà modélisée).
+**Système d'évaluation entre joueurs** (table `evaluation` déjà modélisée,
+jamais câblée — discuté à nouveau le 20/09/2026, mis de côté volontairement,
+même raison que les autres points ci-dessous : priorité à la recette manuelle
+en cours). Bonne idée pour refermer la boucle rejoindre → jouer → noter, mais
+pas un simple bouton : reste à trancher qui note qui (le joueur note
+l'organisateur ? l'inverse ? entre joueurs ?), où afficher la moyenne, et la
+modération des commentaires abusifs.
 
 **Notification par email lors de l'annulation d'un événement** (discuté le
 15/09/2026, mis de côté volontairement — priorité donnée à la recette manuelle
