@@ -4,6 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useFicheEvenement } from "../hooks/useFicheEvenement";
 import { useModificationEvenementForm } from "../hooks/useModificationEvenementForm";
 import { useQrPresence } from "../hooks/useQrPresence";
+import { useScannerPresence } from "../hooks/useScannerPresence";
 import { useMessageConfirmation } from "../hooks/useMessageConfirmation";
 import { useSignalement } from "../hooks/useSignalement";
 import { evenementService } from "../services/evenementService";
@@ -12,7 +13,14 @@ import { CarteInteractive } from "../components/CarteInteractive";
 import { Avatar } from "../components/Avatar";
 import { ErreurChamp } from "../components/ErreurChamp";
 import { MessageConfirmation } from "../components/MessageConfirmation";
-import { FORMATS_COURANTS, LIBELLES_NIVEAU, type Evenement, type InscritDetail, type NiveauRequis } from "../types/evenement";
+import {
+  FORMATS_COURANTS,
+  LIBELLES_NIVEAU,
+  type Evenement,
+  type InscritDetail,
+  type NiveauRequis,
+  type PresenceReponse,
+} from "../types/evenement";
 import "../styles/ficheEvenement.css";
 
 const formaterDateLongue = (date: string) =>
@@ -53,6 +61,9 @@ export const FicheEvenement = () => {
     terminerEvenement,
     idJoueurEnValidation,
     validerDemande,
+    idJoueurEnMarquage,
+    marquerPresent,
+    apresScan,
     rafraichir,
   } = useFicheEvenement();
   const [modeEdition, setModeEdition] = useState(false);
@@ -203,6 +214,13 @@ export const FicheEvenement = () => {
                 </button>
               )}
 
+              {/* Scan de présence — organisateur, jour de l'événement seulement
+                  (même règle que le QR généré côté joueur : un jeton ne peut
+                  de toute façon exister en dehors de cette fenêtre). */}
+              {estOrganisateur && estAujourdhui(evenement.dateDebut) && (
+                <ScannerPresence idEvenement={evenement.id} onSucces={apresScan} />
+              )}
+
               {/* Toujours disponible pour l'organisateur, jamais bloqué par les
                   présences (revu le 20/09/2026 — un simple absent aurait sinon
                   empêché de clôturer l'événement pour toujours). Le nombre de
@@ -279,11 +297,32 @@ export const FicheEvenement = () => {
               </div>
               <ul className="liste-inscrits">
                 {inscritsAcceptes.map((inscrit) => (
-                  <li key={inscrit.idJoueur}>
-                    <Avatar nom={inscrit.nom} prenom={inscrit.prenom} />
-                    <span>
-                      {inscrit.prenom} {inscrit.nom}
+                  <li key={inscrit.idJoueur} className="ligne-demande">
+                    <span className="ligne-demande-identite">
+                      <Avatar nom={inscrit.nom} prenom={inscrit.prenom} />
+                      <span>
+                        {inscrit.prenom} {inscrit.nom}
+                      </span>
                     </span>
+                    {/* Marquage manuel — secours du scan QR (caméra en panne,
+                        joueur sans téléphone...). Organisateur, jour J seulement,
+                        même fenêtre que le scan et la génération du QR. */}
+                    {estOrganisateur && estAujourdhui(evenement.dateDebut) && (
+                      <span>
+                        {inscrit.presence ? (
+                          <span className="badge badge--marque">Présent</span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="bouton-secondaire"
+                            onClick={() => marquerPresent(inscrit.idJoueur)}
+                            disabled={idJoueurEnMarquage === inscrit.idJoueur}
+                          >
+                            {idJoueurEnMarquage === inscrit.idJoueur ? "…" : "Marquer présent"}
+                          </button>
+                        )}
+                      </span>
+                    )}
                   </li>
                 ))}
                 {inscritsAcceptes.length === 0 && <li className="texte-attenue">Aucun joueur inscrit pour l'instant.</li>}
@@ -689,6 +728,42 @@ const QrPresence = ({ idEvenement, dateDebut }: PropsQrPresence) => {
           {erreur}
         </p>
       )}
+    </div>
+  );
+};
+
+type PropsScannerPresence = {
+  idEvenement: number;
+  onSucces: (reponse: PresenceReponse) => void;
+};
+
+// Pendant du QrPresence, côté organisateur : ouvre la caméra et scanne en
+// continu (plusieurs joueurs à la suite sans rouvrir l'écran à chaque fois).
+// html5-qrcode gère lui-même le flux vidéo dans le conteneur ciblé par id
+// (voir useScannerPresence) — le composant ne fait qu'afficher son état.
+const ScannerPresence = ({ idEvenement, onSucces }: PropsScannerPresence) => {
+  const { actif, erreur, demarrer, arreter, idConteneur } = useScannerPresence(idEvenement, onSucces);
+
+  if (!actif) {
+    return (
+      <button type="button" className="bouton-secondaire" onClick={demarrer}>
+        Scanner un QR de présence
+      </button>
+    );
+  }
+
+  return (
+    <div className="bloc-scanner-presence">
+      <div id={idConteneur} className="lecteur-qr" />
+      <p className="texte-attenue">Pointez la caméra vers le QR affiché par le joueur.</p>
+      {erreur && (
+        <p role="alert" className="message-erreur">
+          {erreur}
+        </p>
+      )}
+      <button type="button" className="bouton-secondaire" onClick={arreter}>
+        Arrêter le scan
+      </button>
     </div>
   );
 };
