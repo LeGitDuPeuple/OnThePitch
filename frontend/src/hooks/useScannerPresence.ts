@@ -18,6 +18,7 @@ export const useScannerPresence = (idEvenement: number, onSucces: (reponse: Pres
   const [actif, setActif] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const enTraitementRef = useRef(false);
+  const lecteurRef = useRef<Html5Qrcode | null>(null);
 
   const traiterJeton = useCallback(
     async (jeton: string) => {
@@ -43,11 +44,30 @@ export const useScannerPresence = (idEvenement: number, onSucces: (reponse: Pres
     [idEvenement, onSucces]
   );
 
+  // Arrête la caméra et laisse html5-qrcode retirer lui-même la vidéo qu'il a
+  // injectée dans #lecteur-qr-presence. Doit impérativement se terminer AVANT
+  // que React ne démonte ce conteneur (voir arreter ci-dessous) : sinon les
+  // deux se disputent le même nœud DOM et React plante en pleine
+  // réconciliation (écran blanc — bug remonté par le porteur de projet le
+  // 20/09/2026). idempotent : lecteurRef passe à null dès le premier appel,
+  // un second appel (ex. depuis le cleanup de l'effet juste après) ne fait rien.
+  const detruire = useCallback(async () => {
+    const lecteur = lecteurRef.current;
+    lecteurRef.current = null;
+    if (!lecteur) return;
+    try {
+      await lecteur.stop();
+      await lecteur.clear();
+    } catch {
+      // Déjà arrêté, ou jamais vraiment démarré (caméra refusée) — rien à faire.
+    }
+  }, []);
+
   useEffect(() => {
     if (!actif) return;
 
     const lecteur = new Html5Qrcode(ID_CONTENEUR);
-    let arrete = false;
+    lecteurRef.current = lecteur;
 
     lecteur
       .start(
@@ -56,27 +76,25 @@ export const useScannerPresence = (idEvenement: number, onSucces: (reponse: Pres
         (texteDecode) => void traiterJeton(texteDecode),
         () => {} // callback d'échec de décodage — appelé à chaque image sans QR dedans, rien à faire
       )
-      .catch(() => {
-        if (!arrete) setErreur("Impossible d'accéder à la caméra (autorisation refusée ou aucune caméra détectée)");
-      });
+      .catch(() => setErreur("Impossible d'accéder à la caméra (autorisation refusée ou aucune caméra détectée)"));
 
+    // Filet de sécurité si le composant disparaît pendant que le scan tourne
+    // (navigation hors de la page...) — le chemin normal passe par arreter(),
+    // qui a déjà tout nettoyé avant que ce cleanup s'exécute.
     return () => {
-      arrete = true;
-      // stop() échoue si start() n'a jamais réellement démarré (caméra refusée) —
-      // sans conséquence, on nettoie simplement au mieux.
-      lecteur
-        .stop()
-        .then(() => lecteur.clear())
-        .catch(() => {});
+      void detruire();
     };
-  }, [actif, traiterJeton]);
+  }, [actif, traiterJeton, detruire]);
 
   const demarrer = useCallback(() => {
     setErreur(null);
     setActif(true);
   }, []);
 
-  const arreter = useCallback(() => setActif(false), []);
+  const arreter = useCallback(async () => {
+    await detruire();
+    setActif(false);
+  }, [detruire]);
 
   return { actif, erreur, demarrer, arreter, idConteneur: ID_CONTENEUR };
 };
