@@ -36,13 +36,42 @@ describe("AuthService", () => {
       const service = new AuthService(repository);
       await service.inscrire(donneesInscription);
 
-      const { jeton } = await service.connecter({
+      const resultat = await service.connecter({
         email: donneesInscription.email,
         motDePasse: donneesInscription.motDePasse,
       });
 
-      expect(typeof jeton).toBe("string");
-      expect(jeton.split(".")).toHaveLength(3); // structure d'un JWT
+      expect(resultat.doubleAuthRequise).toBe(false);
+      if (resultat.doubleAuthRequise) return; // narrowing TypeScript
+      expect(typeof resultat.jeton).toBe("string");
+      expect(resultat.jeton.split(".")).toHaveLength(3); // structure d'un JWT
+    });
+
+    it("avec la double authentification active : pas de session, un jeton temporaire", async () => {
+      const repository = new UtilisateurRepositoryFake();
+      const service = new AuthService(repository);
+      const utilisateur = await service.inscrire(donneesInscription);
+      await repository.activerDoubleAuth(utilisateur.id, []);
+
+      const resultat = await service.connecter({
+        email: donneesInscription.email,
+        motDePasse: donneesInscription.motDePasse,
+      });
+
+      expect(resultat.doubleAuthRequise).toBe(true);
+      expect(resultat).not.toHaveProperty("jeton");
+      expect(resultat).toHaveProperty("jetonTemporaire");
+    });
+
+    it("avec la double authentification active, un mauvais mot de passe reste refusé avant tout", async () => {
+      const repository = new UtilisateurRepositoryFake();
+      const service = new AuthService(repository);
+      const utilisateur = await service.inscrire(donneesInscription);
+      await repository.activerDoubleAuth(utilisateur.id, []);
+
+      await expect(
+        service.connecter({ email: donneesInscription.email, motDePasse: "mauvais mot de passe" })
+      ).rejects.toBeInstanceOf(NonAuthentifie);
     });
 
     it("refuse un email inconnu", async () => {

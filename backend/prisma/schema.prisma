@@ -65,6 +65,15 @@ model Utilisateur {
   idStatut        Int?      @map("id_statut")
   idNiveau        Int?      @map("id_niveau")
 
+  // Double authentification (TOTP, 24/09/2026) — absentes du MCD, à AJOUTER
+  // au MCD Looping. otpSecret : secret partagé avec l'application
+  // d'authentification (posé dès la configuration, mais inactif tant que
+  // otpActif est faux). codesSecours : tableau JSON de hachages bcrypt, jamais
+  // les codes en clair (affichés une seule fois à l'activation).
+  otpSecret       String?   @map("otp_secret") @db.VarChar(64)
+  otpActif        Boolean   @default(false) @map("otp_actif")
+  codesSecours    String?   @map("codes_secours") @db.Text
+
   statut        StatutUtilisateur? @relation(fields: [idStatut], references: [idStatut])
   niveau        NiveauUtilisateur? @relation(fields: [idNiveau], references: [idNiveau])
   evenements    Evenement[]

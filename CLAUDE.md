@@ -630,6 +630,62 @@ terminé et testé.
       total : changement d'email puis de mot de passe avec reconnexion réelle,
       visiteur non connecté)
 
+- [x] **Palier 2 — double authentification, backend** (24/09/2026).
+      *Modèle* : 3 colonnes sur `utilisateur` (`otp_secret`, `otp_actif`,
+      `codes_secours`, migration additive — `otp_actif` vaut `false` par
+      défaut, aucun compte existant n'est touché), **à AJOUTER au MCD Looping**.
+      Le secret est posé dès la configuration mais reste inactif tant qu'un
+      code n'a pas été confirmé ; `codes_secours` contient un tableau JSON de
+      hachages bcrypt, jamais les codes en clair (d'où le « affichés une seule
+      fois » : ils ne sont techniquement plus relisibles). Secret TOTP stocké
+      en clair en base (comme event-hub) — un chiffrement par clé
+      d'environnement serait une amélioration possible, non retenue par
+      simplicité.
+      *Architecture* : port `TotpInterface` (générer un secret, construire
+      l'URI du QR, vérifier un code) implémenté par `TotpOtplib` (`otplib` v13 :
+      l'API n'a plus rien à voir avec la v12 utilisée sur event-hub), `TotpFake`
+      pour les tests — même rôle que `GeocodeurInterface`. `DoubleAuthService`
+      (initialiser, activer, désactiver, terminer la connexion), séparé
+      d'`AuthService` (une autre raison de changer) ; les jetons vivent dans
+      `services/jetons.ts`, partagé par les deux.
+      *Connexion en deux temps* : `POST /auth/connexion` valide le mot de
+      passe ; si la 2FA est active, il ne pose **aucun cookie** et renvoie
+      `{ doubleAuthRequise: true, jetonTemporaire }` (JWT de 5 minutes,
+      `type: "2fa"`). `POST /auth/connexion/2fa` reçoit ce jeton + le code et
+      ouvre alors la session. C'est ici que se corrige la **faille de
+      l'ancien projet** (`verify-2fa` y faisait confiance à un `userId` fourni
+      par le client : mot de passe contournable, codes à 6 chiffres devinables
+      avec pour seul frein le limiteur). Corollaire : le middleware
+      `authentifier` **refuse désormais tout jeton portant un champ `type`**
+      (jeton temporaire, QR de présence) — signés avec le même secret, ils
+      auraient sinon pu être posés à la main dans le cookie et servir de
+      session (vérifié : 401).
+      *Gestion* : `POST /compte/2fa/initialiser` (secret + URI `otpauth://`),
+      `/activer` (confirme avec un premier code, renvoie les **10 codes de
+      secours**), `/desactiver` (exige un code valide, TOTP ou de secours :
+      sinon, sur une session laissée ouverte, la couper serait un moyen de la
+      contourner). `initialiser` est refusé (409) si la 2FA est déjà active :
+      régénérer le secret écraserait celui de l'application déjà
+      configurée (autre défaut de l'ancien projet). Réactiver plus tard
+      génère un nouveau secret et de nouveaux codes, les anciens sont
+      invalidés. Code à 6 chiffres = TOTP (tolérance d'horloge d'une tranche de
+      30 s), sinon code de secours (10 caractères hexadécimaux, tiret et casse
+      ignorés à la saisie, consommé dès qu'accepté). Le limiteur de tentatives
+      s'applique à la seconde étape de connexion, à l'activation et à la
+      désactivation.
+      *Points d'exploitation* : le TOTP dépend de l'horloge du serveur
+      (synchronisation NTP nécessaire, sinon les codes sont refusés) ;
+      `APP_NAME` (optionnel) fixe le nom affiché dans l'application
+      d'authentification. Limite assumée : deux utilisations *simultanées* du
+      même code de secours pourraient toutes deux passer (lecture puis
+      écriture non atomiques) — freiné par le limiteur, jugé acceptable ici.
+      Testé : 22 tests Jest (`doubleAuthService.test.ts` + 3 dans
+      `authService.test.ts`, 129 au total) + **16 vérifications contre la vraie
+      API avec de vrais codes TOTP** (activation, mauvais code, secret
+      protégé, connexion en deux temps, jeton temporaire refusé comme session,
+      code de secours à usage unique, désactivation, retour à la connexion
+      directe).
+
 ### Qualité et déploiement
 - [x] Tests Jest sur la couche Service — 76 tests, 8 services (Auth, Evenement,
       RechercheEvenement, Inscription, Presence, Moderation, Geocodage, Photo), repositories

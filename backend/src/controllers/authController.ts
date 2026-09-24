@@ -23,10 +23,17 @@ export class AuthController {
   connexion = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const donnees = connexionSchema.parse(req.body);
-      const { jeton, utilisateur } = await this.authService.connecter(donnees);
+      const resultat = await this.authService.connecter(donnees);
 
-      poserCookieJeton(res, jeton);
-      res.json({ utilisateur: utilisateur.versReponse() });
+      // Double authentification active : pas de cookie à ce stade, le front
+      // enchaîne avec POST /auth/connexion/2fa (voir DoubleAuthService).
+      if (resultat.doubleAuthRequise) {
+        res.json({ doubleAuthRequise: true, jetonTemporaire: resultat.jetonTemporaire });
+        return;
+      }
+
+      poserCookieJeton(res, resultat.jeton);
+      res.json({ doubleAuthRequise: false, utilisateur: resultat.utilisateur.versReponse() });
     } catch (erreur) {
       next(erreur);
     }

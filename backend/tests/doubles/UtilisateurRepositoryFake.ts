@@ -59,19 +59,51 @@ export class UtilisateurRepositoryFake implements UtilisateurRepositoryInterface
   }
 
   async changerMotDePasse(id: number, motDePasseHache: string): Promise<void> {
+    this.remplacer(id, { motDePasseHache });
+  }
+
+  async enregistrerSecretTotp(id: number, secret: string): Promise<void> {
+    this.remplacer(id, { secretTotp: secret });
+  }
+
+  async activerDoubleAuth(id: number, hachagesCodesSecours: string[]): Promise<void> {
+    this.remplacer(id, { doubleAuthActive: true, hachagesCodesSecours });
+  }
+
+  async desactiverDoubleAuth(id: number): Promise<void> {
+    this.remplacer(id, { doubleAuthActive: false, secretTotp: null, hachagesCodesSecours: [] });
+  }
+
+  async mettreAJourCodesSecours(id: number, hachagesCodesSecours: string[]): Promise<void> {
+    this.remplacer(id, { hachagesCodesSecours });
+  }
+
+  // Les champs sensibles sont privés dans l'entité : on la reconstruit avec
+  // les valeurs modifiées plutôt que d'ouvrir des setters.
+  private remplacer(
+    id: number,
+    modifications: {
+      motDePasseHache?: string;
+      secretTotp?: string | null;
+      doubleAuthActive?: boolean;
+      hachagesCodesSecours?: string[];
+    }
+  ): void {
     const index = this.utilisateurs.findIndex((u) => u.id === id);
     if (index === -1) throw new Error("Utilisateur introuvable (double de test)");
     const ancien = this.utilisateurs[index];
-    // Le hachage est privé dans l'entité : on la reconstruit plutôt que d'ouvrir un setter.
     this.utilisateurs[index] = new Utilisateur({
       id: ancien.id,
       nom: ancien.nom,
       prenom: ancien.prenom,
       email: ancien.email,
-      motDePasseHache,
+      motDePasseHache: modifications.motDePasseHache ?? ancien.hachage,
       role: ancien.role,
       ville: ancien.ville,
       dateInscription: ancien.dateInscription,
+      doubleAuthActive: modifications.doubleAuthActive ?? ancien.doubleAuthActive,
+      secretTotp: modifications.secretTotp !== undefined ? modifications.secretTotp : ancien.secretDoubleAuth,
+      hachagesCodesSecours: modifications.hachagesCodesSecours ?? ancien.codesSecours,
     });
   }
 }

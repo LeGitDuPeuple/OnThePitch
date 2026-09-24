@@ -78,6 +78,31 @@ export class UtilisateurRepositoryDatabase implements UtilisateurRepositoryInter
     await prisma.utilisateur.update({ where: { idJoueur: id }, data: { motDePasse: motDePasseHache } });
   }
 
+  async enregistrerSecretTotp(id: number, secret: string): Promise<void> {
+    await prisma.utilisateur.update({ where: { idJoueur: id }, data: { otpSecret: secret } });
+  }
+
+  async activerDoubleAuth(id: number, hachagesCodesSecours: string[]): Promise<void> {
+    await prisma.utilisateur.update({
+      where: { idJoueur: id },
+      data: { otpActif: true, codesSecours: JSON.stringify(hachagesCodesSecours) },
+    });
+  }
+
+  async desactiverDoubleAuth(id: number): Promise<void> {
+    await prisma.utilisateur.update({
+      where: { idJoueur: id },
+      data: { otpActif: false, otpSecret: null, codesSecours: null },
+    });
+  }
+
+  async mettreAJourCodesSecours(id: number, hachagesCodesSecours: string[]): Promise<void> {
+    await prisma.utilisateur.update({
+      where: { idJoueur: id },
+      data: { codesSecours: JSON.stringify(hachagesCodesSecours) },
+    });
+  }
+
   // Convertit une ligne Prisma en entité du domaine.
   private versEntite(ligne: {
     idJoueur: number;
@@ -88,6 +113,9 @@ export class UtilisateurRepositoryDatabase implements UtilisateurRepositoryInter
     role: string;
     ville: string | null;
     dateInscription: Date;
+    otpSecret: string | null;
+    otpActif: boolean;
+    codesSecours: string | null;
   }): Utilisateur {
     return new Utilisateur({
       id: ligne.idJoueur,
@@ -98,6 +126,9 @@ export class UtilisateurRepositoryDatabase implements UtilisateurRepositoryInter
       role: ligne.role as Role,
       ville: ligne.ville,
       dateInscription: ligne.dateInscription,
+      doubleAuthActive: ligne.otpActif,
+      secretTotp: ligne.otpSecret,
+      hachagesCodesSecours: ligne.codesSecours ? (JSON.parse(ligne.codesSecours) as string[]) : [],
     });
   }
 }

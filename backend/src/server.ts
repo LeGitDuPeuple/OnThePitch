@@ -16,6 +16,7 @@ import {
   evenementService,
   notificationController,
   compteController,
+  doubleAuthController,
 } from "./config/container";
 import { authRoutes, registerAuthRoutes } from "./routes/authRoute";
 import { evenementRoutes, registerEvenementRoutes } from "./routes/evenementRoute";
@@ -55,7 +56,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Dépendances assemblées dans config/container.ts — server.ts ne fait que brancher les routes.
-registerAuthRoutes(authController);
+registerAuthRoutes(authController, doubleAuthController);
 registerEvenementRoutes(evenementController, geocodageController);
 registerInscriptionRoutes(evenementRoutes, inscriptionController);
 registerPresenceRoutes(evenementRoutes, presenceController);
@@ -64,7 +65,7 @@ registerEvaluationRoutes(evenementRoutes, evaluationController);
 registerModerationRoutes(moderationController);
 registerPhotoRoutes(evenementRoutes, photoController);
 registerNotificationRoutes(notificationController);
-registerCompteRoutes(compteController);
+registerCompteRoutes(compteController, doubleAuthController);
 
 // Route de santé, pour vérifier que l'API répond
 app.get("/api/v1/sante", (_req, res) => {
