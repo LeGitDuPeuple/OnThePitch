@@ -43,6 +43,9 @@ export const rechercheEvenementSchema = z.object({
   latitude: z.coerce.number().min(-90).max(90),
   longitude: z.coerce.number().min(-180).max(180),
   rayonKm: z.coerce.number().positive().optional(),
+  // Pagination — voir RechercheEvenementService pour les valeurs par défaut.
+  skip: z.coerce.number().int().min(0).optional(),
+  take: z.coerce.number().int().min(1).max(50).optional(),
 });
 
 // Types déduits des schémas : une seule source de vérité.

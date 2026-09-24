@@ -24,4 +24,7 @@ export interface UtilisateurRepositoryInterface {
 
   // Passe le statut de l'utilisateur à "averti" (modération).
   avertir(id: number): Promise<void>;
+
+  // Nombre de comptes joueurs — vue d'ensemble du tableau de bord admin.
+  compterJoueurs(): Promise<number>;
 }

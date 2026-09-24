@@ -5,6 +5,10 @@ import { ErreurApi } from "../services/api";
 import type { EvenementProche } from "../types/evenement";
 
 const RAYON_DEFAUT_KM = 10;
+// Pagination volontairement simple (skip/take, comme le back) : "Suivant"
+// se désactive dès qu'une page renvoie moins de résultats que sa taille —
+// pas besoin d'un compte total à part pour ça (voir CLAUDE.md, simplicité).
+const TAILLE_PAGE = 10;
 
 type PointRecherche = {
   latitude: number;
@@ -19,11 +23,14 @@ export const useRechercheForm = () => {
   const [rayonKm, setRayonKm] = useState(RAYON_DEFAUT_KM);
   const [pointRecherche, setPointRecherche] = useState<PointRecherche | null>(null);
   const [resultats, setResultats] = useState<EvenementProche[]>([]);
+  const [skip, setSkip] = useState(0);
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [erreursChamps, setErreursChamps] = useState<Record<string, string>>({});
 
-  const lancerRecherche = useCallback(async (point: PointRecherche, rayon: number) => {
+  // decalage par défaut à 0 : toute nouvelle recherche (adresse, position,
+  // changement de rayon...) repart de la première page.
+  const lancerRecherche = useCallback(async (point: PointRecherche, rayon: number, decalage = 0) => {
     setChargement(true);
     setErreur(null);
     // Efface une éventuelle erreur de champ laissée par une action précédente
@@ -36,8 +43,11 @@ export const useRechercheForm = () => {
         latitude: point.latitude,
         longitude: point.longitude,
         rayonKm: rayon,
+        skip: decalage,
+        take: TAILLE_PAGE,
       });
       setResultats(donnees);
+      setSkip(decalage);
     } catch (erreurRequete) {
       setErreur(erreurRequete instanceof ErreurApi ? erreurRequete.message : "Une erreur est survenue");
     } finally {
@@ -156,6 +166,15 @@ export const useRechercheForm = () => {
     [pointRecherche, lancerRecherche]
   );
 
+  // Page suivante/précédente : même point et même rayon, seul le décalage change.
+  const pageSuivante = useCallback(() => {
+    if (pointRecherche) void lancerRecherche(pointRecherche, rayonKm, skip + TAILLE_PAGE);
+  }, [pointRecherche, rayonKm, skip, lancerRecherche]);
+
+  const pagePrecedente = useCallback(() => {
+    if (pointRecherche) void lancerRecherche(pointRecherche, rayonKm, Math.max(0, skip - TAILLE_PAGE));
+  }, [pointRecherche, rayonKm, skip, lancerRecherche]);
+
   return {
     adresse,
     setAdresse,
@@ -169,5 +188,11 @@ export const useRechercheForm = () => {
     rechercherParAdresse,
     rechercherParPosition,
     rechercherSuggestion,
+    // Pagination : le composant n'a qu'à afficher les boutons et lire ces deux
+    // booléens, aucun raisonnement de sa part (voir CLAUDE.md, "Front React").
+    pageSuivante,
+    pagePrecedente,
+    peutReculer: skip > 0,
+    peutAvancer: resultats.length === TAILLE_PAGE,
   };
 };

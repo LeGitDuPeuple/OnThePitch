@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEntete } from "../hooks/useEntete";
 import { Avatar } from "./Avatar";
+import { ClocheNotifications } from "./ClocheNotifications";
 import "../styles/entete.css";
 
 // En-tête partagé par tous les écrans (voir OnThePitch-maquettes-planche.png,
@@ -21,6 +22,11 @@ export const Entete = () => {
             <Link to="/" className={pathname === "/" ? "actif" : ""} onClick={fermerMenu}>
               Rechercher
             </Link>
+            {utilisateur?.role === "joueur" && (
+              <Link to="/profil" className={pathname === "/profil" ? "actif" : ""} onClick={fermerMenu}>
+                Mon profil
+              </Link>
+            )}
             {utilisateur?.role === "administrateur" && (
               <Link to="/admin" className={pathname === "/admin" ? "actif" : ""} onClick={fermerMenu}>
                 Admin
@@ -29,17 +35,20 @@ export const Entete = () => {
 
             <div className="entete-compte entete-compte--mobile">
               {utilisateur ? (
-                <button
-                  type="button"
-                  className="bouton-secondaire"
-                  onClick={() => {
-                    fermerMenu();
-                    void deconnecter();
-                  }}
-                  disabled={deconnexionEnCours}
-                >
-                  Se déconnecter
-                </button>
+                <>
+                  <ClocheNotifications />
+                  <button
+                    type="button"
+                    className="bouton-secondaire"
+                    onClick={() => {
+                      fermerMenu();
+                      void deconnecter();
+                    }}
+                    disabled={deconnexionEnCours}
+                  >
+                    Se déconnecter
+                  </button>
+                </>
               ) : (
                 <Link to="/connexion" className="bouton-secondaire" onClick={fermerMenu}>
                   Connexion / Inscription
@@ -57,6 +66,7 @@ export const Entete = () => {
           <div className="entete-compte entete-compte--desktop">
             {utilisateur ? (
               <>
+                <ClocheNotifications />
                 <Avatar nom={utilisateur.nom} prenom={utilisateur.prenom} neutre />
                 <button type="button" className="bouton-secondaire" onClick={() => void deconnecter()} disabled={deconnexionEnCours}>
                   Se déconnecter

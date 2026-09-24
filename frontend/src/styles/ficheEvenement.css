@@ -100,6 +100,23 @@
   color: var(--texte-attenue);
 }
 
+/* Fiabilité de l'organisateur (moyenne des évaluations reçues, voir CLAUDE.md
+   section Évaluations) — délibérément une pastille à part, pas un texte gris
+   à la suite du nom : retour du porteur de projet (24/09/2026), la première
+   version passait totalement inaperçue. Couleur ambre : convention quasi
+   universelle de la note à l'étoile, même si le même ton sert par ailleurs
+   au badge "Annulé" côté admin — jamais les deux cas côte à côte. */
+.pastille-fiabilite {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ambre-texte);
+  background: var(--ambre-clair);
+  border-radius: var(--rayon-pilule);
+  padding: 0.2rem 0.7rem;
+}
+
 .infos-fiche {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

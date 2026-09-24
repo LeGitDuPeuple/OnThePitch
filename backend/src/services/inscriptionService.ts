@@ -1,12 +1,14 @@
 import { Inscription } from "../domain/entities/Inscription";
 import { InscriptionRepositoryInterface, InscritDetail } from "../domain/interface/inscriptionRepositoryInterface";
 import { EvenementRepositoryInterface } from "../domain/interface/evenementRepositoryInterface";
+import { NotificationInterface } from "../domain/interface/notificationInterface";
 import { RessourceIntrouvable, AccesRefuse, Conflit } from "../domain/erreurMetier";
 
 export class InscriptionService {
   constructor(
     private readonly inscriptionRepository: InscriptionRepositoryInterface,
-    private readonly evenementRepository: EvenementRepositoryInterface
+    private readonly evenementRepository: EvenementRepositoryInterface,
+    private readonly notification: NotificationInterface
   ) {}
 
   // Liste les inscrits d'un événement — pour la fiche événement (accessible sans
@@ -39,7 +41,16 @@ export class InscriptionService {
     }
 
     const statutInitial = evenement.estPrive ? "en_attente" : "acceptee";
-    return this.inscriptionRepository.rejoindre(idJoueur, idEvenement, statutInitial);
+    const inscription = await this.inscriptionRepository.rejoindre(idJoueur, idEvenement, statutInitial);
+
+    if (statutInitial === "en_attente") {
+      await this.notification.notifier(evenement.idOrganisateur, "nouvelle_demande", idEvenement);
+    } else {
+      // Inscription directe (événement public) : peut avoir pris la dernière place.
+      await this.notifierSiComplet(evenement.idOrganisateur, idEvenement);
+    }
+
+    return inscription;
   }
 
   // Validation d'une demande sur un événement privé — réservée à l'organisateur.
@@ -64,9 +75,28 @@ export class InscriptionService {
       throw new RessourceIntrouvable("Aucune demande en attente pour ce joueur");
     }
 
-    return accepter
-      ? this.inscriptionRepository.accepter(idJoueur, idEvenement)
-      : this.inscriptionRepository.refuser(idJoueur, idEvenement);
+    const inscriptionMiseAJour = accepter
+      ? await this.inscriptionRepository.accepter(idJoueur, idEvenement)
+      : await this.inscriptionRepository.refuser(idJoueur, idEvenement);
+
+    await this.notification.notifier(idJoueur, accepter ? "demande_acceptee" : "demande_refusee", idEvenement);
+    if (accepter) {
+      await this.notifierSiComplet(idOrganisateur, idEvenement);
+    }
+
+    return inscriptionMiseAJour;
+  }
+
+  // Après une inscription/acceptation réussie, la place ne peut être passée de
+  // libre à complète qu'à cet instant précis : executerAvecControleDesPlaces
+  // (voir InscriptionRepositoryDatabase) refuse déjà l'opération si l'événement
+  // était complet avant, donc un succès qui amène à égalité vient forcément de
+  // franchir le seuil — pas besoin d'un état "avant/après" à comparer ici.
+  private async notifierSiComplet(idOrganisateur: number, idEvenement: number): Promise<void> {
+    const evenement = await this.evenementRepository.trouverParId(idEvenement);
+    if (evenement?.estComplet()) {
+      await this.notification.notifier(idOrganisateur, "evenement_complet", idEvenement);
+    }
   }
 
   // Désinscription : le joueur retire sa propre inscription.

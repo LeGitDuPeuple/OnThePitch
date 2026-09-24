@@ -2,6 +2,8 @@ import { InscriptionService } from "../../src/services/inscriptionService";
 import { RessourceIntrouvable, AccesRefuse, Conflit } from "../../src/domain/erreurMetier";
 import { EvenementRepositoryFake } from "../doubles/EvenementRepositoryFake";
 import { InscriptionRepositoryFake } from "../doubles/InscriptionRepositoryFake";
+import { EvaluationRepositoryFake } from "../doubles/EvaluationRepositoryFake";
+import { NotificationFake } from "../doubles/NotificationFake";
 import { GeocodeurFake, coordonneesTest } from "../doubles/GeocodeurFake";
 import { EvenementService } from "../../src/services/evenementService";
 
@@ -15,7 +17,13 @@ const creerEvenement = async (
   estPrive: boolean,
   nombrePlaces = 10
 ) => {
-  const evenementService = new EvenementService(evenementRepository, new GeocodeurFake(coordonneesTest));
+  const evenementService = new EvenementService(
+    evenementRepository,
+    new GeocodeurFake(coordonneesTest),
+    new InscriptionRepositoryFake(),
+    new NotificationFake(),
+    new EvaluationRepositoryFake()
+  );
   return evenementService.creer(
     {
       titre: "Match du dimanche",
@@ -35,7 +43,7 @@ describe("InscriptionService", () => {
       const evenementRepository = new EvenementRepositoryFake();
       const inscriptionRepository = new InscriptionRepositoryFake();
       const evenement = await creerEvenement(evenementRepository, false);
-      const service = new InscriptionService(inscriptionRepository, evenementRepository);
+      const service = new InscriptionService(inscriptionRepository, evenementRepository, new NotificationFake());
 
       const inscription = await service.rejoindre(evenement.id, 2);
 
@@ -46,7 +54,7 @@ describe("InscriptionService", () => {
       const evenementRepository = new EvenementRepositoryFake();
       const inscriptionRepository = new InscriptionRepositoryFake();
       const evenement = await creerEvenement(evenementRepository, true);
-      const service = new InscriptionService(inscriptionRepository, evenementRepository);
+      const service = new InscriptionService(inscriptionRepository, evenementRepository, new NotificationFake());
 
       const inscription = await service.rejoindre(evenement.id, 2);
 
@@ -57,14 +65,18 @@ describe("InscriptionService", () => {
       const evenementRepository = new EvenementRepositoryFake();
       const inscriptionRepository = new InscriptionRepositoryFake();
       const evenement = await creerEvenement(evenementRepository, false);
-      const service = new InscriptionService(inscriptionRepository, evenementRepository);
+      const service = new InscriptionService(inscriptionRepository, evenementRepository, new NotificationFake());
       await service.rejoindre(evenement.id, 2);
 
       await expect(service.rejoindre(evenement.id, 2)).rejects.toBeInstanceOf(Conflit);
     });
 
     it("refuse de rejoindre un événement inexistant", async () => {
-      const service = new InscriptionService(new InscriptionRepositoryFake(), new EvenementRepositoryFake());
+      const service = new InscriptionService(
+        new InscriptionRepositoryFake(),
+        new EvenementRepositoryFake(),
+        new NotificationFake()
+      );
 
       await expect(service.rejoindre(999, 2)).rejects.toBeInstanceOf(RessourceIntrouvable);
     });
@@ -73,7 +85,7 @@ describe("InscriptionService", () => {
       const evenementRepository = new EvenementRepositoryFake();
       const inscriptionRepository = new InscriptionRepositoryFake();
       const evenement = await creerEvenement(evenementRepository, false, 1);
-      const service = new InscriptionService(inscriptionRepository, evenementRepository);
+      const service = new InscriptionService(inscriptionRepository, evenementRepository, new NotificationFake());
 
       // Le contrôle des places vit dans la vraie base (voir InscriptionRepositoryDatabase,
       // testée manuellement en conditions de concurrence) : ici on simule directement
@@ -89,7 +101,7 @@ describe("InscriptionService", () => {
       const evenementRepository = new EvenementRepositoryFake();
       const inscriptionRepository = new InscriptionRepositoryFake();
       const evenement = await creerEvenement(evenementRepository, true);
-      const service = new InscriptionService(inscriptionRepository, evenementRepository);
+      const service = new InscriptionService(inscriptionRepository, evenementRepository, new NotificationFake());
       await service.rejoindre(evenement.id, 2);
 
       const inscription = await service.validerDemande(evenement.id, 2, 1, true);
@@ -101,7 +113,7 @@ describe("InscriptionService", () => {
       const evenementRepository = new EvenementRepositoryFake();
       const inscriptionRepository = new InscriptionRepositoryFake();
       const evenement = await creerEvenement(evenementRepository, true);
-      const service = new InscriptionService(inscriptionRepository, evenementRepository);
+      const service = new InscriptionService(inscriptionRepository, evenementRepository, new NotificationFake());
       await service.rejoindre(evenement.id, 2);
 
       const inscription = await service.validerDemande(evenement.id, 2, 1, false);
@@ -113,7 +125,7 @@ describe("InscriptionService", () => {
       const evenementRepository = new EvenementRepositoryFake();
       const inscriptionRepository = new InscriptionRepositoryFake();
       const evenement = await creerEvenement(evenementRepository, true);
-      const service = new InscriptionService(inscriptionRepository, evenementRepository);
+      const service = new InscriptionService(inscriptionRepository, evenementRepository, new NotificationFake());
       await service.rejoindre(evenement.id, 2);
 
       await expect(service.validerDemande(evenement.id, 2, 99, true)).rejects.toBeInstanceOf(AccesRefuse);
@@ -123,7 +135,7 @@ describe("InscriptionService", () => {
       const evenementRepository = new EvenementRepositoryFake();
       const inscriptionRepository = new InscriptionRepositoryFake();
       const evenement = await creerEvenement(evenementRepository, true);
-      const service = new InscriptionService(inscriptionRepository, evenementRepository);
+      const service = new InscriptionService(inscriptionRepository, evenementRepository, new NotificationFake());
 
       await expect(service.validerDemande(evenement.id, 2, 1, true)).rejects.toBeInstanceOf(RessourceIntrouvable);
     });
@@ -134,7 +146,7 @@ describe("InscriptionService", () => {
       const evenementRepository = new EvenementRepositoryFake();
       const inscriptionRepository = new InscriptionRepositoryFake();
       const evenement = await creerEvenement(evenementRepository, true);
-      const service = new InscriptionService(inscriptionRepository, evenementRepository);
+      const service = new InscriptionService(inscriptionRepository, evenementRepository, new NotificationFake());
       await service.rejoindre(evenement.id, 2);
       await service.validerDemande(evenement.id, 2, 1, true);
       await service.rejoindre(evenement.id, 3);
@@ -148,7 +160,11 @@ describe("InscriptionService", () => {
     });
 
     it("refuse de lister les inscrits d'un événement inexistant", async () => {
-      const service = new InscriptionService(new InscriptionRepositoryFake(), new EvenementRepositoryFake());
+      const service = new InscriptionService(
+        new InscriptionRepositoryFake(),
+        new EvenementRepositoryFake(),
+        new NotificationFake()
+      );
 
       await expect(service.lister(999)).rejects.toBeInstanceOf(RessourceIntrouvable);
     });
@@ -159,7 +175,7 @@ describe("InscriptionService", () => {
       const evenementRepository = new EvenementRepositoryFake();
       const inscriptionRepository = new InscriptionRepositoryFake();
       const evenement = await creerEvenement(evenementRepository, false);
-      const service = new InscriptionService(inscriptionRepository, evenementRepository);
+      const service = new InscriptionService(inscriptionRepository, evenementRepository, new NotificationFake());
       await service.rejoindre(evenement.id, 2);
 
       await service.desinscrire(evenement.id, 2);
@@ -171,7 +187,7 @@ describe("InscriptionService", () => {
       const evenementRepository = new EvenementRepositoryFake();
       const inscriptionRepository = new InscriptionRepositoryFake();
       const evenement = await creerEvenement(evenementRepository, false);
-      const service = new InscriptionService(inscriptionRepository, evenementRepository);
+      const service = new InscriptionService(inscriptionRepository, evenementRepository, new NotificationFake());
 
       await expect(service.desinscrire(evenement.id, 2)).rejects.toBeInstanceOf(RessourceIntrouvable);
     });

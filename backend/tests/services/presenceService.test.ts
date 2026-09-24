@@ -3,6 +3,8 @@ import { Inscription } from "../../src/domain/entities/Inscription";
 import { RessourceIntrouvable, AccesRefuse, RequeteInvalide, Conflit } from "../../src/domain/erreurMetier";
 import { EvenementRepositoryFake } from "../doubles/EvenementRepositoryFake";
 import { InscriptionRepositoryFake } from "../doubles/InscriptionRepositoryFake";
+import { EvaluationRepositoryFake } from "../doubles/EvaluationRepositoryFake";
+import { NotificationFake } from "../doubles/NotificationFake";
 import { GeocodeurFake, coordonneesTest } from "../doubles/GeocodeurFake";
 import { EvenementService } from "../../src/services/evenementService";
 
@@ -12,7 +14,13 @@ const JOUEUR = 2;
 // Événement dont dateDebut/dateFin tombent aujourd'hui : condition nécessaire
 // pour générer un QR de présence (voir PresenceService.estAujourdhui).
 const creerEvenementAujourdhui = async (evenementRepository: EvenementRepositoryFake) => {
-  const evenementService = new EvenementService(evenementRepository, new GeocodeurFake(coordonneesTest));
+  const evenementService = new EvenementService(
+    evenementRepository,
+    new GeocodeurFake(coordonneesTest),
+    new InscriptionRepositoryFake(),
+    new NotificationFake(),
+    new EvaluationRepositoryFake()
+  );
   return evenementService.creer(
     {
       titre: "Match du jour",
@@ -58,7 +66,13 @@ describe("PresenceService", () => {
     it("refuse si l'événement n'a pas lieu aujourd'hui", async () => {
       const evenementRepository = new EvenementRepositoryFake();
       const inscriptionRepository = new InscriptionRepositoryFake();
-      const evenementService = new EvenementService(evenementRepository, new GeocodeurFake(coordonneesTest));
+      const evenementService = new EvenementService(
+        evenementRepository,
+        new GeocodeurFake(coordonneesTest),
+        inscriptionRepository,
+        new NotificationFake(),
+        new EvaluationRepositoryFake()
+      );
       const evenement = await evenementService.creer(
         {
           titre: "Match dans une semaine",

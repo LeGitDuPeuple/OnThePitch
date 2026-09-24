@@ -34,6 +34,21 @@ export class EvenementController {
     }
   };
 
+  // GET /evenements/mes-evenements — écran Profil, réservé au joueur connecté
+  mesEvenements = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { organises, participe, enAttente } = await this.evenementService.listerMesEvenements(req.utilisateur!.id);
+
+      res.json({
+        organises: organises.map((evenement) => evenement.versReponse()),
+        participe: participe.map((evenement) => evenement.versReponse()),
+        enAttente: enAttente.map((evenement) => evenement.versReponse()),
+      });
+    } catch (erreur) {
+      next(erreur);
+    }
+  };
+
   // GET /evenements/:id — accessible sans authentification. Inclut le lieu
   // (adresse, coordonnées) pour la fiche événement.
   trouverParId = async (req: Request, res: Response, next: NextFunction) => {

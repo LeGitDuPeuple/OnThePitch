@@ -7,6 +7,7 @@ import { useQrPresence } from "../hooks/useQrPresence";
 import { useScannerPresence } from "../hooks/useScannerPresence";
 import { useMessageConfirmation } from "../hooks/useMessageConfirmation";
 import { useSignalement } from "../hooks/useSignalement";
+import { useEvaluation } from "../hooks/useEvaluation";
 import { evenementService } from "../services/evenementService";
 import { useAppSelector } from "../store/hooks";
 import { CarteInteractive } from "../components/CarteInteractive";
@@ -54,6 +55,7 @@ export const FicheEvenement = () => {
     chargement,
     erreur,
     etat,
+    peutEvaluer,
     actionEnCours,
     rejoindre,
     seDesinscrire,
@@ -130,7 +132,7 @@ export const FicheEvenement = () => {
             <div className="badges-fiche">
               <span className="badge">{evenement.estPrive ? "Événement privé" : "Événement public"}</span>
               <span className="badge badge--marque">{LIBELLES_NIVEAU[evenement.niveauRequis]}</span>
-              {evenement.statut === "Termine" && <span className="badge">Terminé</span>}
+              {evenement.statut === "Termine" && <span className="badge badge--info">Terminé</span>}
             </div>
 
             <h1>{evenement.titre}</h1>
@@ -140,6 +142,9 @@ export const FicheEvenement = () => {
               <span>
                 Organisé par {evenement.organisateur.prenom} {evenement.organisateur.nom}
               </span>
+              {evenement.organisateur.fiabilite !== null && (
+                <span className="pastille-fiabilite">★ {evenement.organisateur.fiabilite.toFixed(1)}/5</span>
+              )}
             </div>
 
             <div className="infos-fiche">
@@ -188,6 +193,8 @@ export const FicheEvenement = () => {
                 (verifierRole("joueur") revérifie côté back de toute façon —
                 voir CLAUDE.md section 8). */}
             {utilisateur?.role === "joueur" && !estOrganisateur && <Signalement idEvenement={evenement.id} />}
+
+            {peutEvaluer && <Evaluation idEvenement={evenement.id} />}
 
             {estOrganisateur && evenement.estPrive && demandesEnAttente.length > 0 && (
               <DemandesEnAttente demandes={demandesEnAttente} idJoueurEnValidation={idJoueurEnValidation} valider={validerDemande} />
@@ -415,6 +422,87 @@ const Signalement = ({ idEvenement }: PropsSignalement) => {
   );
 };
 
+type PropsEvaluation = {
+  idEvenement: number;
+};
+
+// "Évaluer l'organisateur" — un joueur accepté note l'organisateur une fois
+// l'événement terminé (voir CLAUDE.md, "Évolutions envisagées" — système
+// d'évaluation, résolu le 23/09/2026). Éligibilité déjà vérifiée par
+// useFicheEvenement.peutEvaluer avant l'affichage de ce composant.
+const Evaluation = ({ idEvenement }: PropsEvaluation) => {
+  const { envoiEnCours, erreur, envoyee, noter } = useEvaluation(idEvenement);
+  const [ouvert, setOuvert] = useState(false);
+  const [note, setNote] = useState<number | "">("");
+  const [commentaire, setCommentaire] = useState("");
+
+  if (envoyee) {
+    return <p className="texte-attenue">Merci, votre évaluation a été enregistrée.</p>;
+  }
+
+  if (!ouvert) {
+    return (
+      <button type="button" className="bouton-secondaire" onClick={() => setOuvert(true)}>
+        Évaluer l'organisateur
+      </button>
+    );
+  }
+
+  return (
+    <form
+      className="bloc-signalement"
+      onSubmit={(evenementForm) => {
+        evenementForm.preventDefault();
+        if (note !== "") void noter(note, commentaire.trim() || undefined);
+      }}
+    >
+      <label>
+        Note
+        <select
+          value={note}
+          onChange={(evenementChange) => setNote(Number(evenementChange.target.value))}
+          required
+          disabled={envoiEnCours}
+        >
+          <option value="" disabled>
+            Choisissez une note
+          </option>
+          {[1, 2, 3, 4, 5].map((valeur) => (
+            <option key={valeur} value={valeur}>
+              {valeur}/5
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Commentaire (facultatif)
+        <textarea
+          value={commentaire}
+          onChange={(evenementChange) => setCommentaire(evenementChange.target.value)}
+          maxLength={255}
+          rows={2}
+          disabled={envoiEnCours}
+        />
+      </label>
+
+      {erreur && (
+        <p role="alert" className="message-erreur">
+          {erreur}
+        </p>
+      )}
+
+      <div className="actions-formulaire">
+        <button type="submit" disabled={envoiEnCours || note === ""}>
+          {envoiEnCours ? "Envoi…" : "Envoyer l'évaluation"}
+        </button>
+        <button type="button" className="bouton-secondaire" onClick={() => setOuvert(false)} disabled={envoiEnCours}>
+          Annuler
+        </button>
+      </div>
+    </form>
+  );
+};
+
 type PropsPhotoLieu = {
   idEvenement: number;
   nomLieu: string | null;
@@ -506,6 +594,8 @@ const BoutonInscription = ({ etat, actionEnCours, rejoindre, seDesinscrire }: Pr
       );
     case "organisateur":
       return <p className="info-organisateur">Vous organisez cet événement.</p>;
+    case "refuse":
+      return <p className="info-organisateur">Votre demande pour rejoindre cet événement a été refusée par l'organisateur.</p>;
     case "termine":
       return null;
     case "complet":

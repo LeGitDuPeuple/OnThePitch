@@ -1,12 +1,21 @@
 import { useAppSelector } from "../store/hooks";
 import { useAdminConnexionForm } from "../hooks/useAdminConnexionForm";
 import { useModeration } from "../hooks/useModeration";
+import { useEvenementsAdmin } from "../hooks/useEvenementsAdmin";
 import { useDeconnexion } from "../hooks/useDeconnexion";
-import type { SignalementDetail } from "../types/moderation";
+import type { SignalementDetail, EvenementAdmin } from "../types/moderation";
+import type { StatutEvenement } from "../types/evenement";
 import "../styles/admin.css";
 
 const formaterDate = (date: string) =>
   new Date(date).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
+
+const LIBELLES_STATUT: Record<StatutEvenement, string> = {
+  Ouvert: "Ouvert",
+  Complet: "Complet",
+  Termine: "Terminé",
+  Annule: "Annulé",
+};
 
 export const Admin = () => {
   const { utilisateur, chargementInitial } = useAppSelector((state) => state.auth);
@@ -61,23 +70,57 @@ const ConnexionAdmin = () => {
 };
 
 const TableauDeBord = () => {
-  const { signalements, chargement, erreur, idEvenementEnCours, traiter } = useModeration();
+  const { signalements, statistiques, chargement, erreur, idEvenementEnCours, traiter } = useModeration();
+  const {
+    statut,
+    setStatut,
+    dateDebutMin,
+    setDateDebutMin,
+    dateDebutMax,
+    setDateDebutMax,
+    evenements,
+    chargement: chargementEvenements,
+    erreur: erreurEvenements,
+  } = useEvenementsAdmin();
   const { deconnecter, enCours: deconnexionEnCours } = useDeconnexion();
 
   return (
     <main className="page-admin">
       <div className="entete-admin">
-        <h1>Signalements en attente</h1>
+        <h1>Tableau de bord</h1>
         <button type="button" className="bouton-secondaire" onClick={() => void deconnecter()} disabled={deconnexionEnCours}>
           Se déconnecter
         </button>
       </div>
+
+      {statistiques && (
+        <div className="statistiques-admin">
+          <div className="tuile-statistique">
+            <strong>{statistiques.totalEvenements}</strong>
+            <span>Événements créés</span>
+          </div>
+          <div className="tuile-statistique">
+            <strong>{statistiques.evenementsActifs}</strong>
+            <span>Événements actifs</span>
+          </div>
+          <div className="tuile-statistique">
+            <strong>{statistiques.evenementsTermines}</strong>
+            <span>Événements terminés</span>
+          </div>
+          <div className="tuile-statistique">
+            <strong>{statistiques.totalJoueurs}</strong>
+            <span>Joueurs inscrits</span>
+          </div>
+        </div>
+      )}
 
       {erreur && (
         <p role="alert" className="message-erreur">
           {erreur}
         </p>
       )}
+
+      <h2>Signalements en attente</h2>
 
       {chargement ? (
         <p>Chargement…</p>
@@ -95,9 +138,72 @@ const TableauDeBord = () => {
           ))}
         </ul>
       )}
+
+      <h2>Tous les événements</h2>
+
+      <div className="filtres-evenements-admin">
+        <label>
+          Statut
+          <select value={statut} onChange={(e) => setStatut(e.target.value as StatutEvenement | "")}>
+            <option value="">Tous</option>
+            <option value="Ouvert">Ouvert</option>
+            <option value="Complet">Complet</option>
+            <option value="Termine">Terminé</option>
+            <option value="Annule">Annulé</option>
+          </select>
+        </label>
+        <label>
+          Du
+          <input type="date" value={dateDebutMin} onChange={(e) => setDateDebutMin(e.target.value)} />
+        </label>
+        <label>
+          Au
+          <input type="date" value={dateDebutMax} onChange={(e) => setDateDebutMax(e.target.value)} />
+        </label>
+      </div>
+
+      {erreurEvenements && (
+        <p role="alert" className="message-erreur">
+          {erreurEvenements}
+        </p>
+      )}
+
+      {chargementEvenements ? (
+        <p>Chargement…</p>
+      ) : evenements.length === 0 ? (
+        <p>Aucun événement ne correspond à ces filtres.</p>
+      ) : (
+        <ul className="liste-evenements-admin">
+          {evenements.map((evenement) => (
+            <LigneEvenementAdmin key={evenement.id} evenement={evenement} />
+          ))}
+        </ul>
+      )}
     </main>
   );
 };
+
+// Même code couleur que le reste de l'appli (CarteRecherche, FicheEvenement) :
+// Ouvert en vert, Complet en rouge (bloquant), Terminé en bleu, Annulé en
+// ambre. Une couleur à part par statut — revu le 22/09/2026 (retour du porteur
+// de projet : le badge neutre/estompé passait inaperçu à côté des autres sur
+// cette liste à plusieurs statuts, voir CLAUDE.md).
+const classeBadgeStatut = (evenement: EvenementAdmin): string => {
+  if (evenement.estAnnule) return "badge badge--ambre";
+  if (evenement.statut === "Termine") return "badge badge--info";
+  if (evenement.statut === "Complet") return "badge badge--alerte";
+  return "badge badge--marque";
+};
+
+const LigneEvenementAdmin = ({ evenement }: { evenement: EvenementAdmin }) => (
+  <li className="ligne-evenement-admin">
+    <strong>{evenement.titre}</strong>
+    <span className={classeBadgeStatut(evenement)}>{evenement.estAnnule ? "Annulé" : LIBELLES_STATUT[evenement.statut]}</span>
+    <div className="texte-attenue">
+      Organisé par {evenement.organisateur.prenom} {evenement.organisateur.nom} · {formaterDate(evenement.dateDebut)}
+    </div>
+  </li>
+);
 
 type PropsLigneSignalement = {
   signalement: SignalementDetail;

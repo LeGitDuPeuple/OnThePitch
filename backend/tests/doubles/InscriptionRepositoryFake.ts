@@ -22,6 +22,12 @@ export class InscriptionRepositoryFake implements InscriptionRepositoryInterface
       }));
   }
 
+  async listerParJoueur(idJoueur: number, statuts: StatutInscription[]): Promise<Inscription[]> {
+    return this.inscriptions.filter(
+      (inscription) => inscription.idJoueur === idJoueur && statuts.includes(inscription.statut)
+    );
+  }
+
   ajouter(inscription: Inscription): void {
     this.inscriptions.push(inscription);
   }

@@ -35,6 +35,35 @@
   color: var(--rouge);
 }
 
+.statistiques-admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.tuile-statistique {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 0.85rem 1rem;
+  box-shadow: var(--ombre-carte);
+}
+
+.tuile-statistique strong {
+  font-size: 1.6rem;
+}
+
+.tuile-statistique span {
+  font-size: 0.78rem;
+  color: var(--texte-attenue);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .liste-signalements {
   list-style: none;
   padding: 0;
@@ -61,4 +90,39 @@
   display: flex;
   gap: 0.5rem;
   margin-top: 0.65rem;
+}
+
+.filtres-evenements-admin {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.filtres-evenements-admin label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--texte-attenue);
+}
+
+.liste-evenements-admin {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.ligne-evenement-admin {
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 0.7rem 1rem;
+  box-shadow: var(--ombre-carte);
+}
+
+.ligne-evenement-admin strong {
+  margin-right: 0.5rem;
 }

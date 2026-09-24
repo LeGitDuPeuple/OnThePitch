@@ -7,3 +7,13 @@ export const signalementSchema = z.object({
 });
 
 export type DonneesSignalement = z.infer<typeof signalementSchema>;
+
+// Validation des paramètres de GET /moderation/evenements (query string, donc
+// coercition) — vue d'ensemble admin, voir CLAUDE.md section Modération.
+export const filtresEvenementsAdminSchema = z.object({
+  statut: z.enum(["Ouvert", "Complet", "Termine", "Annule"]).optional(),
+  dateDebutMin: z.coerce.date().optional(),
+  dateDebutMax: z.coerce.date().optional(),
+});
+
+export type FiltresEvenementsAdminQuery = z.infer<typeof filtresEvenementsAdminSchema>;

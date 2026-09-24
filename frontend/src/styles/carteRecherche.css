@@ -78,6 +78,13 @@
   gap: 0.6rem;
 }
 
+.pagination-resultats {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
 .carte-evenement {
   display: flex;
   align-items: flex-start;

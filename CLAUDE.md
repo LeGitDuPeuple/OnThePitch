@@ -33,8 +33,22 @@ Devant un choix entre deux solutions qui répondent au besoin, prendre la plus s
 terminé et testé.
 
 ### Socle
-- [ ] `docker-compose.yml` fonctionnel (db + api + client) — seul `db` existe pour l'instant,
-      `api`/`client` pas encore conteneurisés (pas de Dockerfile, `frontend/` pas encore amorcé)
+- [x] `docker-compose.yml` fonctionnel (db + api + client) — 21/09/2026,
+      `Dockerfile` ajoutés pour `backend/` (build Node 24 en deux étapes,
+      `node:24-slim` plutôt qu'Alpine à cause du module natif de `bcrypt`,
+      `prisma migrate deploy` au démarrage du conteneur) et `frontend/`
+      (build Vite puis servi par nginx, avec repli sur `index.html` pour les
+      routes React Router — sinon `/evenements/:id` renverrait un 404 nginx
+      au rechargement direct). `api` attend que `db` soit *healthy* avant de
+      démarrer ; `DATABASE_URL` réécrit pour ce service (`db:5432` plutôt que
+      `localhost`, seule différence avec le `.env` de développement local).
+      Bug rencontré et corrigé : `prisma7.config.ts` (porte l'URL de
+      connexion pour la CLI Prisma) n'était pas copié dans l'image finale —
+      `migrate deploy` échouait ("datasource.url property is required").
+      Testé de bout en bout : les trois conteneurs démarrent, migrations
+      appliquées automatiquement, connexion + navigation + carte interactive
+      vérifiées en navigateur réel à travers la stack conteneurisée (Puppeteer),
+      rechargement direct d'une route profonde vérifié (repli nginx)
 - [x] Extension PostGIS active + index GIST (via migration Prisma, pas `init.sql`)
 - [x] Serveur Express qui démarre et répond sur une route de santé
 - [x] Structure de dossiers en place (controllers / services / repositories)
@@ -109,7 +123,40 @@ terminé et testé.
       Sur la recherche, choisir une suggestion lance la recherche directement
       (coordonnées déjà connues, pas de second géocodage). Sur la création
       d'annonce, remplit seulement le champ. Testé (3 tests + Chrome headless)
-- [ ] Performance vérifiée (< 500 ms sur 1 000 événements)
+- [x] Pagination des résultats (22/09/2026, inspirée du `skip`/`take` déjà
+      utilisé sur un autre projet du porteur — même principe, refait proprement
+      ici à travers Controller → Service → Repository plutôt que le controller
+      qui interrogeait Prisma directement comme sur ce projet de référence).
+      `GET /evenements/recherche` accepte `skip`/`take` (défaut 0/10, `take`
+      plafonné à 50), `LIMIT`/`OFFSET` ajoutés à la requête PostGIS. Pas de
+      curseur ni de comptage total à part : "Suivant" se désactive simplement
+      quand une page renvoie moins de résultats que sa taille — draw-back
+      assumé, un événement peut en théorie apparaître deux fois ou sauter une
+      page si la liste change entre deux clics, jugé acceptable ici. Prépare
+      le terrain pour la case suivante (moins de lignes remontées par requête
+      sur un gros volume). Boutons "Précédent"/"Suivant" sous la liste de
+      résultats (`CarteRecherche.tsx`), toute nouvelle recherche (adresse,
+      position, changement de rayon) repart de la première page. Testé : 2
+      tests Jest (défaut skip/take, valeurs fournies) + vérifié contre la
+      vraie API (14 événements, pagination par 5) + navigateur réel (Puppeteer :
+      page 1 pleine avec "Suivant" actif, page 2 avec le reliquat et "Suivant"
+      désactivé, carte mise à jour)
+- [x] Performance vérifiée (24/09/2026) — 1000 événements insérés directement
+      via Prisma (pas par l'API : le géocodage réel, non caché, aurait pris
+      un temps déraisonnable et heurté le rate-limit de l'API Adresse du
+      gouvernement pour ce seul besoin de volume, voir "Évolutions
+      envisagées" sur le cache Redis), dispersés aléatoirement dans un rayon
+      de ~40 km autour de Paris — tous à l'intérieur du rayon de recherche
+      utilisé pour la mesure (60 km, puis 100 km), pour que la requête trie
+      vraiment ~1000 lignes candidates plutôt que d'être trivialement filtrée
+      par l'index GIST avant même le tri. `GET /evenements/recherche` mesuré
+      à **11-55 ms** sur 10 requêtes consécutives (deux rayons), très
+      largement sous les 500 ms visés — résultats vérifiés non triviaux
+      (contenu réel, triés par distance croissante). Données de test
+      supprimées après coup (pas de soft delete ici : script de maintenance
+      ponctuel manipulant directement la base, pas une action métier de
+      l'application — le principe "jamais de DELETE physique" de CLAUDE.md
+      s'applique au code applicatif, pas à un script de charge jetable).
 
 ### Inscriptions
 - [x] Rejoindre un événement public — testé (201 direct, 409 si déjà inscrit,
@@ -225,16 +272,61 @@ terminé et testé.
       côte à côte, tablette = liste sous la carte, mobile = bascule par onglets.
       Vérifié par build ; pas de vérification visuelle en navigateur réel cette
       session (outil d'automatisation indisponible) —à confirmer visuellement
+- [x] Écran Profil joueur (`/profil`, demandé le 20/09/2026 par le porteur de
+      projet, referme partiellement l'écart de périmètre ci-dessous) — trois
+      listes : événements organisés, événements rejoints (statut `acceptee`
+      uniquement) et demandes en attente (statut `en_attente`), chacune
+      excluant les événements annulés. Les deux premières listes séparent
+      "à venir" (affiché) et "terminés" (repliés dans un `<details>`, pour ne
+      pas surcharger visuellement — décision explicite du porteur de projet).
+      Les demandes refusées n'apparaissent dans aucune des trois listes.
+      Backend : `EvenementRepository.listerParOrganisateur`,
+      `InscriptionRepository.listerParJoueur` (renvoie des `Inscription`, pas
+      des `Evenement` — la résolution vers l'événement actif reste dans
+      `EvenementService.listerMesEvenements`, qui connaît déjà les deux
+      repositories), route `GET /evenements/mes-evenements`. Aucun changement
+      de schéma. Ne couvre volontairement pas le score de "Fiabilité" par
+      joueur montré sur la même page de la maquette — celui-ci reste bloqué
+      par l'absence de système de notation (voir note ci-dessous et
+      "Évolutions envisagées"). Lien "Mon profil" dans l'en-tête, réservé au
+      rôle `joueur`. Testé de bout en bout contre la vraie API (Puppeteer,
+      3 comptes : organisateur avec plusieurs événements dont des terminés,
+      participant avec un événement terminé, joueur refusé — vérifié absent
+      partout). 77 tests Jest toujours au vert (5 fichiers de test mis à jour
+      pour la nouvelle dépendance d'`EvenementService`)
+- [x] Découpage du code par route (22/09/2026, à la demande du porteur de
+      projet). `App.tsx` : `/` (`CarteRecherche`) reste importée directement
+      (premier écran vu par presque tout le monde), les six autres routes
+      passent par `React.lazy` + `Suspense` — leur code JavaScript n'est
+      téléchargé qu'à la navigation, pas au chargement initial. Les
+      composants concernés sont exportés nommément (`export const X`), pas
+      par défaut : `lazy()` exige un export par défaut, d'où un
+      `.then((m) => ({ default: m.X }))` pour adapter l'un vers l'autre.
+      Gain mesuré : paquet JS initial passé de 880 Ko à 442 Ko (`FicheEvenement`,
+      qui embarque Leaflet, est désormais le plus gros morceau séparé —
+      chargé seulement en visitant une fiche). Fait disparaître l'avertissement
+      Vite présent depuis le début du projet ("Some chunks are larger than
+      500 kB"). Bug trouvé en testant : le test E2E `profil.spec.ts` a
+      commencé à échouer par intermittence après ce changement — pas une
+      régression du découpage lui-même, mais un bug déjà présent dans
+      `ProfilPage` (`e2e/pages/ProfilPage.ts`) que le délai supplémentaire du
+      chargement du code a rendu visible : `.isVisible()` vérifie l'instant
+      présent sans réessayer, contrairement à `expect().toBeVisible()`.
+      Corrigé (`waitFor({ state: "visible" })` ajouté avant l'inspection du
+      contenu). Vérifié : build (plusieurs fichiers séparés confirmés),
+      navigation réelle sur les 7 routes sans erreur (Puppeteer), suite E2E
+      complète toujours à 11/11 après correctif
 
-> **Écart de périmètre entre la maquette et ce fichier** (relevé le 14/09/2026,
-> à signaler avant d'aller plus loin sur le sujet) : la maquette fournie montre
-> des pages "Mes événements" et "Profil" (nav + barre d'onglets mobile), ainsi
-> qu'un score de **"Fiabilité"** par joueur affiché à côté de chaque inscrit. Ni
-> l'un ni l'autre n'existe dans le périmètre actuel des 4 écrans (section 9) : la
-> fiabilité dépendrait d'un système de notation entre joueurs, déjà noté plus bas
-> comme "hors périmètre initial" (table `evaluation` non câblée) — ne pas
-> l'inventer avec des données fictives. Non construits pour l'instant ; à
-> discuter si le porteur de projet souhaite les intégrer au périmètre.
+> **Écart de périmètre entre la maquette et ce fichier** (relevé le 14/09/2026 ;
+> partie "Profil" refermée le 20/09/2026 ; partie "Fiabilité" refermée le
+> 23/09/2026, voir section "Évaluations" plus bas) : la maquette fournie
+> montrait des pages "Mes événements" et "Profil" (nav + barre d'onglets
+> mobile), ainsi qu'un score de **"Fiabilité"** par joueur affiché à côté de
+> chaque inscrit. Les deux sont désormais construits. Écart résiduel mineur :
+> la maquette montrait la fiabilité à côté de chaque inscrit dans la liste des
+> joueurs ; elle est affichée à côté du nom de l'organisateur sur la fiche
+> événement à la place (c'est l'organisateur qui est noté, pas les inscrits
+> entre eux — voir section "Évaluations" pour le raisonnement).
 
 ### Présences
 - [x] Marquage manuel (secours) — `POST /evenements/:id/presences/manuel`, testé
@@ -268,7 +360,8 @@ terminé et testé.
       caméra physique n'est pas simulable en environnement de test, mais
       repose sur le même endpoint déjà validé par curl (PRES-04)
 - [x] Passage en statut "Terminé" — `POST /evenements/:id/terminer`, testé (204,
-      403 si pas l'organisateur, 409 si déjà terminé). Bouton "Terminer
+      403 si pas l'organisateur, 409 si déjà terminé, 409 si l'événement n'a
+      pas encore commencé — voir plus bas, 24/09/2026). Bouton "Terminer
       l'événement" ajouté côté front le 19/09/2026 (jusqu'ici accessible par
       API seulement), révisé le 20/09/2026 : jamais bloqué par les présences
       (un simple absent aurait sinon empêché de clôturer pour toujours,
@@ -283,6 +376,39 @@ terminé et testé.
       Recalculé sur l'identité (`utilisateur.id === evenement.idOrganisateur`),
       stable quel que soit le statut. Vérifié de bout en bout (Puppeteer +
       vraie API)
+- [x] Refus de terminer un événement qui n'a pas encore commencé (24/09/2026,
+      repéré par le porteur de projet en regardant le test E2E d'évaluation
+      tourner en `--headed` : l'événement de test était programmé dans le
+      futur, et pourtant "Terminer l'événement" fonctionnait immédiatement —
+      "sinon tu l'annules en fait", remarque exacte). Rien ne vérifiait la
+      date jusqu'ici : `EvenementService.terminer` se contentait de la
+      permission (organisateur) et de l'état (pas déjà terminé). Ajout d'une
+      vérification sur `dateDebut` uniquement, pas `dateFin` — un organisateur
+      doit pouvoir clôturer avant l'heure de fin prévue si tout le monde a
+      fini de jouer, cohérent avec la révision du 20/09/2026 qui refuse déjà
+      de bloquer sur les présences pour la même raison. `409 "Cet événement
+      n'a pas encore commencé"`. A cassé de bout en bout le test E2E
+      d'évaluation (voir section Qualité et déploiement) : l'événement y
+      était créé plusieurs jours dans le futur puis terminé aussitôt, comme
+      quatre tests Jest qui suivaient le même raccourci (`service.creer()`
+      suivi immédiatement de `service.terminer()`) — les cinq corrigés
+      (événement injecté directement avec une `dateDebut` passée via le
+      double, ou clôturé directement via le repository quand seul l'état
+      "déjà terminé" important pour le test). Testé : 97 tests Jest (back,
+      +1) + vérifié contre la vraie API (409 confirmé sur un événement à 4
+      jours) + suite E2E complète (12/12) toujours au vert après correction
+- [x] Clôture automatique de secours (21/09/2026, à la demande du porteur de
+      projet — repéré en observant un événement resté "Ouvert" alors qu'il
+      était largement passé, faute de clic organisateur sur "Terminer
+      l'événement"). `EvenementService.terminerEvenementsExpires` clôture tout
+      événement actif dont `date_fin` dépasse une marge de 3h (délai discuté
+      et validé avec le porteur de projet), appelé par un `setInterval` dans
+      `server.ts` (toutes les 30 min + un passage immédiat au démarrage) —
+      pas de nouvelle dépendance, pas de cron externe. Opération idempotente
+      (`WHERE id_statut_event != Termine`), sans risque en cas de double
+      exécution. Testé (Jest : événement à 4h dépasse la marge → clôturé,
+      à 1h → laissé tel quel ; vérifié aussi en base réelle, événement
+      backdaté manuellement puis clôturé au redémarrage du serveur)
 
 ### Modération
 - [x] Signalement d'un événement — `POST /evenements/:id/signalements`, testé
@@ -294,6 +420,156 @@ terminé et testé.
       testé (soft delete de l'événement + statut "averti" sur l'organisateur, vérifié
       en base). Faux signalement : `DELETE /moderation/evenements/:id/signalements`,
       testé (événement inchangé, signalements retirés)
+- [x] Vue d'ensemble sur `/admin` (22/09/2026, à la demande du porteur de
+      projet — inspirée d'une idée de dashboard analytique vue sur un autre
+      projet, mais délibérément simplifiée : ce projet-là utilisait une
+      **seconde base de données (MongoDB)** rien que pour ça, écarté ici comme
+      inutile — la stack impose PostgreSQL, et les données existent déjà dans
+      les tables `evenement`/`utilisateur`). Quatre chiffres, pas de
+      graphique, pas de nouvelle dépendance : événements créés (total),
+      actifs (Ouvert + Complet), terminés, joueurs inscrits. `ModerationService`
+      s'appuie sur `EvenementRepository.compterParStatut` et
+      `UtilisateurRepository.compterJoueurs` (comptages SQL directs, exclut
+      les événements annulés des colonnes "actifs"/"terminés" mais pas du
+      total). Route `GET /moderation/statistiques`, réservée admin. Testé :
+      1 test Jest (85 au total) + vérifié en navigateur réel (Puppeteer,
+      chiffres cohérents avec la base de dev)
+- [x] Liste filtrable de tous les événements sur `/admin` (22/09/2026, à la
+      demande du porteur de projet, en complément de la vue d'ensemble
+      ci-dessus) — contrairement aux "Signalements en attente", pas limitée
+      à ce qui a été signalé : un admin peut parcourir/superviser
+      proactivement. Filtres statut (Ouvert/Complet/Terminé/Annulé) et plage
+      de date de début, combinables. Point d'attention technique : "Annulé"
+      ne correspond à aucune ligne réellement posée dans `statut_event` (la
+      table a bien une entrée "Annule", mais rien dans le code applicatif ne
+      s'en sert — l'annulation est encodée uniquement par
+      `date_desactivation`). Le filtre "Annulé" traduit donc ce cas en
+      `dateDesactivation IS NOT NULL`, jamais en jointure sur le libellé de
+      statut ; la réponse API expose un `estAnnule` explicite pour que le
+      front n'ait pas à deviner. `EvenementRepository.listerTousAdmin`,
+      `ModerationService.listerEvenements`, route `GET /moderation/evenements`
+      (réservée admin). Hook dédié `useEvenementsAdmin` côté front (séparé de
+      `useModeration` : un hook, une responsabilité). Écarté délibérément :
+      pas de tri, pas de recherche texte, pas de pagination — au-delà du
+      volume de test accumulé pendant cette session (~200 événements), ça
+      resterait à revoir. Testé : 2 tests Jest (87 au total) + vérifié en
+      navigateur réel (Puppeteer, filtre "Annulé" puis "Ouvert", badges
+      cohérents dans les deux cas)
+
+### Notifications
+- [x] Notifications in-app + email générique (21/09/2026, à la demande du
+      porteur de projet — pas d'app mobile, donc pas de push : une cloche
+      dans l'en-tête plutôt qu'une multiplication d'emails détaillés).
+      Table `notification` (absente du MCD initial, écart documenté ci-dessous,
+      même traitement que `photo`/`format` en leur temps). Déclenchée depuis
+      `InscriptionService`/`EvenementService` via le port `NotificationInterface`
+      (même rôle architectural que `GeocodeurInterface` — `NotificationService`
+      l'implémente, wrapping `NotificationRepositoryInterface` + un second port
+      `NotificationEmailInterface` implémenté par `NotificationEmailNodemailer`,
+      compte de test Ethereal créé à la volée). L'email est volontairement
+      générique ("Vous avez une nouvelle notification..."), jamais le détail —
+      un échec d'envoi n'empêche jamais l'action métier ni la notification
+      en base (erreur avalée et journalisée). Cinq déclencheurs : demande sur
+      événement privé → organisateur ; réponse à une demande (acceptée/refusée)
+      → demandeur ; passage à "Complet" → organisateur ; annulation →
+      chaque inscrit accepté ; passage à "Terminé" → chaque inscrit accepté
+      (5ᵉ déclencheur, `evenement_termine`, ajouté le 24/09/2026 — voir
+      ci-dessous). `GET /notifications` + `POST /notifications/:id/lue`.
+      Front : cloche dans `Entete.tsx` (`ClocheNotifications.tsx`,
+      `useNotifications.ts`), rafraîchissement toutes les 30s, clic = marque
+      lu + navigue vers l'événement. Résout les deux points notés plus bas
+      dans "Évolutions envisagées" (email à l'annulation, signaler une demande
+      en attente) — les deux entrées y sont conservées mais marquées résolues.
+      Testé : 4 tests Jest (`notificationService.test.ts`) + les 4 déclencheurs
+      vérifiés contre la vraie API (curl) + email généré consulté sur Ethereal
+      + cloche vérifiée en navigateur réel (Puppeteer : compteur, contenu,
+      clic → navigation + marquage lu persistant)
+- [x] Déclencheur "événement terminé" (24/09/2026, à la demande du porteur de
+      projet — repéré en discutant du système d'évaluation : rien ne ramenait
+      un joueur sur la fiche une fois l'événement clos pour qu'il puisse noter
+      l'organisateur, incohérent avec le reste du système de notification déjà
+      en place). `"evenement_termine"` ajouté à `TypeNotification`, envoyé à
+      chaque inscrit accepté (pas l'organisateur, il ne s'auto-évalue pas) —
+      factorisé dans `EvenementService.notifierInscritsAcceptes` (méthode
+      privée, réutilisée aussi par `annuler`), appelé à la fois par `terminer`
+      (clôture manuelle) et par `terminerEvenementsExpires` (filet de sécurité
+      automatique, voir section Présences) : un organisateur qui oublie de
+      clôturer ne doit pas priver ses inscrits du signal pour évaluer.
+      Nécessitait de changer `EvenementRepository.terminerAvantDate` pour
+      renvoyer les identifiants clôturés plutôt qu'un simple compte (un
+      `updateMany` seul ne renvoie pas les lignes affectées) — `findMany` puis
+      `updateMany` sur les mêmes identifiants côté implémentation Prisma.
+      Testé : 2 tests Jest supplémentaires (clôture manuelle et automatique,
+      `NotificationFake.appels`, 96 au total) + vérifié contre la vraie API
+      (curl : clôture manuelle → notification immédiate) et contre la vraie
+      base (script direct pour simuler la clôture automatique sans attendre
+      le vrai délai de 30 min — notification + email réel envoyés) + cloche
+      vérifiée en navigateur réel (Puppeteer : les deux notifications
+      affichées avec le bon libellé)
+
+### Évaluations
+- [x] Notation de l'organisateur par les joueurs (23/09/2026, à la demande du
+      porteur de projet — "des couleurs de badges" avait ouvert la discussion
+      sur ce qui restait à faire, résolvant ensuite le point noté depuis le
+      20/09/2026 dans "Évolutions envisagées"). Qui note qui découle du
+      modèle de données plutôt que d'un choix arbitraire : la clé primaire de
+      la table `evaluation` est `(id_joueur, id_evenement)` — une seule note
+      par joueur et par événement, ce qui exclut mécaniquement la notation
+      entre joueurs (il faudrait un second `id_joueur`) et retient "chaque
+      joueur accepté note l'organisateur". Réservé à un joueur inscrit et
+      accepté (pas un simple demandeur en attente/refusé), non-organisateur,
+      une fois l'événement réellement "Termine" (pas "Annule"). Pas de
+      condition sur la présence pointée : le scan QR est un secours, pas
+      systématique (même raisonnement que pour terminer l'événement, voir
+      section Présences) — un joueur venu sans avoir été scanné doit pouvoir
+      noter. Doublon (déjà noté) refusé par la contrainte de clé primaire,
+      pas par une vérification applicative dédiée.
+      Architecture : copie conforme du pattern `Signalement`/`Presence` — pas
+      de couche supplémentaire pour autant (`EvaluationRepositoryInterface`
+      + `EvaluationRepositoryDatabase`/`Fake`, `EvaluationService`,
+      `EvaluationController`, route `POST /evenements/:id/evaluations`
+      montée sur le router `/evenements` existant). Ferme au passage l'écart
+      de périmètre maquette sur le score de **"Fiabilité"** (voir plus haut) :
+      `OrganisateurDetail.fiabilite` (moyenne des notes reçues sur tous ses
+      événements, `null` tant qu'aucune n'existe), composée dans
+      `EvenementService.trouverDetailParId` via
+      `EvaluationRepository.moyenneParOrganisateur` — pas dans
+      `EvenementRepository`, qui ne connaît pas la table `evaluation` (une
+      seule responsabilité par repository). Affichée sur la fiche événement,
+      à côté du nom de l'organisateur — identiquement sur chacun de ses
+      événements, puisque c'est une moyenne par organisateur et non par
+      événement (pas de profil public par joueur dans le périmètre actuel
+      pour l'afficher ailleurs — clarifié avec le porteur de projet le
+      24/09/2026, volontairement pas construit ici).
+      CSS revu le 24/09/2026 (retour du porteur de projet : la première
+      version, un simple texte gris à la suite du nom, "passait totalement
+      inaperçue") — pastille `.pastille-fiabilite` dédiée ("★ 4.0/5", fond et
+      texte ambre), plutôt qu'un texte discret noyé dans la ligne
+      "Organisé par...".
+      Front : bouton "Évaluer l'organisateur" sur la fiche événement (même
+      forme que "Signaler un problème"), visible via
+      `useFicheEvenement.peutEvaluer` (mêmes règles que ci-dessus, calculées
+      côté front pour l'affichage — revérifiées côté back de toute façon).
+      Limite assumée : le front ne sait pas qu'un joueur a déjà noté tant
+      qu'il n'a pas rechargé la page (pas de champ dédié exposé sur la fiche
+      événement pour ça, jugé disproportionné pour ce cas) — une nouvelle
+      tentative après rechargement affiche simplement le message d'erreur
+      409 du back ("Vous avez déjà évalué cet événement"), pas une régression
+      silencieuse.
+      Bug trouvé en testant : `EvaluationRepositoryDatabase.moyenneParOrganisateur`
+      filtrait sur `evenement.idOrganisateur`, qui n'existe pas côté Prisma —
+      le champ généré est `idJoueur` (mappé sur `id_joueur`), `idOrganisateur`
+      n'existe que côté entité de domaine (`Evenement.idOrganisateur`,
+      renommé dans `EvenementRepositoryDatabase.versEntite`). Provoquait un
+      500 sur `GET /evenements/:id` dès qu'un événement avait un
+      organisateur. Corrigé, revérifié contre la vraie API.
+      Testé : 5 tests Jest sur `EvaluationService` (succès, événement
+      introuvable, auto-évaluation refusée, événement pas encore terminé,
+      joueur non accepté) + 2 sur la fiabilité (`EvenementService`), 94 au
+      total. Vérifié de bout en bout contre la vraie API (curl : refus avant
+      clôture, refus auto-évaluation, succès, doublon 409, fiabilité recalculée)
+      et en navigateur réel (Puppeteer : badge "Fiabilité 4.0/5" affiché,
+      message d'erreur clair sur une seconde tentative).
 
 ### Qualité et déploiement
 - [x] Tests Jest sur la couche Service — 76 tests, 8 services (Auth, Evenement,
@@ -307,6 +583,74 @@ terminé et testé.
       — la commande ne vérifiait en réalité aucun fichier de `tests/` depuis sa
       création. Deux non-conformités réelles dans `EvenementRepositoryFake`
       dormaient derrière ce trou (interface pas respectée à la lettre).
+- [x] Tests E2E (22/09/2026, structure inspirée d'un autre projet du porteur —
+      Playwright + Page Object Model, mais implémenté proprement à travers
+      l'UI plutôt que ce projet de référence qui court-circuitait ses propres
+      couches). Nouveau dossier `e2e/` à la racine (pas dans `backend/` ni
+      `frontend/` : un test E2E vérifie tout le système à la fois, n'appartient
+      à aucun des deux) — `pages/` (Page Objects), `tests/` (specs), `utils/`
+      (comptes/événements de test via l'API réelle, plus rapide et fiable que
+      de repasser par l'UI pour la préparation). 12 tests, 6 fichiers :
+      authentification, création d'événement, inscriptions (public direct,
+      privé accepté, privé refusé — vérifie au passage le correctif du
+      20/09/2026 sur la demande refusée), profil, recherche + pagination,
+      évaluation (24/09/2026, à la demande du porteur de projet, qui voulait
+      voir le parcours complet joueur+organisateur en `--headed` — jusqu'ici
+      seulement vérifié par des scripts Puppeteer jetables, jamais dans la
+      suite permanente). Ce dernier spec enchaîne : inscription à un
+      événement public, clôture par l'organisateur, notification reçue par le
+      joueur (cloche), clic dessus (marque lu + navigue), évaluation notée,
+      pastille de fiabilité affichée — organisateur préparé via l'API
+      (création d'événement déjà couverte par `creation-evenement.spec.ts`,
+      pas la peine de la dupliquer ici). A nécessité d'étendre
+      `FicheEvenementPage` (`terminerEvenement`, `evaluerOrganisateur`,
+      `pastilleFiabilite`) et `EntetePage` (`texteNotifications`,
+      `cliquerPremiereNotification`, `badgeNotifications`).
+      Bug trouvé en écrivant ce spec : `EntetePage.boutonCloche` utilisait
+      `.locator(".cloche-notifications-bouton").first()` — l'en-tête rend
+      deux instances de la cloche (mobile + desktop, repli CSS selon la
+      largeur, voir CLAUDE.md "Responsive"), et contrairement à
+      `boutonDeconnexion`/`lienConnexionInscription` plus haut (qui passent
+      par `getByRole`, lequel exclut déjà les éléments `display:none` de
+      l'arbre d'accessibilité), un `.locator()` sur une classe CSS renvoie
+      tous les éléments du DOM sans filtrer sur la visibilité — et la
+      variante mobile (cachée en desktop) apparaît EN PREMIER dans le DOM
+      (voir `Entete.tsx`). Le test échouait ("element is not visible") en
+      cliquant sur le bouton caché. Corrigé en scopant explicitement sur
+      `.entete-compte--desktop`, plutôt qu'un `.first()` qui ne marchait que
+      par coïncidence pour les deux autres locators.
+      Second bug trouvé en le regardant tourner en `--headed` (24/09/2026,
+      remarque du porteur de projet — l'événement du scénario était
+      programmé dans plusieurs jours, et se terminait pourtant aussitôt) :
+      révélait l'absence de vérification de date sur "Terminer l'événement"
+      côté back, corrigée dans la foulée (voir section Présences). A dû être
+      réécrit en conséquence : dateDebut à quelques secondes plutôt que
+      plusieurs jours (le joueur doit rejoindre avant cette échéance —
+      `verifierInscriptionPossible` refuse déjà de rejoindre un événement
+      commencé, règle préexistante — puis l'organisateur clôturer après,
+      d'où une attente explicite entre les deux dans le test).
+      Contre l'appli réelle tournant en local (front+back+base), jamais de
+      mock — les tests Jest isolent déjà la couche Service, ceux-ci vérifient
+      le comportement observable de bout en bout. Deux points relevés en
+      testant :
+      1. `workers: 1` obligatoire — en parallèle, les tests se
+         marchent dessus sur la vraie base (contention sur les transactions
+         `Serializable` du contrôle des places notamment), vérifié en pratique
+         (mêmes tests, échouent en parallèle, passent en série).
+      2. Le géocodage n'est jamais mocké (`GeocodageService` appelle la vraie
+         API Adresse du gouvernement à chaque événement créé, sans cache —
+         voir "Évolutions envisagées") : un test qui en crée beaucoup de suite
+         peut essuyer un 503 "service indisponible" si le débit est trop
+         élevé. Reprise automatique avec délai croissant dans les utilitaires
+         de test, pas de mock introduit pour contourner — cohérent avec le
+         choix de tester contre le vrai système. Limite connue et assumée :
+         relancer la suite plusieurs fois d'affilée en quelques minutes peut
+         occasionnellement échouer côté géocodage, un run isolé ne pose pas
+         ce problème.
+      Chrome système (`channel: "chrome"`) plutôt que le Chromium propre à
+      Playwright — téléchargement propre à Playwright très lent dans cet
+      environnement, le binaire système déjà installé fait exactement le
+      même travail pour ces tests.
 - [ ] `Jenkinsfile` en place
 - [ ] Déploiement HTTPS
 
@@ -605,6 +949,23 @@ date_evaluation DATETIME
 commentaire     VARCHAR(255)
 ```
 
+### notification
+```
+id_notification  INT PK          -- À AJOUTER au MCD Looping (absente actuellement)
+id_joueur        INT FK          -- destinataire
+id_evenement     INT FK
+type             VARCHAR(30)     -- fermé côté TypeScript uniquement (TypeNotification),
+                                 -- pas de table de référence dédiée — même choix que
+                                 -- rejoint.statut_inscription, pour la même raison
+lu               BOOLEAN
+date_creation    DATETIME
+```
+
+> Ajoutée le 21/09/2026 (voir section "Notifications"). Pas de champ texte
+> stocké : le message s'affiche uniquement composé côté front à partir de
+> `type` + le titre de l'événement (jamais dupliqué en base, jamais dans
+> l'email — voir section Notifications).
+
 ### Tables de référence
 ```
 statut_utilisateur  (id_statut, libelle_statut)
@@ -883,8 +1244,46 @@ Quatre écrans, maquettés pour les trois premiers :
   à mettre à jour pour rester cohérent avec le code
 - `photo` et `photo_type` doivent être ajoutés à `lieu` au MCD Looping (absents
   actuellement, voir section "Modèle de données")
+- La table `notification` (entière) doit être ajoutée au MCD Looping (absente
+  actuellement, voir section "Modèle de données")
 
 ## Évolutions envisagées (hors périmètre initial)
+
+> **EN COURS DE DÉCISION (24/09/2026) — à reprendre en premier à la prochaine
+> session.** Deux sujets en suspens, discutés juste avant une coupure de
+> session (redémarrage machine prévu par le porteur de projet) :
+>
+> 1. **Chantier AWS/Jenkins/Kubernetes.** Le porteur de projet pensait ce
+>    déploiement réel obligatoire ; ses collègues lui ont indiqué que la
+>    compétence visée est en réalité *« Préparer et documenter le déploiement
+>    d'une application »*, qui porte sur :
+>    - la procédure de déploiement rédigée
+>    - les scripts de déploiement écrits et documentés
+>    - les environnements de test définis + la procédure d'exécution des
+>      tests d'intégration, système et d'acceptation client rédigée
+>    - un système de veille sur les évolutions technologiques et les
+>      problématiques de sécurité liées au déploiement
+>
+>    Un vrai déploiement en production n'est donc **pas strictement requis**
+>    ("c'est mieux si c'est le cas", mais pas la compétence elle-même). Le
+>    porteur de projet récolte encore des informations avant de trancher le
+>    niveau d'ambition (documentation seule vs déploiement AWS réel). Ne pas
+>    commencer le `Jenkinsfile`/les manifests Kubernetes ni quoi que ce soit
+>    côté AWS avant qu'il revienne là-dessus explicitement — discussion
+>    interrompue en plein choix de scope, pas une validation.
+>    Rappel de ce qui existe déjà et pourrait nourrir la documentation quel
+>    que soit le niveau retenu : `docker-compose.yml` + Dockerfiles
+>    (`backend/Dockerfile`, `frontend/Dockerfile`) fonctionnels et testés de
+>    bout en bout (voir section Socle), suite Jest (97 tests) + suite E2E
+>    Playwright (12 tests) déjà en place et documentées (section Qualité et
+>    déploiement) — une bonne partie de la matière pour "environnements de
+>    test définis + procédure d'exécution" existe donc déjà, à formaliser en
+>    document plutôt qu'à reconstruire.
+>
+> 2. **Double authentification (2FA)** — simplement évoquée ("possible qu'on
+>    mette en place ça aussi"), aucune décision, aucun détail (SMS ? TOTP/
+>    app d'authentification ? réservé à l'admin ou à tous les comptes ?). À
+>    clarifier avec le porteur de projet avant d'esquisser quoi que ce soit.
 
 **Cache Redis sur le géocodage.** Une adresse résolue ne change jamais : ses coordonnées
 peuvent être mises en cache sans risque d'obsolescence. Utile si plusieurs événements
@@ -892,39 +1291,31 @@ sont créés au même endroit (terrain municipal, city stade régulier). À ne p
 aux événements eux-mêmes : places restantes et inscriptions évoluent en permanence,
 les mettre en cache reviendrait à servir des données fausses.
 
-**Système d'évaluation entre joueurs** (table `evaluation` déjà modélisée,
-jamais câblée — discuté à nouveau le 20/09/2026, mis de côté volontairement,
-même raison que les autres points ci-dessous : priorité à la recette manuelle
-en cours). Bonne idée pour refermer la boucle rejoindre → jouer → noter, mais
-pas un simple bouton : reste à trancher qui note qui (le joueur note
-l'organisateur ? l'inverse ? entre joueurs ?), où afficher la moyenne, et la
-modération des commentaires abusifs.
+**Système d'évaluation entre joueurs** — ✅ **résolu le 23/09/2026**, voir
+section "Évaluations" du suivi. "Qui note qui" s'est tranché par la
+contrainte de clé primaire de la table `evaluation` (`id_joueur`,
+`id_evenement`) plutôt que par un choix arbitraire : chaque joueur accepté
+note l'organisateur, pas l'inverse, pas entre joueurs. La moyenne
+("Fiabilité") s'affiche sur la fiche événement, à côté du nom de
+l'organisateur. Point non traité, volontairement : la modération des
+commentaires abusifs — pas de workflow dédié, un admin pourrait supprimer
+une évaluation en base au besoin, à construire seulement si le besoin se
+confirme en usage réel.
 
-**Notification par email lors de l'annulation d'un événement** (discuté le
-15/09/2026, mis de côté volontairement — priorité donnée à la recette manuelle
-en cours). Prévenir les joueurs acceptés (pas ceux en attente, jamais garantis
-une place) quand l'organisateur annule — aujourd'hui ils n'ont aucun signal
-autre que la disparition de l'événement. Faisable sans gros chantier : même
-pattern que `GeocodageService` (`NotificationInterface`, implémentation
-Nodemailer, double de test) déjà en place dans le projet. Pour le
-développement/la démo, un compte SMTP factice Nodemailer (Ethereal — gratuit,
-sans inscription, lien de prévisualisation) évite d'avoir besoin de vrais
-identifiants email. Périmètre volontairement limité à ce seul cas (pas de
-notification à l'acceptation, pas de système de notification général) pour
-ne pas dériver.
+**Notification par email lors de l'annulation d'un événement** — ✅ **résolu le
+21/09/2026**, voir section "Notifications" du suivi. Absorbé dans le système
+de notification général (`evenement_annule`) plutôt que traité comme un cas
+à part : le périmètre initialement prévu ici ("ce seul cas, pas de système
+général") a été volontairement dépassé à la demande du porteur de projet, qui
+voulait couvrir plusieurs actions d'un coup (demande, réponse, complet,
+annulation). Entrée conservée pour l'historique de la décision.
 
-**Signaler à l'organisateur qu'une demande d'inscription l'attend** (discuté
-le 15/09/2026, mis de côté volontairement — même raison que ci-dessus). Sur
-un événement privé, une demande passe en `en_attente` sans que l'organisateur
-en soit informé autrement qu'en rouvrant la fiche de cet événement précis et
-en regardant la section "Demandes en attente". Aggravé par l'absence d'écran
-"Mes événements" dans le périmètre actuel (voir l'écart de périmètre maquette
-noté en section Front React) : un organisateur avec plusieurs événements
-privés n'a même pas d'endroit centralisé où revenir vérifier — il doit se
-souvenir de chaque URL. À rediscuter avec la notification d'annulation
-ci-dessus une fois la recette manuelle terminée : un simple badge (sur la
-fiche ou l'en-tête) pourrait suffire, ou bien passer par le même mécanisme
-d'email selon ce qui est décidé pour l'annulation.
+**Signaler à l'organisateur qu'une demande d'inscription l'attend** — ✅
+**résolu le 21/09/2026**, voir section "Notifications". La cloche de l'en-tête
+(`nouvelle_demande`) remplace l'idée de badge sur la carte Profil envisagée
+ci-dessous un temps — plus général, couvre aussi les réponses aux demandes et
+les événements complets/annulés avec le même mécanisme. Entrée conservée pour
+l'historique de la décision.
 
 **Couleur du badge "Privé"** (discuté le 15/09/2026, mis de côté volontairement
 — priorité à la recette manuelle en cours). Le badge est aujourd'hui gris
@@ -936,6 +1327,40 @@ et réutiliser la même couleur mélangerait deux badges de nature différente
 sur la même carte ("Privé" se rejoint très bien, juste sur validation). Si le
 besoin de distinguer "Privé" reste, repartir sur une couleur à part (ambre,
 déjà dans les tokens `index.css`) plutôt que le rouge existant.
+
+**Redirection après clôture d'un événement, vers l'écran Profil** (discuté le
+20/09/2026, mis de côté — l'écran Profil existe désormais, voir section Front
+React, mais ce lien-là n'a pas été ajouté). Aujourd'hui, `terminerEvenement`
+(`useFicheEvenement.ts`) ne redirige nulle part : la fiche se recharge sur
+place et reste affichée (volontaire — contrairement à l'annulation,
+l'événement terminé reste consultable, cf. commentaire dans le code). Ne pas
+remplacer ça par une redirection automatique forcée (arracherait
+l'organisateur d'une page qu'il veut souvent encore consulter juste après
+confirmation — présences, bilan) : plutôt ajouter un lien discret type "Voir
+mes événements" à ce moment-là, vers `/profil`.
+
+**Couleur des badges de statut "Terminé"/"Annulé"** (résolu le 22/09/2026).
+Historique : un premier passage (20/09/2026) avait donné à "Terminé" un
+traitement volontairement estompé (`.badge--sourdine`, opacité 0.7, sans
+couleur propre) pour qu'il s'efface visuellement — pari qui ne s'est confirmé
+qu'une fois un écran à plusieurs statuts construit (`/admin`, "Tous les
+événements", avec Ouvert/Complet/Terminé/Annulé côte à côte). Sur cet écran,
+le badge estompé et le badge "Annulé" (resté sur `.badge` neutre, gris sur
+fond clair) devenaient tous les deux quasi invisibles à côté des badges
+colorés "Ouvert"/"Complet" — retour explicite du porteur de projet
+("des couleurs qu'on les voit vraiment, pas juste du gris sur du blanc").
+Remplacé par deux couleurs à part, cohérentes avec le principe déjà posé pour
+"Privé" ci-dessus (ne pas réutiliser le rouge de "Complet" ni le vert
+"Ouvert"/niveau/"Présent") : "Terminé" en bleu (nouveaux tokens
+`--bleu-texte`/`--bleu-clair`, classe `.badge--info`), "Annulé" en ambre
+(tokens `--ambre-texte`/`--ambre-clair` déjà présents, jusque-là réservés à
+`MessageConfirmation`, classe `.badge--ambre`). `.badge--sourdine` supprimée
+(plus aucun usage). Appliqué aux 3 endroits où "Terminé" apparaît
+(`Admin.tsx`, `Profil.tsx`, `FicheEvenement.tsx`) et à "Annulé" sur
+`Admin.tsx` (seul endroit où ce badge existe). Vérifié : `tsc --noEmit` +
+build front sans erreur, 87/87 tests Jest back inchangés (changement
+purement CSS/front), vérification visuelle Puppeteer sur `/admin` filtré par
+statut (les deux couleurs bien rendues, capture d'écran).
 
 ---
 

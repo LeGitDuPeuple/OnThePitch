@@ -21,6 +21,11 @@ export interface InscriptionRepositoryInterface {
   // Liste les inscrits d'un événement (tous statuts), pour la fiche événement.
   listerParEvenement(idEvenement: number): Promise<InscritDetail[]>;
 
+  // Inscriptions d'un joueur, filtrées par statut — pour l'écran Profil.
+  // Renvoie des Inscription, pas des Evenement : la résolution vers l'événement
+  // (et l'exclusion des annulés) reste au Service, qui connaît déjà les deux repos.
+  listerParJoueur(idJoueur: number, statuts: StatutInscription[]): Promise<Inscription[]>;
+
   // Crée l'inscription. Si statutInitial vaut "acceptee" (événement public), le
   // contrôle des places et le passage en "Complet" ont lieu dans la même transaction.
   rejoindre(idJoueur: number, idEvenement: number, statutInitial: StatutInscription): Promise<Inscription>;

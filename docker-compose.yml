@@ -18,5 +18,34 @@ services:
       timeout: 5s
       retries: 10
 
+  api:
+    build:
+      context: ./backend
+    container_name: onthepitch-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # "localhost" ne veut rien dire dans le réseau Docker : "db" est le nom
+      # du service ci-dessus, résolu automatiquement par Docker. Seule cette
+      # variable diffère de .env (qui reste correct pour le développement local
+      # sans conteneur, où "localhost" désigne bien la machine hôte).
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    ports:
+      - "${PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ./frontend
+    container_name: onthepitch-client
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
 volumes:
   db_data:
