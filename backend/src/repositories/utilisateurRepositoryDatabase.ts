@@ -1,5 +1,7 @@
 import { prisma } from "../config/prismaClient";
+import { Prisma } from "../generated/prisma/client";
 import { Utilisateur, Role } from "../domain/entities/Utilisateur";
+import { Conflit } from "../domain/erreurMetier";
 import {
   UtilisateurRepositoryInterface,
   NouvelUtilisateur,
@@ -56,6 +58,24 @@ export class UtilisateurRepositoryDatabase implements UtilisateurRepositoryInter
 
   async compterJoueurs(): Promise<number> {
     return prisma.utilisateur.count({ where: { role: "joueur" } });
+  }
+
+  async changerEmail(id: number, email: string): Promise<Utilisateur> {
+    try {
+      const ligne = await prisma.utilisateur.update({ where: { idJoueur: id }, data: { email } });
+      return this.versEntite(ligne);
+    } catch (erreur) {
+      // Deux changements simultanés vers la même adresse : la contrainte
+      // UNIQUE de la base tranche, la vérification du service ne suffit pas.
+      if (erreur instanceof Prisma.PrismaClientKnownRequestError && erreur.code === "P2002") {
+        throw new Conflit("Un compte existe déjà avec cet email", "email");
+      }
+      throw erreur;
+    }
+  }
+
+  async changerMotDePasse(id: number, motDePasseHache: string): Promise<void> {
+    await prisma.utilisateur.update({ where: { idJoueur: id }, data: { motDePasse: motDePasseHache } });
   }
 
   // Convertit une ligne Prisma en entité du domaine.

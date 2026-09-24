@@ -15,6 +15,7 @@ import {
   geocodageController,
   evenementService,
   notificationController,
+  compteController,
 } from "./config/container";
 import { authRoutes, registerAuthRoutes } from "./routes/authRoute";
 import { evenementRoutes, registerEvenementRoutes } from "./routes/evenementRoute";
@@ -24,9 +25,19 @@ import { moderationRoutes, registerSignalementRoutes, registerModerationRoutes }
 import { registerEvaluationRoutes } from "./routes/evaluationRoute";
 import { registerPhotoRoutes } from "./routes/photoRoute";
 import { notificationRoutes, registerNotificationRoutes } from "./routes/notificationRoute";
+import { compteRoutes, registerCompteRoutes } from "./routes/compteRoute";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
+
+// Derrière un proxy (nginx, ingress Kubernetes), toutes les requêtes arrivent
+// avec l'IP du proxy : le limiteur de tentatives bloquerait alors tout le monde
+// dès qu'une seule personne échoue. TRUST_PROXY=1 (nombre de proxys de
+// confiance) fait lire la vraie IP dans X-Forwarded-For. Absent en local, où
+// le navigateur appelle l'API directement.
+if (process.env.TRUST_PROXY) {
+  app.set("trust proxy", Number(process.env.TRUST_PROXY));
+}
 
 // Sécurité et parsers — avant toute route.
 // crossOriginResourcePolicy: Helmet pose "same-origin" par défaut, qui bloque
@@ -53,6 +64,7 @@ registerEvaluationRoutes(evenementRoutes, evaluationController);
 registerModerationRoutes(moderationController);
 registerPhotoRoutes(evenementRoutes, photoController);
 registerNotificationRoutes(notificationController);
+registerCompteRoutes(compteController);
 
 // Route de santé, pour vérifier que l'API répond
 app.get("/api/v1/sante", (_req, res) => {
@@ -63,6 +75,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/evenements", evenementRoutes);
 app.use("/api/v1/moderation", moderationRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
+app.use("/api/v1/compte", compteRoutes);
 
 
 

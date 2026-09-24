@@ -18,6 +18,7 @@ import { ModerationService } from "../services/moderationService";
 import { EvaluationService } from "../services/evaluationService";
 import { PhotoService } from "../services/photoService";
 import { NotificationService } from "../services/notificationService";
+import { CompteService } from "../services/compteService";
 // Controllers
 import { AuthController } from "../controllers/authController";
 import { EvenementController } from "../controllers/evenementController";
@@ -28,6 +29,7 @@ import { ModerationController } from "../controllers/moderationController";
 import { EvaluationController } from "../controllers/evaluationController";
 import { PhotoController } from "../controllers/photoController";
 import { NotificationController } from "../controllers/notificationController";
+import { CompteController } from "../controllers/compteController";
 
 // Point de composition unique : c'est le seul endroit du projet où un
 // repository est instancié avec `new`. Le reste du code ne connaît que
@@ -43,6 +45,7 @@ const notificationRepository = new NotificationRepositoryDatabase();
 const notificationEmail = new NotificationEmailNodemailer();
 
 const authService = new AuthService(utilisateurRepository);
+const compteService = new CompteService(utilisateurRepository);
 const geocodageService = new GeocodageService();
 const notificationService = new NotificationService(notificationRepository, notificationEmail, utilisateurRepository);
 const evenementService = new EvenementService(
@@ -64,6 +67,7 @@ const photoService = new PhotoService(lieuRepository, evenementRepository);
 export { evenementService };
 
 export const authController = new AuthController(authService);
+export const compteController = new CompteController(compteService);
 export const evenementController = new EvenementController(evenementService, rechercheEvenementService);
 export const geocodageController = new GeocodageController(geocodageService);
 export const inscriptionController = new InscriptionController(inscriptionService);

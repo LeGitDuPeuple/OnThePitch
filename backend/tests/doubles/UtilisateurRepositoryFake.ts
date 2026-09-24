@@ -50,4 +50,28 @@ export class UtilisateurRepositoryFake implements UtilisateurRepositoryInterface
   async compterJoueurs(): Promise<number> {
     return this.utilisateurs.filter((utilisateur) => utilisateur.role === "joueur").length;
   }
+
+  async changerEmail(id: number, email: string): Promise<Utilisateur> {
+    const utilisateur = this.utilisateurs.find((u) => u.id === id);
+    if (!utilisateur) throw new Error("Utilisateur introuvable (double de test)");
+    utilisateur.email = email;
+    return utilisateur;
+  }
+
+  async changerMotDePasse(id: number, motDePasseHache: string): Promise<void> {
+    const index = this.utilisateurs.findIndex((u) => u.id === id);
+    if (index === -1) throw new Error("Utilisateur introuvable (double de test)");
+    const ancien = this.utilisateurs[index];
+    // Le hachage est privé dans l'entité : on la reconstruit plutôt que d'ouvrir un setter.
+    this.utilisateurs[index] = new Utilisateur({
+      id: ancien.id,
+      nom: ancien.nom,
+      prenom: ancien.prenom,
+      email: ancien.email,
+      motDePasseHache,
+      role: ancien.role,
+      ville: ancien.ville,
+      dateInscription: ancien.dateInscription,
+    });
+  }
 }

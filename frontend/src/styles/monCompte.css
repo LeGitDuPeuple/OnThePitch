@@ -1,0 +1,55 @@
+.page-compte {
+  max-width: 520px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.carte-compte {
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--ombre-carte);
+}
+
+.carte-compte h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+
+.carte-compte > p {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+}
+
+.carte-compte form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.carte-compte label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texte-attenue);
+}
+
+.carte-compte .message-erreur {
+  color: var(--rouge);
+  margin: 0;
+}
+
+.carte-compte .message-confirmation {
+  margin-bottom: 0;
+}
+
+.carte-compte button[type="submit"] {
+  align-self: flex-start;
+}

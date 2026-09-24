@@ -8,6 +8,8 @@ export class EntetePage {
   readonly lienRechercher: Locator;
   readonly lienMonProfil: Locator;
   readonly lienCreerAnnonce: Locator;
+  // L'avatar (initiales) est un lien vers "Mon compte" — variante desktop seulement.
+  readonly avatarCompte: Locator;
   // .first() : l'en-tête rend une version mobile ET une version desktop de ces
   // éléments (repli CSS selon la largeur, voir CLAUDE.md "Responsive") — les
   // deux existent dans le DOM en même temps, seule leur visibilité change.
@@ -21,6 +23,7 @@ export class EntetePage {
     this.lienRechercher = page.getByRole("link", { name: "Rechercher" });
     this.lienMonProfil = page.getByRole("link", { name: "Mon profil" });
     this.lienCreerAnnonce = page.getByRole("link", { name: "Créer une annonce" });
+    this.avatarCompte = page.locator(".entete-compte--desktop .entete-avatar-lien");
     // Scopé sur la variante desktop, contrairement à boutonDeconnexion/
     // lienConnexionInscription plus haut : ceux-là passent par getByRole, qui
     // exclut déjà les éléments display:none de l'arbre d'accessibilité — un

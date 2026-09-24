@@ -39,6 +39,10 @@ export class Conflit extends ErreurMetier {
   readonly statut = 409;
 }
 
+export class TropDeRequetes extends ErreurMetier {
+  readonly statut = 429;
+}
+
 export class ServiceIndisponible extends ErreurMetier {
   readonly statut = 503;
 }
