@@ -16,6 +16,7 @@ const Connexion = lazy(() => import("./pages/Connexion").then((m) => ({ default:
 const Inscription = lazy(() => import("./pages/Inscription").then((m) => ({ default: m.Inscription })));
 const Admin = lazy(() => import("./pages/Admin").then((m) => ({ default: m.Admin })));
 const Profil = lazy(() => import("./pages/Profil").then((m) => ({ default: m.Profil })));
+const MonCompte = lazy(() => import("./pages/MonCompte").then((m) => ({ default: m.MonCompte })));
 
 export const App = () => {
   // Vérifie la session (cookie httpOnly) au démarrage de l'appli.
@@ -33,6 +34,7 @@ export const App = () => {
           <Route path="/inscription" element={<Inscription />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/profil" element={<Profil />} />
+          <Route path="/compte" element={<MonCompte />} />
         </Routes>
       </Suspense>
     </>

@@ -141,3 +141,16 @@
     display: flex;
   }
 }
+
+/* L'avatar mène à "Mon compte" : un lien, pas de menu déroulant (voir
+   CLAUDE.md, section Compte). */
+.entete-avatar-lien {
+  display: inline-flex;
+  border-radius: 50%;
+  text-decoration: none;
+}
+
+.entete-avatar-lien:hover .avatar,
+.entete-avatar-lien:focus-visible .avatar {
+  background: var(--fond);
+}

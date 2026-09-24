@@ -36,6 +36,9 @@ export const Entete = () => {
             <div className="entete-compte entete-compte--mobile">
               {utilisateur ? (
                 <>
+                  <Link to="/compte" className={pathname === "/compte" ? "actif" : ""} onClick={fermerMenu}>
+                    Mon compte
+                  </Link>
                   <ClocheNotifications />
                   <button
                     type="button"
@@ -67,7 +70,9 @@ export const Entete = () => {
             {utilisateur ? (
               <>
                 <ClocheNotifications />
-                <Avatar nom={utilisateur.nom} prenom={utilisateur.prenom} neutre />
+                <Link to="/compte" className="entete-avatar-lien" aria-label="Mon compte" title="Mon compte">
+                  <Avatar nom={utilisateur.nom} prenom={utilisateur.prenom} neutre />
+                </Link>
                 <button type="button" className="bouton-secondaire" onClick={() => void deconnecter()} disabled={deconnexionEnCours}>
                   Se déconnecter
                 </button>

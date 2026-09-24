@@ -27,4 +27,11 @@ export interface UtilisateurRepositoryInterface {
 
   // Nombre de comptes joueurs — vue d'ensemble du tableau de bord admin.
   compterJoueurs(): Promise<number>;
+
+  // Remplace l'email (identifiant de connexion et destinataire des
+  // notifications). Lève Conflit si un autre compte l'utilise déjà.
+  changerEmail(id: number, email: string): Promise<Utilisateur>;
+
+  // Remplace le mot de passe (déjà haché par le service).
+  changerMotDePasse(id: number, motDePasseHache: string): Promise<void>;
 }

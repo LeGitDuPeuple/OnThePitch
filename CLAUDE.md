@@ -571,6 +571,65 @@ terminé et testé.
       et en navigateur réel (Puppeteer : badge "Fiabilité 4.0/5" affiché,
       message d'erreur clair sur une seconde tentative).
 
+### Compte et sécurité
+> **Chantier en cours sur la branche `feature/double-auth`** (24/09/2026, à la
+> demande du porteur de projet : « commence le chantier, je teste ce soir, si
+> ce n'est pas bon je rollback »). `main` est intact et poussé (commit
+> `1244a18`) : revenir en arrière = `git checkout main`, rien à défaire.
+> Décisions prises pour la double authentification (paliers 2 à 4, pas encore
+> faits sauf mention contraire) : **optionnelle** (jamais imposée), **10 codes
+> de secours** générés à l'activation et **affichés une seule fois** (hachés
+> en base, à usage unique), **activation et désactivation possibles à tout
+> moment** (désactiver exige un code valide), application d'authentification
+> standard TOTP (Microsoft Authenticator, Google Authenticator...), pas de
+> SMS. Pas dans le formulaire d'inscription (friction, pas de session à ce
+> stade) : un bandeau discret "Sécurisez votre compte" après l'inscription
+> renverra vers "Mon compte". Jeton temporaire de 5 minutes entre le mot de
+> passe et le code (corrige la faille de l'ancien projet event-hub, où
+> `verify-2fa` faisait confiance à un `userId` envoyé par le client).
+
+- [x] **Palier 1 — limiteur de tentatives, changement d'email et de mot de
+      passe** (24/09/2026).
+      *Limiteur* : `middlewares/limiteurTentatives.ts` (`express-rate-limit`),
+      10 échecs par 15 minutes et par IP, seuls les ÉCHECS comptent (une
+      connexion réussie n'est jamais freinée). Appliqué à `POST
+      /auth/connexion` et aux routes du compte — jusqu'ici, rien n'empêchait de
+      tester des milliers de mots de passe. Répond `429` via le gestionnaire
+      d'erreurs centralisé (nouvelle erreur métier `TropDeRequetes`).
+      Compteur en mémoire, par processus : sous Kubernetes avec plusieurs
+      réplicas, chaque pod compte séparément (limite réelle multipliée) —
+      acceptable à cette échelle, un stockage partagé (Redis, déjà évoqué plus
+      bas) serait l'évolution. **Derrière un proxy** (nginx, ingress), toutes
+      les requêtes arriveraient avec l'IP du proxy et une seule personne en
+      échec bloquerait tout le monde : variable d'environnement optionnelle
+      `TRUST_PROXY=1` (`server.ts`) à poser au déploiement, absente en local.
+      *Compte* : `CompteService` (séparé d'`AuthService` — une autre raison de
+      changer), `PATCH /compte/email` et `PATCH /compte/mot-de-passe`, session
+      obligatoire. Le **mot de passe actuel** est exigé dans les deux cas :
+      l'email est l'identifiant de connexion, le changer sur une session
+      laissée ouverte suffirait sinon à détourner le compte. Mot de passe faux
+      → `400` sur le champ concerné (et non `401`, qui pourrait faire croire au
+      front que la session a expiré). Email déjà pris → `409` (vérification du
+      service + contrainte `UNIQUE` en filet, cas de deux changements
+      simultanés). La nouvelle adresse sert aussitôt à se connecter ET à
+      recevoir les notifications (`NotificationService` relit l'email en base à
+      chaque envoi, rien n'est copié ailleurs, le JWT ne contient que l'id et
+      le rôle). Limite assumée : changer le mot de passe ne déconnecte pas les
+      autres sessions ouvertes (jeton sans état de 24 h, non révocable).
+      *Front* : page `/compte` ("Mon compte", `MonCompte.tsx`, hooks
+      `useEmailForm` et `useMotDePasseForm`), accessible en cliquant sur
+      l'avatar de l'en-tête (un lien, pas de menu déroulant — un menu aurait
+      caché "Se déconnecter", cliqué directement par le test E2E
+      d'authentification, et aurait contenu un seul élément) et via le menu
+      mobile. Règles de complexité appliquées au NOUVEAU mot de passe
+      seulement, comme à l'inscription.
+      Testé : 10 tests Jest (`compteService.test.ts`, 107 au total) + vérifié
+      contre la vraie API (401 sans session, 400 mauvais mot de passe, 409
+      email pris, 200/204 succès, ancien identifiant refusé et nouveau
+      accepté, 429 à la 11ᵉ tentative) + 2 tests E2E (`compte.spec.ts`, 14 au
+      total : changement d'email puis de mot de passe avec reconnexion réelle,
+      visiteur non connecté)
+
 ### Qualité et déploiement
 - [x] Tests Jest sur la couche Service — 76 tests, 8 services (Auth, Evenement,
       RechercheEvenement, Inscription, Presence, Moderation, Geocodage, Photo), repositories
