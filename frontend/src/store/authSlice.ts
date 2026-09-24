@@ -10,6 +10,10 @@ export type Utilisateur = {
   email: string;
   role: Role;
   ville: string | null;
+  // Double authentification activée — jamais le secret ni les codes (voir
+  // Utilisateur.versReponse côté back). Un profil mis en cache avant l'ajout
+  // de cette propriété la voit absente jusqu'à la prochaine hydratation.
+  doubleAuthActive: boolean;
 };
 
 type EtatAuth = {

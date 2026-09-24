@@ -3,6 +3,7 @@ import { useAppDispatch } from "../store/hooks";
 import { connexionReussie } from "../store/authSlice";
 import { authService } from "../services/authService";
 import { ErreurApi } from "../services/api";
+import { useConnexionDoubleAuth } from "./useConnexionDoubleAuth";
 
 // Même connexion que l'écran public (POST /auth/connexion, même compte, même mot
 // de passe — pas un second système d'authentification, cf. CLAUDE.md section 9).
@@ -14,6 +15,8 @@ export const useAdminConnexionForm = () => {
   const [erreur, setErreur] = useState<string | null>(null);
   const [chargement, setChargement] = useState(false);
   const dispatch = useAppDispatch();
+  // Rien à faire une fois connecté : le composant Admin réagit à l'état d'auth.
+  const doubleAuth = useConnexionDoubleAuth(() => {});
 
   const soumettre = useCallback(
     async (evenement: FormEvent) => {
@@ -22,16 +25,20 @@ export const useAdminConnexionForm = () => {
       setChargement(true);
 
       try {
-        const { utilisateur } = await authService.connexion({ email, motDePasse });
-        dispatch(connexionReussie(utilisateur));
+        const reponse = await authService.connexion({ email, motDePasse });
+        if (reponse.doubleAuthRequise) {
+          doubleAuth.demanderCode(reponse.jetonTemporaire);
+          return;
+        }
+        dispatch(connexionReussie(reponse.utilisateur));
       } catch (erreurRequete) {
         setErreur(erreurRequete instanceof ErreurApi ? erreurRequete.message : "Une erreur est survenue");
       } finally {
         setChargement(false);
       }
     },
-    [email, motDePasse, dispatch]
+    [email, motDePasse, dispatch, doubleAuth]
   );
 
-  return { email, setEmail, motDePasse, setMotDePasse, erreur, chargement, soumettre };
+  return { email, setEmail, motDePasse, setMotDePasse, erreur, chargement, soumettre, doubleAuth };
 };

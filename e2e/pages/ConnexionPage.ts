@@ -25,4 +25,14 @@ export class ConnexionPage {
     await this.champMotDePasse.fill(motDePasse);
     await this.boutonSeConnecter.click();
   }
+
+  // Seconde étape, pour un compte avec double authentification.
+  async saisirCode(code: string): Promise<void> {
+    await this.page.getByLabel("Code de vérification").fill(code);
+    await this.page.getByRole("button", { name: "Valider le code" }).click();
+  }
+
+  champCode(): Locator {
+    return this.page.getByLabel("Code de vérification");
+  }
 }
