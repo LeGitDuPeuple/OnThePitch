@@ -5,6 +5,7 @@ import { connexionReussie } from "../store/authSlice";
 import { authService } from "../services/authService";
 import { ErreurApi } from "../services/api";
 import { validerEmail } from "../utils/validation";
+import { useConnexionDoubleAuth } from "./useConnexionDoubleAuth";
 
 // Toute la logique du formulaire de connexion : le composant Connexion ne fait
 // qu'afficher ce que ce hook expose (voir CLAUDE.md, "Front React").
@@ -19,6 +20,8 @@ export const useConnexionForm = () => {
   const [chargement, setChargement] = useState(false);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const versAccueil = useCallback(() => navigate("/"), [navigate]);
+  const doubleAuth = useConnexionDoubleAuth(versAccueil);
 
   const validerChampEmail = useCallback((evenement: FocusEvent<HTMLInputElement>) => {
     setErreurEmail(validerEmail(evenement.target.value));
@@ -35,8 +38,14 @@ export const useConnexionForm = () => {
 
       setChargement(true);
       try {
-        const { utilisateur } = await authService.connexion({ email, motDePasse });
-        dispatch(connexionReussie(utilisateur));
+        const reponse = await authService.connexion({ email, motDePasse });
+        // Compte avec double authentification : pas de session encore, on
+        // enchaîne avec la saisie du code (voir useConnexionDoubleAuth).
+        if (reponse.doubleAuthRequise) {
+          doubleAuth.demanderCode(reponse.jetonTemporaire);
+          return;
+        }
+        dispatch(connexionReussie(reponse.utilisateur));
         navigate("/");
       } catch (erreurRequete) {
         setErreur(erreurRequete instanceof ErreurApi ? erreurRequete.message : "Une erreur est survenue");
@@ -44,8 +53,19 @@ export const useConnexionForm = () => {
         setChargement(false);
       }
     },
-    [email, motDePasse, dispatch, navigate]
+    [email, motDePasse, dispatch, navigate, doubleAuth]
   );
 
-  return { email, setEmail, motDePasse, setMotDePasse, erreurEmail, validerChampEmail, erreur, chargement, soumettre };
+  return {
+    email,
+    setEmail,
+    motDePasse,
+    setMotDePasse,
+    erreurEmail,
+    validerChampEmail,
+    erreur,
+    chargement,
+    soumettre,
+    doubleAuth,
+  };
 };

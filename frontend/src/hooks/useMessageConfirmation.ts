@@ -3,7 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 export type TypeMessageConfirmation = "succes" | "avertissement";
 
-type EtatNavigation = { messageConfirmation?: string; typeMessageConfirmation?: TypeMessageConfirmation } | null;
+export type LienMessage = { vers: string; libelle: string };
+
+type EtatNavigation = {
+  messageConfirmation?: string;
+  typeMessageConfirmation?: TypeMessageConfirmation;
+  lienMessageConfirmation?: LienMessage;
+} | null;
 
 // Lit un message de confirmation (ou d'avertissement) passé via
 // navigate(url, { state: {...} }) — utile quand l'écran source disparaît après
@@ -18,6 +24,9 @@ export const useMessageConfirmation = () => {
   // Pas de setter : le type n'a de sens que tant que le message l'accompagne,
   // fixé une fois pour toutes à la lecture du state de navigation.
   const [type] = useState<TypeMessageConfirmation>(etatInitial?.typeMessageConfirmation ?? "succes");
+  // Lien facultatif dans le bandeau (ex. "Activer la double authentification"
+  // après l'inscription) — même logique que le type : fixé à la lecture.
+  const [lien] = useState<LienMessage | undefined>(etatInitial?.lienMessageConfirmation);
 
   useEffect(() => {
     if (!(location.state as EtatNavigation)?.messageConfirmation) return;
@@ -30,5 +39,5 @@ export const useMessageConfirmation = () => {
 
   const effacer = () => setMessage(null);
 
-  return { message, type, effacer };
+  return { message, type, lien, effacer };
 };

@@ -49,9 +49,20 @@ export const useInscriptionForm = () => {
         // authService) : on enchaîne avec la connexion pour éviter à la
         // personne de retaper ses identifiants qu'elle vient de saisir.
         await authService.inscription({ nom, prenom, email, motDePasse, ville: ville.trim() || undefined });
-        const { utilisateur } = await authService.connexion({ email, motDePasse });
-        dispatch(connexionReussie(utilisateur));
-        navigate("/");
+        const reponse = await authService.connexion({ email, motDePasse });
+        // Un compte tout juste créé n'a jamais la double authentification.
+        if (!reponse.doubleAuthRequise) {
+          dispatch(connexionReussie(reponse.utilisateur));
+          // Invitation discrète (bandeau fermable) : la double authentification
+          // est optionnelle, mais autant la proposer au moment où on pense à la
+          // sécurité du compte — sans l'imposer dans le formulaire d'inscription.
+          navigate("/", {
+            state: {
+              messageConfirmation: "Compte créé.",
+              lienMessageConfirmation: { vers: "/compte", libelle: "Sécurisez-le avec la double authentification" },
+            },
+          });
+        }
       } catch (erreurRequete) {
         if (erreurRequete instanceof ErreurApi) {
           setErreur(erreurRequete.message);

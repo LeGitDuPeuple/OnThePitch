@@ -1,5 +1,6 @@
 import { useAppSelector } from "../store/hooks";
 import { useAdminConnexionForm } from "../hooks/useAdminConnexionForm";
+import { FormulaireCodeDoubleAuth } from "../components/FormulaireCodeDoubleAuth";
 import { useModeration } from "../hooks/useModeration";
 import { useEvenementsAdmin } from "../hooks/useEvenementsAdmin";
 import { useDeconnexion } from "../hooks/useDeconnexion";
@@ -40,31 +41,35 @@ export const Admin = () => {
 };
 
 const ConnexionAdmin = () => {
-  const { email, setEmail, motDePasse, setMotDePasse, erreur, chargement, soumettre } = useAdminConnexionForm();
+  const { email, setEmail, motDePasse, setMotDePasse, erreur, chargement, soumettre, doubleAuth } = useAdminConnexionForm();
 
   return (
     <main className="page-admin">
       <h1>Administration</h1>
-      <form onSubmit={soumettre}>
-        <label>
-          Email
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </label>
-        <label>
-          Mot de passe
-          <input type="password" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} required />
-        </label>
+      {doubleAuth.codeRequis ? (
+        <FormulaireCodeDoubleAuth {...doubleAuth} />
+      ) : (
+        <form onSubmit={soumettre}>
+          <label>
+            Email
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </label>
+          <label>
+            Mot de passe
+            <input type="password" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} required />
+          </label>
 
-        {erreur && (
-          <p role="alert" className="message-erreur">
-            {erreur}
-          </p>
-        )}
+          {erreur && (
+            <p role="alert" className="message-erreur">
+              {erreur}
+            </p>
+          )}
 
-        <button type="submit" disabled={chargement}>
-          {chargement ? "Connexion…" : "Se connecter"}
-        </button>
-      </form>
+          <button type="submit" disabled={chargement}>
+            {chargement ? "Connexion…" : "Se connecter"}
+          </button>
+        </form>
+      )}
     </main>
   );
 };

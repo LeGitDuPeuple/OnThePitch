@@ -572,21 +572,23 @@ terminé et testé.
       message d'erreur clair sur une seconde tentative).
 
 ### Compte et sécurité
-> **Chantier en cours sur la branche `feature/double-auth`** (24/09/2026, à la
+> **Chantier réalisé sur la branche `feature/double-auth`** (24/09/2026, à la
 > demande du porteur de projet : « commence le chantier, je teste ce soir, si
-> ce n'est pas bon je rollback »). `main` est intact et poussé (commit
-> `1244a18`) : revenir en arrière = `git checkout main`, rien à défaire.
-> Décisions prises pour la double authentification (paliers 2 à 4, pas encore
-> faits sauf mention contraire) : **optionnelle** (jamais imposée), **10 codes
-> de secours** générés à l'activation et **affichés une seule fois** (hachés
-> en base, à usage unique), **activation et désactivation possibles à tout
-> moment** (désactiver exige un code valide), application d'authentification
-> standard TOTP (Microsoft Authenticator, Google Authenticator...), pas de
-> SMS. Pas dans le formulaire d'inscription (friction, pas de session à ce
-> stade) : un bandeau discret "Sécurisez votre compte" après l'inscription
-> renverra vers "Mon compte". Jeton temporaire de 5 minutes entre le mot de
-> passe et le code (corrige la faille de l'ancien projet event-hub, où
-> `verify-2fa` faisait confiance à un `userId` envoyé par le client).
+> ce n'est pas bon je rollback »). **En attente de test manuel par le porteur
+> de projet** — pas encore fusionné dans `main`. `main` est intact et poussé
+> (commit `1244a18`) : revenir en arrière = `git checkout main`, rien à défaire ;
+> si le test est concluant, fusionner la branche.
+> Décisions prises pour la double authentification : **optionnelle** (jamais
+> imposée), **10 codes de secours** générés à l'activation et **affichés une
+> seule fois** (hachés en base, à usage unique), **activation et désactivation
+> possibles à tout moment** (désactiver exige un code valide), application
+> d'authentification standard TOTP (Microsoft Authenticator, Google
+> Authenticator...), pas de SMS. Pas dans le formulaire d'inscription
+> (friction, pas de session à ce stade) : un bandeau fermable "Compte créé.
+> Sécurisez-le avec la double authentification" renvoie vers "Mon compte" juste
+> après l'inscription. Jeton temporaire de 5 minutes entre le mot de passe et
+> le code (corrige la faille de l'ancien projet event-hub, où `verify-2fa`
+> faisait confiance à un `userId` envoyé par le client).
 
 - [x] **Palier 1 — limiteur de tentatives, changement d'email et de mot de
       passe** (24/09/2026).
@@ -686,6 +688,54 @@ terminé et testé.
       code de secours à usage unique, désactivation, retour à la connexion
       directe).
 
+- [x] **Palier 3 — double authentification, front** (24/09/2026).
+      *Page "Mon compte"*, section "Double authentification" (`useDoubleAuth`) :
+      « Activer » affiche les trois étapes (installer Microsoft Authenticator,
+      « + » puis « Autre compte », scanner), le **QR code** (`qrcode.react`,
+      déjà dépendance — le back n'envoie que l'URI `otpauth://`, pas d'image, pas
+      de lib `qrcode` côté serveur) et le secret groupé par 4 caractères pour
+      une saisie manuelle ; le premier code confirme l'activation ; puis
+      l'écran des **10 codes de secours** (« plus jamais affichés »), avec
+      « Copier les codes » et une **case à cocher obligatoire** avant de pouvoir
+      cliquer « Terminer » — les codes ne vivent que dans l'état du hook, jamais
+      dans le stockage du navigateur. Activée : badge « Activée » et bouton
+      « Désactiver » (demande un code, TOTP ou de secours). Le champ
+      `doubleAuthActive` du profil (jamais le secret) met la page à jour.
+      *Connexion en deux temps* : `POST /auth/connexion` renvoie maintenant
+      `{ doubleAuthRequise, ... }` (type union côté front, `ReponseConnexion`) ;
+      le hook `useConnexionDoubleAuth` et le composant
+      `FormulaireCodeDoubleAuth` sont **partagés** par l'écran de connexion et
+      celui de l'admin (même connexion, voir section 9) — un seul champ accepte
+      le code de l'application ou un code de secours.
+      *Bandeau après inscription* : `MessageConfirmation` accepte désormais un
+      lien facultatif (`useMessageConfirmation` le lit dans le state de
+      navigation, comme le type de message).
+      Bug trouvé en testant : `MonComptePage.lireCodesSecours` lisait
+      `allTextContents()` (qui ne réessaie pas) avant que l'écran des codes soit
+      affiché — même piège que `ProfilPage` le 22/09/2026, corrigé par une
+      attente explicite.
+      Piège évité en relisant : `LIMITE_TENTATIVES=` et `APP_NAME=` vides dans
+      `.env.example` — avec `??`, une variable vide (copie telle quelle) aurait
+      donné une limite de 0 (tout bloqué) et un émetteur vide dans l'appli
+      d'authentification ; remplacé par `||`.
+      Rendu vérifié en navigateur réel (captures : bandeau, page compte, QR
+      code, écran des codes, étape « code » de la connexion).
+- [x] **Palier 4 — test E2E et documentation** (24/09/2026). `e2e/tests/
+      double-auth.spec.ts` (`otplib` ajouté au projet e2e : le test joue le rôle
+      de l'application d'authentification en générant les codes à partir du
+      secret affiché) : bandeau après inscription, activation (mauvais code
+      refusé, puis bon code), 10 codes affichés une fois et absents après
+      rechargement, connexion en deux temps (mauvais code, puis bon), code de
+      secours accepté une fois puis refusé, désactivation, retour à la
+      connexion directe. **15 tests E2E au total**, tous verts ; **129 tests
+      Jest**. `LIMITE_TENTATIVES` (10 par défaut) rend le plafond du limiteur
+      configurable : la suite E2E provoque ~5 échecs volontaires par exécution,
+      comptés sur la même IP locale — à relever pour la rejouer en boucle.
+      *Piste de test manuel pour le porteur de projet* : Mon compte (avatar)
+      → « Activer », scanner avec Microsoft Authenticator, saisir le code, noter
+      les codes de secours ; se déconnecter puis se reconnecter (code demandé) ;
+      tester un code de secours (une seule fois) ; « Désactiver ».
+
 ### Qualité et déploiement
 - [x] Tests Jest sur la couche Service — 76 tests, 8 services (Auth, Evenement,
       RechercheEvenement, Inscription, Presence, Moderation, Geocodage, Photo), repositories
@@ -705,7 +755,9 @@ terminé et testé.
       `frontend/` : un test E2E vérifie tout le système à la fois, n'appartient
       à aucun des deux) — `pages/` (Page Objects), `tests/` (specs), `utils/`
       (comptes/événements de test via l'API réelle, plus rapide et fiable que
-      de repasser par l'UI pour la préparation). 12 tests, 6 fichiers :
+      de repasser par l'UI pour la préparation). 15 tests, 7 fichiers (état au
+      24/09/2026 ; la description ci-dessous détaille les premiers, les specs
+      `compte` et `double-auth` sont décrits dans la section Compte et sécurité) :
       authentification, création d'événement, inscriptions (public direct,
       privé accepté, privé refusé — vérifie au passage le correctif du
       20/09/2026 sur la demande refusée), profil, recherche + pagination,
@@ -1365,8 +1417,7 @@ Quatre écrans, maquettés pour les trois premiers :
 ## Évolutions envisagées (hors périmètre initial)
 
 > **EN COURS DE DÉCISION (24/09/2026) — à reprendre en premier à la prochaine
-> session.** Deux sujets en suspens, discutés juste avant une coupure de
-> session (redémarrage machine prévu par le porteur de projet) :
+> session.**
 >
 > 1. **Chantier AWS/Jenkins/Kubernetes.** Le porteur de projet pensait ce
 >    déploiement réel obligatoire ; ses collègues lui ont indiqué que la
@@ -1384,21 +1435,26 @@ Quatre écrans, maquettés pour les trois premiers :
 >    porteur de projet récolte encore des informations avant de trancher le
 >    niveau d'ambition (documentation seule vs déploiement AWS réel). Ne pas
 >    commencer le `Jenkinsfile`/les manifests Kubernetes ni quoi que ce soit
->    côté AWS avant qu'il revienne là-dessus explicitement — discussion
->    interrompue en plein choix de scope, pas une validation.
->    Rappel de ce qui existe déjà et pourrait nourrir la documentation quel
->    que soit le niveau retenu : `docker-compose.yml` + Dockerfiles
->    (`backend/Dockerfile`, `frontend/Dockerfile`) fonctionnels et testés de
->    bout en bout (voir section Socle), suite Jest (97 tests) + suite E2E
->    Playwright (12 tests) déjà en place et documentées (section Qualité et
->    déploiement) — une bonne partie de la matière pour "environnements de
->    test définis + procédure d'exécution" existe donc déjà, à formaliser en
->    document plutôt qu'à reconstruire.
+>    côté AWS avant qu'il revienne là-dessus explicitement.
+>    Matière déjà existante pour la documentation, quel que soit le niveau
+>    retenu : `docker-compose.yml` + Dockerfiles fonctionnels et testés,
+>    suite Jest (129 tests) + suite E2E Playwright (15 tests) documentées,
+>    variables d'exploitation notées dans `.env.example` et la section
+>    "Compte et sécurité" (`TRUST_PROXY`, `LIMITE_TENTATIVES`, `APP_NAME`,
+>    limiteur en mémoire par pod, horloge du serveur pour le TOTP).
+>    **Matière pour la veille sécurité** : l'alerte Dependabot du dépôt
+>    (1 "high", signalée au push du 24/09/2026) et `npm audit` côté backend
+>    remontent `mysql2 <= 3.23.0` (fuite d'identifiants en clair par
+>    rétrogradation du plugin d'authentification, déni de service par
+>    décompression), dépendance **transitive de l'outillage Prisma** — non
+>    utilisée à l'exécution (base PostgreSQL). La correction proposée
+>    (`npm audit fix --force`) rétrograderait Prisma en v6, cassant le projet
+>    (Prisma 7 + adaptateur `pg`) : à traiter en attendant un correctif
+>    amont, ne pas forcer.
 >
-> 2. **Double authentification (2FA)** — simplement évoquée ("possible qu'on
->    mette en place ça aussi"), aucune décision, aucun détail (SMS ? TOTP/
->    app d'authentification ? réservé à l'admin ou à tous les comptes ?). À
->    clarifier avec le porteur de projet avant d'esquisser quoi que ce soit.
+> 2. ~~Double authentification~~ — **réalisée le 24/09/2026** sur la branche
+>    `feature/double-auth`, en attente de test manuel (voir section "Compte et
+>    sécurité").
 
 **Cache Redis sur le géocodage.** Une adresse résolue ne change jamais : ses coordonnées
 peuvent être mises en cache sans risque d'obsolescence. Utile si plusieurs événements

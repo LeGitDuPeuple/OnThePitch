@@ -8,4 +8,15 @@ export const compteService = {
 
   changerMotDePasse: (motDePasseActuel: string, nouveauMotDePasse: string): Promise<void> =>
     appelApi("/compte/mot-de-passe", { methode: "PATCH", corps: { motDePasseActuel, nouveauMotDePasse } }),
+
+  // Double authentification : secret et adresse otpauth:// à encoder en QR code.
+  initialiserDoubleAuth: (): Promise<{ secret: string; uri: string }> =>
+    appelApi("/compte/2fa/initialiser", { methode: "POST" }),
+
+  // Confirme avec un premier code, renvoie les codes de secours (une seule fois).
+  activerDoubleAuth: (code: string): Promise<{ codesSecours: string[] }> =>
+    appelApi("/compte/2fa/activer", { methode: "POST", corps: { code } }),
+
+  desactiverDoubleAuth: (code: string): Promise<void> =>
+    appelApi("/compte/2fa/desactiver", { methode: "POST", corps: { code } }),
 };

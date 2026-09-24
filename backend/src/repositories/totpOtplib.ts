@@ -2,7 +2,8 @@ import { generateSecret, generateURI, verifySync } from "otplib";
 import { TotpInterface } from "../domain/interface/totpInterface";
 
 // Nom affiché dans l'application d'authentification.
-const EMETTEUR = process.env["APP_NAME"] ?? "OnThePitch";
+// `||` : une variable vide (copie de .env.example) ne doit pas donner un émetteur vide.
+const EMETTEUR = process.env["APP_NAME"] || "OnThePitch";
 
 // Tolérance d'une tranche de 30 s de part et d'autre : absorbe un léger
 // décalage entre l'horloge du téléphone et celle du serveur. Au-delà, les

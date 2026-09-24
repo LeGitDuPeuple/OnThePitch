@@ -44,14 +44,14 @@ export const CarteRecherche = () => {
     peutAvancer,
   } = useRechercheForm();
   const { suggestions, choisir, fermer } = useSuggestionsAdresse(adresse);
-  const { message: messageConfirmation, effacer: effacerConfirmation } = useMessageConfirmation();
+  const { message: messageConfirmation, lien: lienConfirmation, effacer: effacerConfirmation } = useMessageConfirmation();
   const [vue, setVue] = useState<Vue>("liste");
   const navigate = useNavigate();
 
   return (
     <main className="page-recherche">
       <h1 className="sr-only">Rechercher un événement</h1>
-      <MessageConfirmation message={messageConfirmation} onFermer={effacerConfirmation} />
+      <MessageConfirmation message={messageConfirmation} lien={lienConfirmation} onFermer={effacerConfirmation} />
       <div className="panneau-recherche">
         <form
           className="filtres-recherche"
