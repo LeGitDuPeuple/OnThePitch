@@ -1,13 +1,17 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { Utilisateur } from "../domain/entities/Utilisateur";
 import { UtilisateurRepositoryInterface } from "../domain/interface/utilisateurRepositoryInterface";
 import { Conflit, NonAuthentifie, RessourceIntrouvable } from "../domain/erreurMetier";
 import { DonneesInscription, DonneesConnexion } from "../schemas/authSchema";
-import { getEnvVariable } from "../config/utility/utils";
+import { genererJetonSession, genererJetonTemporaire } from "./jetons";
 
 const COUT_BCRYPT = 12;
-const DUREE_JETON = "24h";
+
+// Résultat d'une connexion : soit la session est ouverte, soit le compte a la
+// double authentification et il reste à fournir le code (jeton temporaire).
+export type ResultatConnexion =
+  | { doubleAuthRequise: false; jeton: string; utilisateur: Utilisateur }
+  | { doubleAuthRequise: true; jetonTemporaire: string };
 
 export class AuthService {
   constructor(private readonly utilisateurRepository: UtilisateurRepositoryInterface) {}
@@ -33,8 +37,10 @@ export class AuthService {
     return utilisateur;
   }
 
-  // Vérifie les identifiants et renvoie un jeton signé.
-  async connecter(donnees: DonneesConnexion): Promise<{ jeton: string; utilisateur: Utilisateur }> {
+  // Vérifie les identifiants. Sans double authentification : renvoie le jeton de
+  // session. Avec : renvoie un jeton temporaire, la connexion s'achève dans
+  // DoubleAuthService.terminerConnexion.
+  async connecter(donnees: DonneesConnexion): Promise<ResultatConnexion> {
     const utilisateur = await this.utilisateurRepository.trouverParEmail(donnees.email);
 
     // Même message dans les deux cas : ne pas révéler si l'email existe.
@@ -48,11 +54,13 @@ export class AuthService {
       throw new NonAuthentifie("Email ou mot de passe incorrect");
     }
 
+    if (utilisateur.doubleAuthActive) {
+      return { doubleAuthRequise: true, jetonTemporaire: genererJetonTemporaire(utilisateur.id) };
+    }
+
     await this.utilisateurRepository.majDerniereConnexion(utilisateur.id);
 
-    const jeton = this.genererJeton(utilisateur);
-
-    return { jeton, utilisateur };
+    return { doubleAuthRequise: false, jeton: genererJetonSession(utilisateur), utilisateur };
   }
 
     // Récupère le profil d'un utilisateur connecté.
@@ -66,12 +74,4 @@ export class AuthService {
     return utilisateur;
   }
 
-  // Fabrique un JWT contenant l'identifiant et le rôle.
-  private genererJeton(utilisateur: Utilisateur): string {
-    return jwt.sign(
-      { id: utilisateur.id, role: utilisateur.role },
-      getEnvVariable("JWT_SECRET"),
-      { expiresIn: DUREE_JETON }
-    );
-  }
 }

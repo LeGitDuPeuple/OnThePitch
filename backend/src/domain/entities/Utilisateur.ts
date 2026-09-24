@@ -11,6 +11,11 @@ export class Utilisateur {
   role: Role;
   ville: string | null;
   dateInscription: Date;
+  // Double authentification (voir CLAUDE.md, section Compte et sécurité).
+  // Le secret et les hachages ne sortent jamais par versReponse().
+  doubleAuthActive: boolean;
+  private secretTotp: string | null;
+  private hachagesCodesSecours: string[];
 
   constructor(params: {
     id: number;
@@ -21,6 +26,9 @@ export class Utilisateur {
     role: Role;
     ville?: string | null;
     dateInscription: Date;
+    doubleAuthActive?: boolean;
+    secretTotp?: string | null;
+    hachagesCodesSecours?: string[];
   }) {
     this.id = params.id;
     this.nom = params.nom;
@@ -30,6 +38,9 @@ export class Utilisateur {
     this.role = params.role;
     this.ville = params.ville ?? null;
     this.dateInscription = params.dateInscription;
+    this.doubleAuthActive = params.doubleAuthActive ?? false;
+    this.secretTotp = params.secretTotp ?? null;
+    this.hachagesCodesSecours = params.hachagesCodesSecours ?? [];
   }
 
   // Vérifie que les champs obligatoires sont présents et le rôle valide.
@@ -52,6 +63,17 @@ export class Utilisateur {
     return this.motDePasseHache;
   }
 
+  // Secret partagé avec l'application d'authentification, uniquement pour la
+  // vérification d'un code (TOTP).
+  get secretDoubleAuth(): string | null {
+    return this.secretTotp;
+  }
+
+  // Hachages bcrypt des codes de secours restants (jamais les codes en clair).
+  get codesSecours(): string[] {
+    return this.hachagesCodesSecours;
+  }
+
   // Renvoie l'utilisateur sans son mot de passe, pour les réponses de l'API.
   versReponse() {
     return {
@@ -61,6 +83,7 @@ export class Utilisateur {
       email: this.email,
       role: this.role,
       ville: this.ville,
+      doubleAuthActive: this.doubleAuthActive,
     };
   }
 }

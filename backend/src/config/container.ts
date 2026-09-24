@@ -7,6 +7,7 @@ import { EvaluationRepositoryDatabase } from "../repositories/evaluationReposito
 import { LieuRepositoryDatabase } from "../repositories/lieuRepositoryDatabase";
 import { NotificationRepositoryDatabase } from "../repositories/notificationRepositoryDatabase";
 import { NotificationEmailNodemailer } from "../repositories/notificationEmailNodemailer";
+import { TotpOtplib } from "../repositories/totpOtplib";
 // Services
 import { AuthService } from "../services/authService";
 import { EvenementService } from "../services/evenementService";
@@ -19,6 +20,7 @@ import { EvaluationService } from "../services/evaluationService";
 import { PhotoService } from "../services/photoService";
 import { NotificationService } from "../services/notificationService";
 import { CompteService } from "../services/compteService";
+import { DoubleAuthService } from "../services/doubleAuthService";
 // Controllers
 import { AuthController } from "../controllers/authController";
 import { EvenementController } from "../controllers/evenementController";
@@ -30,6 +32,7 @@ import { EvaluationController } from "../controllers/evaluationController";
 import { PhotoController } from "../controllers/photoController";
 import { NotificationController } from "../controllers/notificationController";
 import { CompteController } from "../controllers/compteController";
+import { DoubleAuthController } from "../controllers/doubleAuthController";
 
 // Point de composition unique : c'est le seul endroit du projet où un
 // repository est instancié avec `new`. Le reste du code ne connaît que
@@ -43,9 +46,11 @@ const evaluationRepository = new EvaluationRepositoryDatabase();
 const lieuRepository = new LieuRepositoryDatabase();
 const notificationRepository = new NotificationRepositoryDatabase();
 const notificationEmail = new NotificationEmailNodemailer();
+const totp = new TotpOtplib();
 
 const authService = new AuthService(utilisateurRepository);
 const compteService = new CompteService(utilisateurRepository);
+const doubleAuthService = new DoubleAuthService(utilisateurRepository, totp);
 const geocodageService = new GeocodageService();
 const notificationService = new NotificationService(notificationRepository, notificationEmail, utilisateurRepository);
 const evenementService = new EvenementService(
@@ -68,6 +73,7 @@ export { evenementService };
 
 export const authController = new AuthController(authService);
 export const compteController = new CompteController(compteService);
+export const doubleAuthController = new DoubleAuthController(doubleAuthService);
 export const evenementController = new EvenementController(evenementService, rechercheEvenementService);
 export const geocodageController = new GeocodageController(geocodageService);
 export const inscriptionController = new InscriptionController(inscriptionService);

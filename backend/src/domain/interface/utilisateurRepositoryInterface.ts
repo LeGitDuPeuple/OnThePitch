@@ -34,4 +34,17 @@ export interface UtilisateurRepositoryInterface {
 
   // Remplace le mot de passe (déjà haché par le service).
   changerMotDePasse(id: number, motDePasseHache: string): Promise<void>;
+
+  // Double authentification. Le secret est posé dès la configuration mais reste
+  // inactif tant que activerDoubleAuth n'a pas été appelé (code confirmé).
+  enregistrerSecretTotp(id: number, secret: string): Promise<void>;
+
+  // Active la 2FA avec ses codes de secours (déjà hachés par le service).
+  activerDoubleAuth(id: number, hachagesCodesSecours: string[]): Promise<void>;
+
+  // Désactive la 2FA : efface le secret ET les codes de secours restants.
+  desactiverDoubleAuth(id: number): Promise<void>;
+
+  // Remplace la liste des codes de secours restants (après usage d'un code).
+  mettreAJourCodesSecours(id: number, hachagesCodesSecours: string[]): Promise<void>;
 }

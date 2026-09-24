@@ -27,7 +27,17 @@ export const authentifier = (req: Request, res: Response, next: NextFunction) =>
       throw new NonAuthentifie("Authentification requise");
     }
 
-    req.utilisateur = jwt.verify(jeton, getEnvVariable("JWT_SECRET")) as JetonPayload;
+    const contenu = jwt.verify(jeton, getEnvVariable("JWT_SECRET")) as JetonPayload & { type?: unknown };
+
+    // Un jeton de session n'a pas de champ "type". Les autres jetons signés avec
+    // le même secret (jeton temporaire de double authentification, QR de
+    // présence) en portent un : ils ne doivent jamais ouvrir une session, même
+    // posés à la main dans le cookie.
+    if (contenu.type !== undefined) {
+      throw new NonAuthentifie("Jeton invalide ou expiré");
+    }
+
+    req.utilisateur = contenu;
 
     next();
   } catch (erreur) {
