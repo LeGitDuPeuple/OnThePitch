@@ -14,6 +14,7 @@ export type EtatInscription =
   | "inscription_possible"
   | "demande_possible" // événement privé, pas encore de demande
   | "en_attente"
+  | "refuse" // demande sur événement privé refusée par l'organisateur — état terminal (cf. CLAUDE.md, section 6)
   | "inscrit"
   | "complet"
   | "termine";
@@ -62,6 +63,19 @@ export const useFicheEvenement = () => {
 
   const monInscription = utilisateur ? (inscrits.find((inscrit) => inscrit.idJoueur === utilisateur.id) ?? null) : null;
 
+  // Un joueur accepté note l'organisateur, une fois l'événement (réellement)
+  // terminé — pas "Annule", que `etat` regroupe pourtant avec "Termine" pour
+  // l'affichage du bouton d'inscription (voir plus bas). Pas conditionné à la
+  // présence pointée : le scan QR est un secours, pas systématique (même
+  // logique que côté back, voir EvaluationService.noter).
+  const peutEvaluer = Boolean(
+    utilisateur &&
+      evenement &&
+      evenement.statut === "Termine" &&
+      utilisateur.id !== evenement.idOrganisateur &&
+      monInscription?.statut === "acceptee"
+  );
+
   const etat: EtatInscription = (() => {
     if (!evenement) return "complet"; // valeur neutre, non affichée tant que evenement est null
     if (evenement.statut === "Termine" || evenement.statut === "Annule") return "termine";
@@ -69,6 +83,7 @@ export const useFicheEvenement = () => {
     if (utilisateur.id === evenement.idOrganisateur) return "organisateur";
     if (monInscription?.statut === "acceptee") return "inscrit";
     if (monInscription?.statut === "en_attente") return "en_attente";
+    if (monInscription?.statut === "refusee") return "refuse";
     if (evenement.statut === "Complet") return "complet";
     return evenement.estPrive ? "demande_possible" : "inscription_possible";
   })();
@@ -187,6 +202,7 @@ export const useFicheEvenement = () => {
     chargement,
     erreur,
     etat,
+    peutEvaluer,
     actionEnCours,
     rejoindre,
     seDesinscrire,

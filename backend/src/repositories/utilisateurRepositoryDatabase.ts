@@ -54,6 +54,10 @@ export class UtilisateurRepositoryDatabase implements UtilisateurRepositoryInter
     });
   }
 
+  async compterJoueurs(): Promise<number> {
+    return prisma.utilisateur.count({ where: { role: "joueur" } });
+  }
+
   // Convertit une ligne Prisma en entité du domaine.
   private versEntite(ligne: {
     idJoueur: number;

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ModerationService } from "../services/moderationService";
-import { signalementSchema } from "../schemas/signalementSchema";
+import { signalementSchema, filtresEvenementsAdminSchema } from "../schemas/signalementSchema";
 import { RequeteInvalide } from "../domain/erreurMetier";
 
 export class ModerationController {
@@ -47,6 +47,35 @@ export class ModerationController {
           ...signalement.versReponse(),
           motifLibelle,
           evenementTitre,
+        }))
+      );
+    } catch (erreur) {
+      next(erreur);
+    }
+  };
+
+  // GET /moderation/statistiques — vue d'ensemble du tableau de bord admin
+  statistiques = async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const statistiques = await this.moderationService.obtenirStatistiques();
+      res.json(statistiques);
+    } catch (erreur) {
+      next(erreur);
+    }
+  };
+
+  // GET /moderation/evenements — vue d'ensemble admin, tous les événements,
+  // filtrable par statut et par plage de date de début
+  listerEvenements = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const filtres = filtresEvenementsAdminSchema.parse(req.query);
+      const evenements = await this.moderationService.listerEvenements(filtres);
+
+      res.json(
+        evenements.map(({ evenement, organisateur }) => ({
+          ...evenement.versReponse(),
+          estAnnule: evenement.dateDesactivation !== null,
+          organisateur,
         }))
       );
     } catch (erreur) {

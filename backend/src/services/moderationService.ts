@@ -4,9 +4,20 @@ import {
   SignalementDetaille,
   MotifSignalement,
 } from "../domain/interface/signalementRepositoryInterface";
-import { EvenementRepositoryInterface } from "../domain/interface/evenementRepositoryInterface";
+import {
+  EvenementRepositoryInterface,
+  FiltresEvenementsAdmin,
+  EvenementAvecOrganisateur,
+} from "../domain/interface/evenementRepositoryInterface";
 import { UtilisateurRepositoryInterface } from "../domain/interface/utilisateurRepositoryInterface";
 import { RessourceIntrouvable } from "../domain/erreurMetier";
+
+export type StatistiquesAdmin = {
+  totalEvenements: number;
+  evenementsActifs: number;
+  evenementsTermines: number;
+  totalJoueurs: number;
+};
 
 export class ModerationService {
   constructor(
@@ -47,6 +58,29 @@ export class ModerationService {
 
     await this.evenementRepository.desactiver(idEvenement);
     await this.utilisateurRepository.avertir(evenement.idOrganisateur);
+  }
+
+  // Vue d'ensemble du tableau de bord admin (22/09/2026, à la demande du
+  // porteur de projet) — quelques compteurs simples, pas de graphique ni de
+  // nouvelle dépendance (voir CLAUDE.md, "Évolutions envisagées").
+  async obtenirStatistiques(): Promise<StatistiquesAdmin> {
+    const [{ total, actifs, termines }, totalJoueurs] = await Promise.all([
+      this.evenementRepository.compterParStatut(),
+      this.utilisateurRepository.compterJoueurs(),
+    ]);
+
+    return {
+      totalEvenements: total,
+      evenementsActifs: actifs,
+      evenementsTermines: termines,
+      totalJoueurs,
+    };
+  }
+
+  // Vue d'ensemble admin : tous les événements, filtrables — pas juste ceux
+  // signalés (contrairement à listerSignalementsEnAttente).
+  async listerEvenements(filtres: FiltresEvenementsAdmin): Promise<EvenementAvecOrganisateur[]> {
+    return this.evenementRepository.listerTousAdmin(filtres);
   }
 
   // Faux signalement : l'événement reste actif, les signalements le concernant sont retirés.

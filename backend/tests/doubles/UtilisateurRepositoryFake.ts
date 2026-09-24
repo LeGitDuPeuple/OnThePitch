@@ -46,4 +46,8 @@ export class UtilisateurRepositoryFake implements UtilisateurRepositoryInterface
   async avertir(id: number): Promise<void> {
     this.idsAvertis.push(id);
   }
+
+  async compterJoueurs(): Promise<number> {
+    return this.utilisateurs.filter((utilisateur) => utilisateur.role === "joueur").length;
+  }
 }

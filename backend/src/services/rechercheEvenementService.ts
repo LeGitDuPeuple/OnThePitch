@@ -5,10 +5,17 @@ export interface ParametresRecherche {
   latitude: number;
   longitude: number;
   rayonKm?: number;
+  skip?: number;
+  take?: number;
 }
 
 const RAYON_DEFAUT_KM = 10;
 const RAYON_MAXIMUM_KM = 100;
+// Pagination volontairement simple (skip/take) : la page suivante ne fait que
+// décaler l'offset, jamais de curseur — un événement peut apparaître deux fois
+// ou en sauter un si la liste change entre deux pages, acceptable ici (les
+// résultats bougent peu d'une page à l'autre en pratique).
+const TAILLE_PAGE_DEFAUT = 10;
 
 export class RechercheEvenementService {
   constructor(private readonly evenementRepository: EvenementRepositoryInterface) {}
@@ -24,11 +31,15 @@ export class RechercheEvenementService {
 
     // PostGIS raisonne en mètres : la conversion est une règle métier.
     const rayonMetres = rayonKm * 1000;
+    const skip = parametres.skip ?? 0;
+    const take = parametres.take ?? TAILLE_PAGE_DEFAUT;
 
     const resultats = await this.evenementRepository.rechercherParRayon(
       parametres.longitude,
       parametres.latitude,
-      rayonMetres
+      rayonMetres,
+      skip,
+      take
     );
 
     // Une zone sans événement est un résultat valide, pas une erreur.

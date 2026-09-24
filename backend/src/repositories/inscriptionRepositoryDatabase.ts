@@ -40,6 +40,15 @@ export class InscriptionRepositoryDatabase implements InscriptionRepositoryInter
     }));
   }
 
+  async listerParJoueur(idJoueur: number, statuts: StatutInscription[]): Promise<Inscription[]> {
+    const lignes = await prisma.rejoint.findMany({
+      where: { idJoueur, statutInscription: { in: statuts } },
+      orderBy: { dateInscription: "desc" },
+    });
+
+    return lignes.map((ligne) => this.versEntite(ligne));
+  }
+
   async rejoindre(idJoueur: number, idEvenement: number, statutInitial: StatutInscription): Promise<Inscription> {
     try {
       // Événement privé : simple demande en attente, aucune place n'est encore consommée.

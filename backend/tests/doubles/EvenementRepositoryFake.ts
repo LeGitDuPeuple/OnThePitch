@@ -6,6 +6,8 @@ import {
   EvenementProche,
   EvenementDetail,
   LieuDetail,
+  FiltresEvenementsAdmin,
+  EvenementAvecOrganisateur,
 } from "../../src/domain/interface/evenementRepositoryInterface";
 import { RessourceIntrouvable } from "../../src/domain/erreurMetier";
 
@@ -66,7 +68,7 @@ export class EvenementRepositoryFake implements EvenementRepositoryInterface {
     if (!evenement || !lieu) return null;
 
     // Identité factice : ce double ne modélise pas les utilisateurs.
-    return { evenement, lieu, organisateur: { nom: "Organisateur", prenom: `#${evenement.idOrganisateur}` } };
+    return { evenement, lieu, organisateur: { nom: "Organisateur", prenom: `#${evenement.idOrganisateur}`, fiabilite: null } };
   }
 
   async modifier(id: number, donnees: ModificationEvenement): Promise<Evenement> {
@@ -84,8 +86,44 @@ export class EvenementRepositoryFake implements EvenementRepositoryInterface {
     return evenement;
   }
 
-  async rechercherParRayon(_longitude: number, _latitude: number, _rayonMetres: number): Promise<EvenementProche[]> {
+  async rechercherParRayon(
+    _longitude: number,
+    _latitude: number,
+    _rayonMetres: number,
+    _skip: number,
+    _take: number
+  ): Promise<EvenementProche[]> {
     return [];
+  }
+
+  async listerParOrganisateur(idOrganisateur: number): Promise<Evenement[]> {
+    return this.evenements.filter((evenement) => evenement.idOrganisateur === idOrganisateur && evenement.estActif());
+  }
+
+  async compterParStatut(): Promise<{ total: number; actifs: number; termines: number }> {
+    return {
+      total: this.evenements.length,
+      actifs: this.evenements.filter((e) => e.estActif() && (e.statut === "Ouvert" || e.statut === "Complet")).length,
+      termines: this.evenements.filter((e) => e.estActif() && e.statut === "Termine").length,
+    };
+  }
+
+  async listerTousAdmin(filtres: FiltresEvenementsAdmin): Promise<EvenementAvecOrganisateur[]> {
+    return this.evenements
+      .filter((evenement) => {
+        if (filtres.statut === "Annule") {
+          if (evenement.estActif()) return false;
+        } else if (filtres.statut) {
+          if (!evenement.estActif() || evenement.statut !== filtres.statut) return false;
+        }
+        if (filtres.dateDebutMin && evenement.dateDebut < filtres.dateDebutMin) return false;
+        if (filtres.dateDebutMax && evenement.dateDebut > filtres.dateDebutMax) return false;
+        return true;
+      })
+      .map((evenement) => ({
+        evenement,
+        organisateur: { nom: "Organisateur", prenom: `#${evenement.idOrganisateur}`, fiabilite: null },
+      }));
   }
 
   async desactiver(id: number): Promise<void> {
@@ -96,5 +134,16 @@ export class EvenementRepositoryFake implements EvenementRepositoryInterface {
   async terminer(id: number): Promise<void> {
     const evenement = this.evenements.find((e) => e.id === id);
     if (evenement) evenement.statut = "Termine";
+  }
+
+  async terminerAvantDate(dateLimite: Date): Promise<number[]> {
+    const idsClotures: number[] = [];
+    for (const evenement of this.evenements) {
+      if (evenement.estActif() && evenement.statut !== "Termine" && evenement.dateFin < dateLimite) {
+        evenement.statut = "Termine";
+        idsClotures.push(evenement.id);
+      }
+    }
+    return idsClotures;
   }
 }

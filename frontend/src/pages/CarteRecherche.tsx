@@ -38,6 +38,10 @@ export const CarteRecherche = () => {
     rechercherParAdresse,
     rechercherParPosition,
     rechercherSuggestion,
+    pageSuivante,
+    pagePrecedente,
+    peutReculer,
+    peutAvancer,
   } = useRechercheForm();
   const { suggestions, choisir, fermer } = useSuggestionsAdresse(adresse);
   const { message: messageConfirmation, effacer: effacerConfirmation } = useMessageConfirmation();
@@ -151,6 +155,16 @@ export const CarteRecherche = () => {
               );
             })}
           </ul>
+          {resultats.length > 0 && (
+            <div className="pagination-resultats">
+              <button type="button" className="bouton-secondaire" onClick={pagePrecedente} disabled={!peutReculer || chargement}>
+                Précédent
+              </button>
+              <button type="button" className="bouton-secondaire" onClick={pageSuivante} disabled={!peutAvancer || chargement}>
+                Suivant
+              </button>
+            </div>
+          )}
         </section>
       </div>
 

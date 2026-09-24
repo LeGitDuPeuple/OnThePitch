@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { moderationService } from "../services/moderationService";
 import { ErreurApi } from "../services/api";
-import type { SignalementDetail } from "../types/moderation";
+import type { SignalementDetail, StatistiquesAdmin } from "../types/moderation";
 
 // Toute la logique du tableau de bord admin : le composant n'affiche que ce que
 // ce hook expose (voir CLAUDE.md, "le composant affiche, il ne raisonne pas").
 export const useModeration = () => {
   const [signalements, setSignalements] = useState<SignalementDetail[]>([]);
+  const [statistiques, setStatistiques] = useState<StatistiquesAdmin | null>(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
   // Événement en cours de traitement — ne désactive que la ligne concernée,
@@ -16,7 +17,12 @@ export const useModeration = () => {
   const charger = useCallback(async () => {
     setErreur(null);
     try {
-      setSignalements(await moderationService.listerSignalements());
+      const [listeSignalements, statistiquesAdmin] = await Promise.all([
+        moderationService.listerSignalements(),
+        moderationService.obtenirStatistiques(),
+      ]);
+      setSignalements(listeSignalements);
+      setStatistiques(statistiquesAdmin);
     } catch (erreurRequete) {
       setErreur(erreurRequete instanceof ErreurApi ? erreurRequete.message : "Une erreur est survenue");
     } finally {
@@ -48,5 +54,5 @@ export const useModeration = () => {
     [charger]
   );
 
-  return { signalements, chargement, erreur, idEvenementEnCours, traiter };
+  return { signalements, statistiques, chargement, erreur, idEvenementEnCours, traiter };
 };

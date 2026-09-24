@@ -22,6 +22,9 @@
   --ambre-texte: #7a4a00;
   --ambre-clair: #fdf0dc;
 
+  --bleu-texte: #1d4e89;
+  --bleu-clair: #e3edf7;
+
   --rayon: 10px;
   --rayon-pilule: 999px;
   --ombre-carte: 0 1px 2px rgba(14, 59, 42, 0.06);
@@ -168,6 +171,27 @@ textarea:focus {
 .badge--alerte {
   color: var(--rouge);
   background: var(--rouge-clair);
+  border-color: transparent;
+}
+
+/* Événement terminé — couleur à part (bleu), ni rouge comme "Complet" ni vert
+   comme "Ouvert"/niveau/"Présent", qui connotent chacun autre chose. Remplace
+   l'ancien traitement estompé (opacité, sans couleur) : trop proche du gris
+   par défaut sur une liste à plusieurs statuts (retour du porteur de projet,
+   22/09/2026, sur l'écran admin "tous les événements" — voir CLAUDE.md). */
+.badge--info {
+  color: var(--bleu-texte);
+  background: var(--bleu-clair);
+  border-color: transparent;
+}
+
+/* Événement annulé — même remarque : le badge neutre par défaut (gris sur
+   fond clair) n'était pas assez visible à côté des autres statuts colorés.
+   Couleur à part (ambre) plutôt que réutiliser le rouge de "Complet", qui
+   désigne un état bloquant de nature différente. */
+.badge--ambre {
+  color: var(--ambre-texte);
+  background: var(--ambre-clair);
   border-color: transparent;
 }
 

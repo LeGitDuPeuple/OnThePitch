@@ -65,12 +65,13 @@ model Utilisateur {
   idStatut        Int?      @map("id_statut")
   idNiveau        Int?      @map("id_niveau")
 
-  statut       StatutUtilisateur? @relation(fields: [idStatut], references: [idStatut])
-  niveau       NiveauUtilisateur? @relation(fields: [idNiveau], references: [idNiveau])
-  evenements   Evenement[]
-  inscriptions Rejoint[]
-  signalements Signal[]
-  evaluations  Evaluation[]
+  statut        StatutUtilisateur? @relation(fields: [idStatut], references: [idStatut])
+  niveau        NiveauUtilisateur? @relation(fields: [idNiveau], references: [idNiveau])
+  evenements    Evenement[]
+  inscriptions  Rejoint[]
+  signalements  Signal[]
+  evaluations   Evaluation[]
+  notifications Notification[]
 
   @@index([email])
   @@map("utilisateur")
@@ -116,13 +117,14 @@ model Evenement {
   idStatutEvent     Int       @map("id_statut_event")
   idJoueur          Int       @map("id_joueur")
 
-  lieu         Lieu        @relation(fields: [idLieu], references: [idLieu])
-  statut       StatutEvent @relation(fields: [idStatutEvent], references: [idStatutEvent])
-  organisateur Utilisateur @relation(fields: [idJoueur], references: [idJoueur])
-  niveaux      Requiert[]
-  inscriptions Rejoint[]
-  signalements Signal[]
-  evaluations  Evaluation[]
+  lieu          Lieu           @relation(fields: [idLieu], references: [idLieu])
+  statut        StatutEvent    @relation(fields: [idStatutEvent], references: [idStatutEvent])
+  organisateur  Utilisateur    @relation(fields: [idJoueur], references: [idJoueur])
+  niveaux       Requiert[]
+  inscriptions  Rejoint[]
+  signalements  Signal[]
+  evaluations   Evaluation[]
+  notifications Notification[]
 
   @@index([dateDebut])
   @@index([idJoueur])
@@ -182,4 +184,27 @@ model Evaluation {
 
   @@id([idJoueur, idEvenement])
   @@map("evaluation")
+}
+
+// Absente du MCD initial (comme photo/format en leur temps) — ajoutée le
+// 21/09/2026 à la demande du porteur de projet : prévenir un joueur qu'une
+// action l'attend (demande reçue, réponse à sa demande, événement complet ou
+// annulé), sans dépendre d'une notification mobile puisque ce n'est pas une
+// app native. `type` reste une chaîne libre côté base, comme
+// rejoint.statutInscription — fermée uniquement par le type TypeScript
+// `TypeNotification`, pas de table de référence dédiée (même choix que pour
+// les statuts d'inscription, pour la même raison de simplicité).
+model Notification {
+  idNotification Int      @id @default(autoincrement()) @map("id_notification")
+  idJoueur       Int      @map("id_joueur")
+  idEvenement    Int      @map("id_evenement")
+  type           String   @db.VarChar(30)
+  lu             Boolean  @default(false)
+  dateCreation   DateTime @default(now()) @map("date_creation")
+
+  joueur    Utilisateur @relation(fields: [idJoueur], references: [idJoueur])
+  evenement Evenement   @relation(fields: [idEvenement], references: [idEvenement])
+
+  @@index([idJoueur, lu])
+  @@map("notification")
 }

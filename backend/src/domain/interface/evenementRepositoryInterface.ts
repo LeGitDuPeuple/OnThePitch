@@ -65,11 +65,31 @@ export type LieuDetail = {
 export type OrganisateurDetail = {
   nom: string;
   prenom: string;
+  // Score de "Fiabilité" de la maquette d'origine (voir CLAUDE.md, écart de
+  // périmètre) : moyenne des évaluations reçues sur tous ses événements.
+  // Ajouté par EvenementService.trouverDetailParId (EvaluationRepository), pas
+  // par ce repository — null tant qu'aucune évaluation n'existe encore.
+  fiabilite: number | null;
 };
 
 export type EvenementDetail = {
   evenement: Evenement;
   lieu: LieuDetail;
+  organisateur: OrganisateurDetail;
+};
+
+// Filtres de la vue d'ensemble admin (voir CLAUDE.md, section Modération).
+// "Annule" n'est pas un statut réellement posé en base (voir plus bas) : il
+// se traduit par dateDesactivation non nulle, pas par une jointure sur
+// statut_event.
+export type FiltresEvenementsAdmin = {
+  statut?: "Ouvert" | "Complet" | "Termine" | "Annule";
+  dateDebutMin?: Date;
+  dateDebutMax?: Date;
+};
+
+export type EvenementAvecOrganisateur = {
+  evenement: Evenement;
   organisateur: OrganisateurDetail;
 };
 
@@ -87,16 +107,38 @@ export interface EvenementRepositoryInterface {
   // Modifie les champs fournis d'un événement existant, sans toucher au lieu.
   modifier(id: number, donnees: ModificationEvenement): Promise<Evenement>;
 
-  // Recherche les événements publics à venir dans un rayon donné (en mètres).
+  // Recherche les événements publics à venir dans un rayon donné (en mètres),
+  // triés par distance, avec pagination simple (skip/take).
   rechercherParRayon(
     longitude: number,
     latitude: number,
-    rayonMetres: number
+    rayonMetres: number,
+    skip: number,
+    take: number
   ): Promise<EvenementProche[]>;
+
+  // Événements organisés par ce joueur (actifs ou terminés, jamais les annulés) —
+  // pour l'écran Profil.
+  listerParOrganisateur(idOrganisateur: number): Promise<Evenement[]>;
+
+  // Compteurs pour la vue d'ensemble du tableau de bord admin.
+  compterParStatut(): Promise<{ total: number; actifs: number; termines: number }>;
+
+  // Liste tous les événements, tous organisateurs confondus, filtrable par
+  // statut et par plage de date de début — vue d'ensemble admin (contrairement
+  // à listerParOrganisateur, restreint à un seul joueur pour le Profil).
+  listerTousAdmin(filtres: FiltresEvenementsAdmin): Promise<EvenementAvecOrganisateur[]>;
 
   // Marque un événement comme désactivé (soft delete).
   desactiver(id: number): Promise<void>;
 
   // Clôture l'événement une fois les présences relevées.
   terminer(id: number): Promise<void>;
+
+  // Clôture automatiquement les événements actifs dont la date de fin précède
+  // `dateLimite` (organisateur qui a oublié de cliquer "Terminer l'événement" —
+  // voir CLAUDE.md, section Présences). Renvoie les identifiants clôturés
+  // (pas juste un compte) : EvenementService en a besoin pour notifier les
+  // inscrits de chaque événement concerné.
+  terminerAvantDate(dateLimite: Date): Promise<number[]>;
 }

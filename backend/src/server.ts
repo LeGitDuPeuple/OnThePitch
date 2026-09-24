@@ -10,15 +10,20 @@ import {
   inscriptionController,
   presenceController,
   moderationController,
+  evaluationController,
   photoController,
   geocodageController,
+  evenementService,
+  notificationController,
 } from "./config/container";
 import { authRoutes, registerAuthRoutes } from "./routes/authRoute";
 import { evenementRoutes, registerEvenementRoutes } from "./routes/evenementRoute";
 import { registerInscriptionRoutes } from "./routes/inscriptionRoute";
 import { registerPresenceRoutes } from "./routes/presenceRoute";
 import { moderationRoutes, registerSignalementRoutes, registerModerationRoutes } from "./routes/moderationRoute";
+import { registerEvaluationRoutes } from "./routes/evaluationRoute";
 import { registerPhotoRoutes } from "./routes/photoRoute";
+import { notificationRoutes, registerNotificationRoutes } from "./routes/notificationRoute";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
@@ -44,8 +49,10 @@ registerEvenementRoutes(evenementController, geocodageController);
 registerInscriptionRoutes(evenementRoutes, inscriptionController);
 registerPresenceRoutes(evenementRoutes, presenceController);
 registerSignalementRoutes(evenementRoutes, moderationController);
+registerEvaluationRoutes(evenementRoutes, evaluationController);
 registerModerationRoutes(moderationController);
 registerPhotoRoutes(evenementRoutes, photoController);
+registerNotificationRoutes(notificationController);
 
 // Route de santé, pour vérifier que l'API répond
 app.get("/api/v1/sante", (_req, res) => {
@@ -55,11 +62,28 @@ app.get("/api/v1/sante", (_req, res) => {
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/evenements", evenementRoutes);
 app.use("/api/v1/moderation", moderationRoutes);
+app.use("/api/v1/notifications", notificationRoutes);
 
 
 
 // Toujours en dernier : capture ce que les routes laissent remonter
 app.use(errorHandlerMiddleware);
+
+// Filet de sécurité pour un organisateur qui a oublié de cliquer "Terminer
+// l'événement" (voir CLAUDE.md, section Présences) : toutes les 30 min,
+// clôture les événements terminés depuis plus de 3h. setInterval suffit ici,
+// pas de cron externe ni de nouvelle dépendance — l'opération est idempotente
+// (WHERE idStatutEvent != Termine), donc sans risque en cas de double exécution.
+const INTERVALLE_CLOTURE_AUTO_MS = 30 * 60 * 1000;
+
+const executerClotureAutomatique = () => {
+  evenementService.terminerEvenementsExpires().catch((erreur: unknown) => {
+    console.error("Échec de la clôture automatique des événements :", erreur);
+  });
+};
+
+executerClotureAutomatique();
+setInterval(executerClotureAutomatique, INTERVALLE_CLOTURE_AUTO_MS);
 
 app.listen(PORT, () => {
   console.log(`API démarrée sur http://localhost:${PORT}`);

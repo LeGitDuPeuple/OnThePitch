@@ -19,6 +19,8 @@ export const registerModerationRoutes = (controller: ModerationController) => {
   moderationRoutes.get("/motifs", controller.listerMotifs);
 
   moderationRoutes.get("/signalements", authentifier, verifierRole("administrateur"), controller.lister);
+  moderationRoutes.get("/statistiques", authentifier, verifierRole("administrateur"), controller.statistiques);
+  moderationRoutes.get("/evenements", authentifier, verifierRole("administrateur"), controller.listerEvenements);
 
   moderationRoutes.post(
     "/evenements/:id/sanctionner",

@@ -1,6 +1,9 @@
 import { PhotoService } from "../../src/services/photoService";
 import { RessourceIntrouvable, AccesRefuse, RequeteInvalide } from "../../src/domain/erreurMetier";
 import { EvenementRepositoryFake } from "../doubles/EvenementRepositoryFake";
+import { InscriptionRepositoryFake } from "../doubles/InscriptionRepositoryFake";
+import { EvaluationRepositoryFake } from "../doubles/EvaluationRepositoryFake";
+import { NotificationFake } from "../doubles/NotificationFake";
 import { LieuRepositoryFake } from "../doubles/LieuRepositoryFake";
 import { GeocodeurFake, coordonneesTest } from "../doubles/GeocodeurFake";
 import { EvenementService } from "../../src/services/evenementService";
@@ -13,7 +16,13 @@ const photoTest = { donnees: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a,
 const fichierNonImage = { donnees: new Uint8Array([0x4d, 0x5a, 1, 2, 3]), typeMime: "image/jpeg" };
 
 const creerEvenement = async (evenementRepository: EvenementRepositoryFake) => {
-  const evenementService = new EvenementService(evenementRepository, new GeocodeurFake(coordonneesTest));
+  const evenementService = new EvenementService(
+    evenementRepository,
+    new GeocodeurFake(coordonneesTest),
+    new InscriptionRepositoryFake(),
+    new NotificationFake(),
+    new EvaluationRepositoryFake()
+  );
   return evenementService.creer(
     {
       titre: "Match avec photo",

@@ -1,0 +1,50 @@
+.page-profil {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 3rem;
+}
+
+.profil-entete {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 2rem;
+}
+
+.profil-entete h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.profil-section {
+  margin-bottom: 2rem;
+}
+
+.profil-section h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.75rem;
+}
+
+.liste-profil {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.profil-sous-groupe-termines {
+  margin-top: 0.6rem;
+}
+
+.profil-sous-groupe-termines summary {
+  cursor: pointer;
+  color: var(--texte-attenue);
+  font-size: 0.85rem;
+  margin-bottom: 0.6rem;
+}
+
+.profil-sous-groupe-termines[open] summary {
+  margin-bottom: 0.6rem;
+}

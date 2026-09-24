@@ -1,4 +1,5 @@
 import { prisma } from "../config/prismaClient";
+import { Prisma } from "../generated/prisma/client";
 import { Evenement, StatutEvenement, NiveauRequis } from "../domain/entities/Evenement";
 import { ServiceIndisponible } from "../domain/erreurMetier";
 import {
@@ -7,6 +8,8 @@ import {
   ModificationEvenement,
   EvenementProche,
   EvenementDetail,
+  FiltresEvenementsAdmin,
+  EvenementAvecOrganisateur,
 } from "../domain/interface/evenementRepositoryInterface";
 
 // Forme brute d'une ligne renvoyée par la requête PostGIS.
@@ -169,6 +172,9 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
       organisateur: {
         nom: ligne.organisateur.nom,
         prenom: ligne.organisateur.prenom,
+        // Complété par EvenementService.trouverDetailParId (EvaluationRepository) —
+        // ce repository ne connaît pas la table evaluation.
+        fiabilite: null,
       },
     };
   }
@@ -217,7 +223,9 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
   async rechercherParRayon(
     longitude: number,
     latitude: number,
-    rayonMetres: number
+    rayonMetres: number,
+    skip: number,
+    take: number
   ): Promise<EvenementProche[]> {
     const lignes = await prisma.$queryRaw<LigneRecherche[]>`
       SELECT e.id_evenement, e.titre, e.format, e.nombre_places, e.type_prive_publique,
@@ -245,6 +253,7 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
         AND e.date_desactivation IS NULL
       GROUP BY e.id_evenement, s.libelle_event, n.libelle_niveau_event, l.nom, l.adresse, l.ville, l.longitude, l.latitude
       ORDER BY distance ASC
+      LIMIT ${take}::int OFFSET ${skip}::int
     `;
 
     return lignes.map((ligne) => ({
@@ -271,6 +280,110 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
     }));
   }
 
+  // Vue d'ensemble admin : tous les événements, filtrables par statut et par
+  // plage de date de début. "Annule" se traduit par dateDesactivation non
+  // nulle (voir FiltresEvenementsAdmin) — les autres statuts excluent
+  // implicitement les événements annulés, comme partout ailleurs.
+  async listerTousAdmin(filtres: FiltresEvenementsAdmin): Promise<EvenementAvecOrganisateur[]> {
+    const ou: Prisma.EvenementWhereInput = {};
+
+    if (filtres.statut === "Annule") {
+      ou.dateDesactivation = { not: null };
+    } else if (filtres.statut) {
+      ou.dateDesactivation = null;
+      ou.statut = { libelleEvent: filtres.statut };
+    }
+
+    if (filtres.dateDebutMin || filtres.dateDebutMax) {
+      ou.dateDebut = {
+        ...(filtres.dateDebutMin ? { gte: filtres.dateDebutMin } : {}),
+        ...(filtres.dateDebutMax ? { lte: filtres.dateDebutMax } : {}),
+      };
+    }
+
+    const lignes = await prisma.evenement.findMany({
+      where: ou,
+      include: {
+        statut: true,
+        niveaux: { include: { niveau: true } },
+        inscriptions: { where: { statutInscription: "acceptee" } },
+        organisateur: true,
+      },
+      orderBy: { dateDebut: "desc" },
+    });
+
+    return lignes.map((ligne) => ({
+      evenement: new Evenement({
+        id: ligne.idEvenement,
+        titre: ligne.titre,
+        description: ligne.description,
+        format: ligne.format,
+        nombrePlaces: ligne.nombrePlaces,
+        estPrive: ligne.typePrivePublique,
+        dateDebut: ligne.dateDebut,
+        dateFin: ligne.dateFin,
+        dateDesactivation: ligne.dateDesactivation,
+        idLieu: ligne.idLieu,
+        idOrganisateur: ligne.idJoueur,
+        statut: ligne.statut.libelleEvent as StatutEvenement,
+        niveauRequis: (ligne.niveaux[0]?.niveau.libelleNiveauEvent as NiveauRequis) ?? "tous_niveaux",
+        nombreInscrits: ligne.inscriptions.length,
+      }),
+      organisateur: { nom: ligne.organisateur.nom, prenom: ligne.organisateur.prenom, fiabilite: null },
+    }));
+  }
+
+  // Événements organisés par ce joueur — écran Profil. Les annulés (soft delete)
+  // n'y figurent pas, comme partout ailleurs dans le projet.
+  async listerParOrganisateur(idOrganisateur: number): Promise<Evenement[]> {
+    const lignes = await prisma.evenement.findMany({
+      where: { idJoueur: idOrganisateur, dateDesactivation: null },
+      include: {
+        statut: true,
+        niveaux: { include: { niveau: true } },
+        inscriptions: { where: { statutInscription: "acceptee" } },
+      },
+      orderBy: { dateDebut: "desc" },
+    });
+
+    return lignes.map(
+      (ligne) =>
+        new Evenement({
+          id: ligne.idEvenement,
+          titre: ligne.titre,
+          description: ligne.description,
+          format: ligne.format,
+          nombrePlaces: ligne.nombrePlaces,
+          estPrive: ligne.typePrivePublique,
+          dateDebut: ligne.dateDebut,
+          dateFin: ligne.dateFin,
+          dateDesactivation: ligne.dateDesactivation,
+          idLieu: ligne.idLieu,
+          idOrganisateur: ligne.idJoueur,
+          statut: ligne.statut.libelleEvent as StatutEvenement,
+          niveauRequis: (ligne.niveaux[0]?.niveau.libelleNiveauEvent as NiveauRequis) ?? "tous_niveaux",
+          nombreInscrits: ligne.inscriptions.length,
+        })
+    );
+  }
+
+  // Compteurs pour la vue d'ensemble du tableau de bord admin — "total" compte
+  // tous les événements jamais créés (même annulés depuis), "actifs" et
+  // "termines" excluent les annulés (dateDesactivation non nulle).
+  async compterParStatut(): Promise<{ total: number; actifs: number; termines: number }> {
+    const [total, actifs, termines] = await Promise.all([
+      prisma.evenement.count(),
+      prisma.evenement.count({
+        where: { dateDesactivation: null, statut: { libelleEvent: { in: ["Ouvert", "Complet"] } } },
+      }),
+      prisma.evenement.count({
+        where: { dateDesactivation: null, statut: { libelleEvent: "Termine" } },
+      }),
+    ]);
+
+    return { total, actifs, termines };
+  }
+
   // Soft delete : on ne supprime jamais physiquement un événement.
   async desactiver(id: number): Promise<void> {
     await prisma.evenement.update({
@@ -289,5 +402,36 @@ export class EvenementRepositoryDatabase implements EvenementRepositoryInterface
       where: { idEvenement: id },
       data: { idStatutEvent: statutTermine.idStatutEvent },
     });
+  }
+
+  async terminerAvantDate(dateLimite: Date): Promise<number[]> {
+    const statutTermine = await prisma.statutEvent.findUniqueOrThrow({
+      where: { libelleEvent: "Termine" },
+    });
+
+    const critere = {
+      dateFin: { lt: dateLimite },
+      dateDesactivation: null,
+      idStatutEvent: { not: statutTermine.idStatutEvent },
+    };
+
+    // findMany puis updateMany plutôt qu'un seul updateMany : Prisma ne
+    // renvoie pas les lignes affectées par un updateMany (juste un compte),
+    // et EvenementService a besoin des identifiants pour notifier les
+    // inscrits de chaque événement concerné.
+    const evenementsAClore = await prisma.evenement.findMany({
+      where: critere,
+      select: { idEvenement: true },
+    });
+    const idsAClore = evenementsAClore.map((evenement) => evenement.idEvenement);
+
+    if (idsAClore.length === 0) return [];
+
+    await prisma.evenement.updateMany({
+      where: { idEvenement: { in: idsAClore } },
+      data: { idStatutEvent: statutTermine.idStatutEvent },
+    });
+
+    return idsAClore;
   }
 }

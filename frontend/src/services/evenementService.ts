@@ -1,10 +1,12 @@
 import { appelApi, URL_BASE } from "./api";
-import type { EvenementProche, EvenementDetail, Evenement, NiveauRequis } from "../types/evenement";
+import type { EvenementProche, EvenementDetail, Evenement, MesEvenements, NiveauRequis } from "../types/evenement";
 
 export type ParametresRecherche = {
   latitude: number;
   longitude: number;
   rayonKm?: number;
+  skip?: number;
+  take?: number;
 };
 
 // Corps de POST /evenements (voir schemas/evenementSchema.ts côté back — pas de
@@ -46,11 +48,20 @@ export const evenementService = {
     if (parametres.rayonKm !== undefined) {
       params.set("rayonKm", String(parametres.rayonKm));
     }
+    if (parametres.skip !== undefined) {
+      params.set("skip", String(parametres.skip));
+    }
+    if (parametres.take !== undefined) {
+      params.set("take", String(parametres.take));
+    }
 
     return appelApi<EvenementProche[]>(`/evenements/recherche?${params.toString()}`);
   },
 
   trouverParId: (id: number): Promise<EvenementDetail> => appelApi(`/evenements/${id}`),
+
+  // Écran Profil — réservé à un joueur connecté (voir CLAUDE.md, section Front React).
+  mesEvenements: (): Promise<MesEvenements> => appelApi("/evenements/mes-evenements"),
 
   creer: (donnees: CreationEvenement): Promise<Evenement> => appelApi("/evenements", { methode: "POST", corps: donnees }),
 

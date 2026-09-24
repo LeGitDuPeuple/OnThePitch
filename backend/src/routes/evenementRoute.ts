@@ -12,6 +12,7 @@ export const registerEvenementRoutes = (controller: EvenementController, geocoda
   evenementRoutes.get("/recherche", controller.rechercher);
   evenementRoutes.get("/geocoder", geocodageController.geocoder);
   evenementRoutes.get("/geocoder/suggestions", geocodageController.suggerer);
+  evenementRoutes.get("/mes-evenements", authentifier, controller.mesEvenements);
 
   evenementRoutes.post("/", authentifier, verifierRole("joueur"), controller.creer);
   evenementRoutes.get("/:id", controller.trouverParId);

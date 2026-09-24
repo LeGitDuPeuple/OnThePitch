@@ -29,6 +29,15 @@ export type Evenement = {
   idOrganisateur: number;
 };
 
+// Écran Profil : mes événements organisés, ceux que je rejoins (acceptés
+// uniquement), et mes demandes en attente sur un événement privé. Les demandes
+// refusées n'apparaissent volontairement dans aucune des trois listes.
+export type MesEvenements = {
+  organises: Evenement[];
+  participe: Evenement[];
+  enAttente: Evenement[];
+};
+
 // Résultat de la recherche géolocalisée : un événement, enrichi de sa distance
 // et des coordonnées de son lieu (pour le marqueur sur la carte).
 export type EvenementProche = Evenement & {
@@ -54,6 +63,9 @@ export type LieuDetail = {
 export type OrganisateurDetail = {
   nom: string;
   prenom: string;
+  // Score de "Fiabilité" (maquette d'origine) : moyenne des évaluations reçues
+  // sur tous ses événements, null tant qu'aucune n'existe encore.
+  fiabilite: number | null;
 };
 
 export type EvenementDetail = Evenement & { lieu: LieuDetail; organisateur: OrganisateurDetail };
