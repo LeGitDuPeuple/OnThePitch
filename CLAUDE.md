@@ -753,7 +753,7 @@ terminé et testé.
       `frontend/` : un test E2E vérifie tout le système à la fois, n'appartient
       à aucun des deux) — `pages/` (Page Objects), `tests/` (specs), `utils/`
       (comptes/événements de test via l'API réelle, plus rapide et fiable que
-      de repasser par l'UI pour la préparation). 15 tests, 7 fichiers (état au
+      de repasser par l'UI pour la préparation). 15 tests E2E, 7 fichiers (état au
       24/09/2026 ; la description ci-dessous détaille les premiers, les specs
       `compte` et `double-auth` sont décrits dans la section Compte et sécurité) :
       authentification, création d'événement, inscriptions (public direct,
@@ -816,8 +816,92 @@ terminé et testé.
       Playwright — téléchargement propre à Playwright très lent dans cet
       environnement, le binaire système déjà installé fait exactement le
       même travail pour ces tests.
-- [ ] `Jenkinsfile` en place
-- [ ] Déploiement HTTPS
+- [x] `Jenkinsfile` en place (25/09/2026) — voir la section « Déploiement, CI et
+      documentation » juste ci-dessous.
+- [ ] Déploiement HTTPS **en production** — volontairement non réalisé : le
+      professeur a confirmé (25/09/2026) qu'une démonstration en environnement de
+      développement suffit (« c'est mieux » en production, mais pas exigé). La cible
+      (HTTPS, Kubernetes, AWS) est décrite dans `docs/deploiement.md`, section 9.
+
+### Déploiement, CI et documentation
+> Compétence visée : « Préparer et documenter le déploiement d'une application ».
+> Livrables (25/09/2026) : `docs/deploiement.md` (procédure de déploiement),
+> `docs/tests.md` (environnements de test et procédure d'exécution des tests
+> d'intégration, système et d'acceptation), `docs/veille.md` (veille technologique
+> et sécurité), et les scripts ci-dessous. Décision du 25/09/2026 : **démonstration
+> en environnement de développement**, pas de mise en production réelle.
+
+- [x] **Scripts** (`scripts/`, chacun commenté en tête) : `verifier.sh` (compilation,
+      Jest, build du front — sans base, ≈ 1 min 20, validé dans une **copie propre**
+      du dépôt), `e2e.sh` (pile Docker jetable → intégration + E2E → destruction),
+      `smoke-test.sh` (santé, recherche via l'API et la base, front),
+      `deployer-dev.sh` (déploiement de démonstration), `audit.sh` (`npm audit`),
+      `jenkins-local.sh` (Jenkins de démonstration). Pourquoi des scripts plutôt
+      que des commandes dans le `Jenkinsfile` : ils se testent **sans Jenkins**, et
+      servent aussi de commandes de démonstration.
+      *Pile de CI isolée* (`docker-compose.ci.yml`) : conteneurs, volume et ports
+      distincts du poste de dev (aucun port de base exposé) — la CI ne touche jamais
+      à la base de développement. Mot de passe de base et `JWT_SECRET` tirés au hasard
+      à chaque exécution, SMTP non configuré (Ethereal, aucun email réel) : **aucun
+      secret requis**. `docker-compose.yml` accepte `ENV_FILE` pour cela.
+      *Bug trouvé en validant `e2e.sh`* : le nettoyage échouait **en silence**
+      (`>/dev/null 2>&1 \|\| true`) parce que le script change de dossier avant la fin
+      et que les fichiers compose étaient en chemin relatif — conteneurs et volume
+      restaient en place. Corrigé (chemins absolus, échec de nettoyage **visible**) et
+      revérifié : rien ne reste après exécution.
+- [x] **`Jenkinsfile`** : push → Vérification ; nuit (`cron`) ou lancement manuel
+      (`LANCER_E2E`) → + Audit + Intégration/E2E. Aucune logique dans le fichier
+      (il appelle les scripts). Un audit avec vulnérabilité « high » rend le build
+      **instable (jaune)**, pas rouge : voir `docs/veille.md`.
+      *Validation dans un vrai Jenkins* (image de démonstration `ci/jenkins/` :
+      Node 24, client Docker + Compose, Chrome, configuration par fichier —
+      `scripts/jenkins-local.sh`) : build 1 en échec attendu (Jenkins refuse un
+      dépôt Git local par défaut → `ALLOW_LOCAL_CHECKOUT`, propre à la démo),
+      build 2 SUCCÈS (Vérification : 129 Jest ; Audit et E2E correctement sautés),
+      build 3 (nuit simulée) : 29 tests Playwright verts, pile nettoyée, audit jaune
+      sur `mysql2`. **Jenkins de démonstration à arrêter après usage** : son passage
+      de 2 h lancerait les E2E sur les ports de développement.
+- [x] **Tests d'intégration** (`e2e/integration/`, 14 tests) : l'API réelle contre la
+      vraie base, sans navigateur, projet Playwright `integration` (lancé avant les
+      E2E). Niveau qui manquait pour couvrir « intégration, système, acceptation » :
+      auth (cookie httpOnly, doublon, message identique email inconnu/mot de passe
+      faux, 2FA en deux temps avec vrais codes TOTP, jeton temporaire refusé), création
+      avec géocodage réel, annulation, inscriptions (doublon, complet, statut
+      Complet/Ouvert), **concurrence**, événement privé, recherche géolocalisée,
+      clôture + évaluation + notification, photo déguisée.
+      **Défaut réel trouvé par le test de concurrence** : avec 8 inscriptions
+      simultanées sur 2 places, certaines renvoyaient `500`. Cause : le repository
+      ne rejouait que l'erreur Prisma `P2034`, or avec l'adaptateur `pg` le conflit de
+      sérialisation PostgreSQL (`40001`) remonte en `DriverAdapterError` (cause
+      `TransactionWriteConflict`) — aucune reprise, erreur brute. Et 3 tentatives ne
+      suffisaient pas. La règle métier restait sauve (jamais plus de 2 acceptés) mais
+      l'utilisateur voyait une erreur interne. Corrigé (`inscriptionRepositoryDatabase.ts` :
+      reconnaissance des deux formes, 12 tentatives avec délai aléatoire, `503` clair en
+      dernier recours au lieu d'un `500` brut). Validé : 10 rondes de 12 inscriptions
+      simultanées sur 2 places → à chaque fois exactement 2 acceptées, 10 refusées en `409`.
+      Écart avec la vérification d'origine (« 10 requêtes simultanées, 2 acceptées, 8
+      refusées ») : elle avait été faite une fois, à la main — non reproductible, et
+      trompeuse par chance. *Deux pièges de test corrigés* : événement de recherche noyé
+      parmi des dizaines d'autres à la Concorde dans une base de dev dense (adresse
+      dédiée à Toulouse), et le limiteur (ci-dessous).
+      *Limiteur de tentatives — précision* : `skipSuccessfulRequests` incrémente le
+      compteur **avant** de connaître le résultat, puis retire les succès après coup :
+      des connexions **simultanées** peuvent donc dépasser transitoirement le plafond
+      alors qu'elles réussissent (constaté : 8 connexions parallèles + quelques échecs
+      volontaires → `429`). Sans conséquence pour un usage normal ; la CI pose
+      `LIMITE_TENTATIVES=1000`. Le passage à 10 par défaut reste une valeur de démo.
+- [x] **Documentation** (`docs/`) : `deploiement.md` (architecture, prérequis,
+      variables, déploiement, vérification, mise à jour, retour arrière avec
+      sauvegarde/restauration, exploitation, dépannage, cible de production non
+      réalisée), `tests.md` (niveaux, environnements, procédure d'exécution,
+      lecture des résultats Jenkins, procédure de la recette d'acceptation, limites),
+      `veille.md` (sources, outils, fréquence, processus de traitement, registre des
+      alertes réellement traitées). `.github/dependabot.yml` : mises à jour npm et
+      Docker hebdomadaires (les PR n'apparaîtront qu'une fois poussé). **Limite
+      connue** : le cahier de recette (75 cas, 20/09/2026) ne couvre pas les
+      notifications, l'évaluation, le compte/2FA ni l'admin étendu — leur recette
+      d'acceptation reste à écrire (couverts par Jest, intégration et E2E).
+
 
 ---
 
@@ -1414,44 +1498,18 @@ Quatre écrans, maquettés pour les trois premiers :
 
 ## Évolutions envisagées (hors périmètre initial)
 
-> **EN COURS DE DÉCISION (24/09/2026) — à reprendre en premier à la prochaine
-> session.**
+> **Décisions du 25/09/2026.** Chantier AWS/Jenkins/Kubernetes **tranché** : le
+> professeur a indiqué qu'une démonstration en environnement de développement
+> suffit ; les livrables demandés par la compétence (procédure, scripts documentés,
+> environnements et procédure de tests, veille) sont faits — voir « Déploiement, CI
+> et documentation ». Aucun déploiement AWS/Kubernetes réel n'est prévu ; la cible
+> est décrite dans `docs/deploiement.md`, section 9. Double authentification :
+> réalisée, testée et fusionnée (24-25/09/2026).
 >
-> 1. **Chantier AWS/Jenkins/Kubernetes.** Le porteur de projet pensait ce
->    déploiement réel obligatoire ; ses collègues lui ont indiqué que la
->    compétence visée est en réalité *« Préparer et documenter le déploiement
->    d'une application »*, qui porte sur :
->    - la procédure de déploiement rédigée
->    - les scripts de déploiement écrits et documentés
->    - les environnements de test définis + la procédure d'exécution des
->      tests d'intégration, système et d'acceptation client rédigée
->    - un système de veille sur les évolutions technologiques et les
->      problématiques de sécurité liées au déploiement
->
->    Un vrai déploiement en production n'est donc **pas strictement requis**
->    ("c'est mieux si c'est le cas", mais pas la compétence elle-même). Le
->    porteur de projet récolte encore des informations avant de trancher le
->    niveau d'ambition (documentation seule vs déploiement AWS réel). Ne pas
->    commencer le `Jenkinsfile`/les manifests Kubernetes ni quoi que ce soit
->    côté AWS avant qu'il revienne là-dessus explicitement.
->    Matière déjà existante pour la documentation, quel que soit le niveau
->    retenu : `docker-compose.yml` + Dockerfiles fonctionnels et testés,
->    suite Jest (129 tests) + suite E2E Playwright (15 tests) documentées,
->    variables d'exploitation notées dans `.env.example` et la section
->    "Compte et sécurité" (`TRUST_PROXY`, `LIMITE_TENTATIVES`, `APP_NAME`,
->    limiteur en mémoire par pod, horloge du serveur pour le TOTP).
->    **Matière pour la veille sécurité** : l'alerte Dependabot du dépôt
->    (1 "high", signalée au push du 24/09/2026) et `npm audit` côté backend
->    remontent `mysql2 <= 3.23.0` (fuite d'identifiants en clair par
->    rétrogradation du plugin d'authentification, déni de service par
->    décompression), dépendance **transitive de l'outillage Prisma** — non
->    utilisée à l'exécution (base PostgreSQL). La correction proposée
->    (`npm audit fix --force`) rétrograderait Prisma en v6, cassant le projet
->    (Prisma 7 + adaptateur `pg`) : à traiter en attendant un correctif
->    amont, ne pas forcer.
->
-> 2. ~~Double authentification~~ — **réalisée le 24/09/2026, testée et
->    fusionnée dans `main` le 25/09/2026** (voir section "Compte et sécurité").
+> **Reste ouvert** (rien d'urgent) : recette d'acceptation des fonctionnalités
+> ajoutées depuis le 20/09 ; vulnérabilité `mysql2` (transitive de Prisma, acceptée
+> et documentée, à réexaminer à chaque version de Prisma — ne pas forcer
+> `npm audit fix --force`, il rétrograderait Prisma en v6).
 
 **Cache Redis sur le géocodage.** Une adresse résolue ne change jamais : ses coordonnées
 peuvent être mises en cache sans risque d'obsolescence. Utile si plusieurs événements
