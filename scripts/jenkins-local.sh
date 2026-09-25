@@ -26,9 +26,20 @@ case "${1:-demarrer}" in
   lancer)
     JENKINS="http://localhost:$PORT"
     AUTH=(-u "admin:$MOT_DE_PASSE")
-    JETON="$(curl -fsS "${AUTH[@]}" "$JENKINS/crumbIssuer/api/json" | sed -E 's/.*"crumb":"([^"]+)".*/\1/')"
-    curl -fsS "${AUTH[@]}" -H "Jenkins-Crumb: $JETON" -X POST \
-      "$JENKINS/job/onthepitch/buildWithParameters?LANCER_E2E=true" -o /dev/null
+    JARRE="$(mktemp)"
+    trap 'rm -f "$JARRE"' EXIT
+    # Le jeton anti-CSRF de Jenkins est lié à la session : il faut réutiliser le cookie.
+    JETON="$(curl -fsS -c "$JARRE" "${AUTH[@]}" "$JENKINS/crumbIssuer/api/json" | sed -E 's/.*"crumb":"([^"]+)".*/\1/')"
+    declencher() { curl -fsS -b "$JARRE" "${AUTH[@]}" -H "Jenkins-Crumb: $JETON" -X POST "$JENKINS/job/onthepitch/$1" -o /dev/null; }
+
+    # Les paramètres du Jenkinsfile (LANCER_E2E) ne sont connus de Jenkins qu'après
+    # un PREMIER build : sans lui, on lance d'abord un build simple.
+    if curl -fsS "${AUTH[@]}" "$JENKINS/job/onthepitch/api/json" | grep -q '"parameterDefinitions"'; then
+      declencher "buildWithParameters?LANCER_E2E=true"
+    else
+      echo "Premier build (enregistre les paramètres) : relancez cette commande ensuite pour les E2E."
+      declencher "build"
+    fi
     echo "Build lancé : $JENKINS/job/onthepitch/"
     ;;
   demarrer)
