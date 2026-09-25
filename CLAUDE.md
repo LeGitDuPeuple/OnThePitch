@@ -821,7 +821,7 @@ terminé et testé.
 - [ ] Déploiement HTTPS **en production** — volontairement non réalisé : le
       professeur a confirmé (25/09/2026) qu'une démonstration en environnement de
       développement suffit (« c'est mieux » en production, mais pas exigé). La cible
-      (HTTPS, Kubernetes, AWS) est décrite dans `docs/deploiement.md`, section 9.
+      (HTTPS, Kubernetes, AWS) est décrite dans `docs/deploiement.md`, section 10 (et Kubernetes local, réalisé, section 9).
 
 ### Déploiement, CI et documentation
 > Compétence visée : « Préparer et documenter le déploiement d'une application ».
@@ -890,6 +890,31 @@ terminé et testé.
       alors qu'elles réussissent (constaté : 8 connexions parallèles + quelques échecs
       volontaires → `429`). Sans conséquence pour un usage normal ; la CI pose
       `LIMITE_TENTATIVES=1000`. Le passage à 10 par défaut reste une valeur de démo.
+- [x] **Kubernetes en local** (25/09/2026, à la demande du porteur de projet : « un
+      truc simple mais comme en prod, mais pas en prod — à toi de me dire » ; je
+      n'avais d'abord laissé Kubernetes qu'à l'état de tableau dans la doc, alors que
+      la stack l'annonce comme cible : trou signalé puis comblé). `k8s/` : namespace,
+      ConfigMap, PostGIS en `StatefulSet` (volume), API en `Deployment` (`initContainer`
+      qui attend la base, sondes démarrage/prêt/vivant sur `/api/v1/sante`, limites de
+      ressources), site en `Deployment`, Services `NodePort` ; `kind` (Kubernetes dans
+      Docker) plutôt que minikube : plus léger, un seul binaire. `scripts/k8s-local.sh`
+      pilote tout (cluster, images chargées sans registre, secrets aléatoires créés une
+      fois et jamais versionnés, manifests, attente, test de fumée). Outils installés
+      dans `~/.local/bin` (sans droits administrateur) ; `kubectl` aligné sur la version
+      du cluster (1.31) — celui téléchargé par défaut (1.37) était hors de l'écart
+      supporté.
+      *Erreurs rencontrées* : `kubectl apply -f k8s/` a tenté d'appliquer
+      `kind-config.yaml` (config de kind, pas un objet Kubernetes) → rangé dans
+      `k8s/local/`, hors du dossier appliqué.
+      *Vérifié* : test de fumée ; les 9 migrations sur base neuve ; **29 tests Playwright
+      verts contre le cluster** (limiteur relevé par `kubectl set env` le temps du test) ;
+      pod de l'API supprimé → remplacé ; pod de la base supprimé → remplacé, compte créé
+      avant la suppression toujours connectable (le volume conserve les données) — l'API a
+      redémarré une fois le temps du retour de la base ; cluster supprimé proprement.
+      Ce que ce n'est PAS : pas d'Ingress ni de HTTPS (pas de contrôleur en local), pas
+      de registre d'images, une seule réplique — décrit comme cible dans
+      `docs/deploiement.md` section 10. Jenkins reste sur `docker compose` (`e2e.sh`) :
+      brancher la CI sur Kubernetes n'apporterait rien de plus à cette échelle.
 - [x] **Documentation** (`docs/`) : `deploiement.md` (architecture, prérequis,
       variables, déploiement, vérification, mise à jour, retour arrière avec
       sauvegarde/restauration, exploitation, dépannage, cible de production non
@@ -1503,7 +1528,7 @@ Quatre écrans, maquettés pour les trois premiers :
 > suffit ; les livrables demandés par la compétence (procédure, scripts documentés,
 > environnements et procédure de tests, veille) sont faits — voir « Déploiement, CI
 > et documentation ». Aucun déploiement AWS/Kubernetes réel n'est prévu ; la cible
-> est décrite dans `docs/deploiement.md`, section 9. Double authentification :
+> est décrite dans `docs/deploiement.md`, section 10 (et Kubernetes local, réalisé, section 9). Double authentification :
 > réalisée, testée et fusionnée (24-25/09/2026).
 >
 > **Reste ouvert** (rien d'urgent) : recette d'acceptation des fonctionnalités

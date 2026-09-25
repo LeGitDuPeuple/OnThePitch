@@ -5,9 +5,10 @@ revenir en arrière. Les commandes sont à copier telles quelles ; chaque script
 cité est commenté en tête de fichier.
 
 > **Périmètre.** La procédure est écrite et **exécutée pour un environnement de
-> développement / démonstration** (une machine avec Docker). Le passage en
-> production (HTTPS, Kubernetes, AWS) est décrit en section 9 comme cible, mais
-> n'a **pas** été réalisé.
+> développement / démonstration**, sous deux formes : `docker compose` (section 4) et
+> **Kubernetes local** avec `kind` (section 9), au plus près d'une production sans
+> serveur. La mise en production réelle (serveur, HTTPS, AWS) est décrite en
+> section 10 comme cible, mais n'a **pas** été réalisée.
 
 ## 1. Vue d'ensemble
 
@@ -159,7 +160,84 @@ Dépannage courant :
 | Création d'événement en `503` | API Adresse indisponible ou trop sollicitée | Réessayer ; pas d'erreur côté application |
 | Codes 2FA toujours refusés | Horloge du serveur ou du téléphone décalée | Synchroniser l'horloge |
 
-## 9. Passage en production — cible (non réalisé)
+## 9. Kubernetes en local (« comme en production, sans serveur »)
+
+Le même déploiement, mais avec de vrais objets Kubernetes, dans un mini-cluster
+`kind` (Kubernetes qui tourne dans Docker) sur la machine de développement.
+
+### 9.1 Ce que ça apporte par rapport à `docker compose`
+
+| | `docker compose` | Kubernetes (`kind`) |
+|---|---|---|
+| Un pod/conteneur plante | Redémarrage simple | Redémarré **automatiquement** et retiré du trafic tant qu'il n'est pas prêt |
+| Vérification de santé | Au démarrage seulement | **Sondes** en continu (démarrage, prêt, vivant) sur `/api/v1/sante` |
+| Données de la base | Volume nommé | `StatefulSet` + volume persistant : la base garde son identité et ses données |
+| Secrets | Fichier `.env` | Objet `Secret` du cluster (jamais dans un fichier versionné) |
+| Passer à l'échelle | Non | `replicas: N` sur l'API (voir la note sur le limiteur en section 8) |
+
+### 9.2 Prérequis (installation sans droits administrateur)
+
+```bash
+mkdir -p ~/.local/bin && cd ~/.local/bin
+curl -Lo kind https://kind.sigs.k8s.io/dl/v0.24.0/kind-linux-amd64
+curl -Lo kubectl https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl
+chmod +x kind kubectl          # ~/.local/bin doit être dans le PATH
+```
+
+`kubectl` doit rester dans l'écart de version du cluster (ici Kubernetes 1.31).
+Les ports **3000 et 5173** doivent être libres (arrêter les serveurs de dev) : l'URL
+de l'API est figée dans le build du site et l'origine CORS est `localhost:5173`.
+
+### 9.3 Utilisation
+
+```bash
+./scripts/k8s-local.sh              # crée/met à jour tout, puis lance le test de fumée
+./scripts/k8s-local.sh etat         # pods, services, volume
+./scripts/k8s-local.sh journaux     # journaux de l'API
+./scripts/k8s-local.sh arreter      # supprime le cluster ET ses données
+```
+
+Premier lancement ≈ 1 min 30 (téléchargement de l'image du nœud) ; ensuite ≈ 1 min.
+**Résultat attendu** : les trois lignes `OK` du test de fumée, puis
+« Kubernetes local prêt : site http://localhost:5173 — API http://localhost:3000/api/v1 ».
+
+Le script : crée le cluster (une fois) → construit les deux images et les **charge
+dans le cluster** (pas de registre) → crée les secrets **aléatoires** (une fois,
+uniquement dans le cluster) → applique les manifests → attend que tout soit prêt.
+
+### 9.4 Les manifests (`k8s/`, chacun commenté)
+
+| Fichier | Contenu |
+|---|---|
+| `00-namespace.yaml` | Espace de noms `onthepitch` : tout y vit, supprimable d'un coup |
+| `10-configuration.yaml` | `ConfigMap` : réglages non secrets |
+| `20-base-de-donnees.yaml` | PostGIS en `StatefulSet` (volume 1 Gi) + Service `db` ; sonde `pg_isready` |
+| `30-api.yaml` | `Deployment` de l'API : `initContainer` qui attend la base, variables d'environnement (secrets par référence), sondes démarrage/prêt/vivant, limites de ressources, Service |
+| `40-site.yaml` | `Deployment` du site (nginx) + Service |
+| `local/kind-config.yaml` | Configuration du cluster local (mappe les ports 3000/5173) ; hors du dossier appliqué |
+
+Choix à connaître :
+
+- **Secrets créés par le script, pas par un fichier** : un secret dans un `.yaml`
+  versionné ne serait plus un secret. En production : gestionnaire de secrets.
+- **Les migrations se font au démarrage de l'API** (comportement de l'image) ; l'API
+  attend donc la base grâce à un `initContainer`, et la sonde de **démarrage** laisse
+  jusqu'à 2 minutes avant de juger le pod défaillant.
+- **Services en `NodePort`** : uniquement pour joindre l'application depuis la machine.
+- **Pas d'Ingress** ici (pas de contrôleur, pas de HTTPS en local) : voir section 10.
+
+### 9.5 Ce qui a été vérifié (25/09/2026)
+
+| Vérification | Résultat |
+|---|---|
+| Test de fumée sur le cluster | 3 × `OK` |
+| Migrations sur une **base neuve** | Les 9 migrations appliquées, dans l'ordre |
+| Suite complète de tests contre le cluster | **29 tests Playwright verts** (14 intégration + 15 E2E) |
+| Pod de l'API supprimé | Remplacé automatiquement, l'API répond de nouveau |
+| Pod de la base supprimé | Remplacé automatiquement ; un compte créé **avant** la suppression permet toujours de se connecter (données conservées par le volume). L'API a redémarré une fois le temps que la base revienne, puis tout est rentré dans l'ordre |
+| Cluster supprimé (`arreter`) | Plus rien ne reste ; l'environnement de dev est intact |
+
+## 10. Passage en production — cible (non réalisé)
 
 Ce qui changerait, et pourquoi. C'est la feuille de route, pas un déploiement fait.
 
@@ -168,12 +246,12 @@ Ce qui changerait, et pourquoi. C'est la feuille de route, pas un déploiement f
 | **HTTPS** | Non | Obligatoire : la caméra (scan QR) n'est autorisée qu'en HTTPS hors `localhost`, et le cookie de session passe en `secure` dès `NODE_ENV=production`. Terminaison TLS par un reverse proxy / ingress |
 | **Secrets** | Fichier `.env` | Gestionnaire de secrets (Secrets Kubernetes, AWS Secrets Manager) — jamais dans l'image ni le dépôt |
 | **Base** | Conteneur + volume local | Base managée avec PostGIS, sauvegardes automatiques, ou `StatefulSet` + volume persistant |
-| **Orchestration** | `docker compose` | Kubernetes : un *Deployment* + *Service* par composant (`api`, `client`), migrations dans un *Job* ou *initContainer*, sonde de disponibilité sur `/api/v1/sante` |
-| **Images** | Construites sur place | Construites par la CI, poussées dans un registre, déployées **par version** (étiquette = commit) |
+| **Orchestration** | `docker compose`, ou **Kubernetes local (`kind`) — réalisé, section 9** | Le même jeu de manifests sur un vrai cluster ; en plus : **Ingress** avec TLS à la place des `NodePort`, migrations dans un *Job* dédié (plutôt qu'au démarrage de chaque pod), plusieurs réplicas |
+| **Images** | Construites sur place, chargées dans `kind` | Construites par la CI, poussées dans un registre, déployées **par version** (étiquette = commit) |
 | **Proxy / IP** | Accès direct | `TRUST_PROXY=1` ; limiteur de tentatives partagé (Redis) pour plusieurs réplicas |
 | **CI/CD** | Jenkins de démonstration en local (`scripts/jenkins-local.sh`) | Jenkins sur un serveur (ex. EC2), webhook GitHub au lieu de l'interrogation du dépôt, déploiement automatique après une CI verte |
 | **Supervision** | `docker compose logs` | Agrégation de journaux, alertes sur l'échec du passage de nuit |
 
-Les scripts et le `Jenkinsfile` actuels sont écrits pour se prêter à ce passage :
+Les manifests, les scripts et le `Jenkinsfile` actuels sont écrits pour se prêter à ce passage :
 chaque étape est un script autonome, la CI n'a besoin d'aucun secret, et les
 migrations s'appliquent au démarrage.

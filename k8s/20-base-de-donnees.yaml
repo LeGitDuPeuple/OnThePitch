@@ -1,0 +1,66 @@
+# Base de données : PostgreSQL + PostGIS.
+# StatefulSet (et non Deployment) : une base a une identité et des données à
+# conserver — le volume est rattaché au pod et survit à son redémarrage.
+apiVersion: v1
+kind: Service
+metadata:
+  name: db                       # nom résolu par l'API : db:5432
+  namespace: onthepitch
+spec:
+  clusterIP: None                # service "headless" pour le StatefulSet
+  selector: { app: db }
+  ports:
+    - { port: 5432, name: postgres }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+  namespace: onthepitch
+spec:
+  serviceName: db
+  replicas: 1                    # une seule base : pas de réplication dans ce périmètre
+  selector:
+    matchLabels: { app: db }
+  template:
+    metadata:
+      labels: { app: db }
+    spec:
+      containers:
+        - name: postgres
+          image: postgis/postgis:16-3.4
+          ports:
+            - { containerPort: 5432 }
+          env:
+            - name: POSTGRES_DB
+              valueFrom: { configMapKeyRef: { name: onthepitch-config, key: POSTGRES_DB } }
+            - name: POSTGRES_USER
+              valueFrom: { configMapKeyRef: { name: onthepitch-config, key: POSTGRES_USER } }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: onthepitch-secrets, key: POSTGRES_PASSWORD } }
+            # Sous-dossier : la racine du volume contient "lost+found", que Postgres refuse.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - { name: donnees, mountPath: /var/lib/postgresql/data }
+          # Prêt = accepte les connexions (même test que le healthcheck de docker-compose).
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 1Gi }
+  volumeClaimTemplates:
+    - metadata:
+        name: donnees
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests: { storage: 1Gi }

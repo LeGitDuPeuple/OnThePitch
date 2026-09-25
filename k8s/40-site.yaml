@@ -1,0 +1,40 @@
+# Site : fichiers React servis par nginx (image construite depuis frontend/Dockerfile).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: onthepitch
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: client }
+  template:
+    metadata:
+      labels: { app: client }
+    spec:
+      containers:
+        - name: client
+          image: onthepitch-client:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { containerPort: 80 }
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /, port: 80 }
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 25m, memory: 32Mi }
+            limits: { memory: 128Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client
+  namespace: onthepitch
+spec:
+  type: NodePort                 # mappé sur localhost:5173 par kind-config.yaml
+  selector: { app: client }
+  ports:
+    - { port: 80, targetPort: 80, nodePort: 30573 }

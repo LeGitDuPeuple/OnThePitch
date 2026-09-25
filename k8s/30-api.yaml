@@ -1,0 +1,76 @@
+# API : Node 24 + Express + Prisma. Sans état (la session est un jeton dans un
+# cookie) : on peut donc en lancer plusieurs, Kubernetes répartit les requêtes.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: onthepitch
+spec:
+  replicas: 1                    # >1 possible ; voir docs/deploiement.md (limiteur de tentatives par instance)
+  selector:
+    matchLabels: { app: api }
+  template:
+    metadata:
+      labels: { app: api }
+    spec:
+      # L'API applique les migrations au démarrage : elle doit attendre que la base
+      # réponde (équivalent du "depends_on: service_healthy" de docker-compose).
+      initContainers:
+        - name: attendre-la-base
+          image: postgis/postgis:16-3.4       # fournit pg_isready, déjà présente sur le cluster
+          command: ["sh", "-c", "until pg_isready -h db -p 5432; do echo 'base pas prête'; sleep 2; done"]
+      containers:
+        - name: api
+          image: onthepitch-api:local
+          imagePullPolicy: IfNotPresent       # image chargée dans le cluster (kind load), pas de registre
+          ports:
+            - { containerPort: 3000 }
+          env:
+            # Les variables sont définies AVANT DATABASE_URL : Kubernetes ne substitue
+            # $(NOM) que pour des variables déjà déclarées plus haut dans la liste.
+            - name: POSTGRES_USER
+              valueFrom: { configMapKeyRef: { name: onthepitch-config, key: POSTGRES_USER } }
+            - name: POSTGRES_DB
+              valueFrom: { configMapKeyRef: { name: onthepitch-config, key: POSTGRES_DB } }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: onthepitch-secrets, key: POSTGRES_PASSWORD } }
+            - name: DATABASE_URL
+              value: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@db:5432/$(POSTGRES_DB)
+            - name: JWT_SECRET
+              valueFrom: { secretKeyRef: { name: onthepitch-secrets, key: JWT_SECRET } }
+            - name: API_ADRESSE_URL
+              valueFrom: { configMapKeyRef: { name: onthepitch-config, key: API_ADRESSE_URL } }
+            - name: PORT
+              valueFrom: { configMapKeyRef: { name: onthepitch-config, key: PORT } }
+          # Démarrage : le temps des migrations. Tant qu'il n'a pas réussi, les
+          # deux autres sondes ne s'appliquent pas (pas de redémarrage prématuré).
+          startupProbe:
+            httpGet: { path: /api/v1/sante, port: 3000 }
+            periodSeconds: 3
+            failureThreshold: 40                # jusqu'à 2 minutes
+          # Prêt : Kubernetes n'envoie du trafic qu'aux pods qui répondent.
+          readinessProbe:
+            httpGet: { path: /api/v1/sante, port: 3000 }
+            periodSeconds: 10
+          # Vivant : un pod qui ne répond plus est redémarré.
+          livenessProbe:
+            httpGet: { path: /api/v1/sante, port: 3000 }
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 100m, memory: 192Mi }
+            limits: { memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: onthepitch
+spec:
+  # NodePort : rend l'API joignable depuis la machine (démonstration locale, mappé
+  # sur localhost:3000 par kind-config.yaml). En production : ClusterIP derrière
+  # un Ingress avec TLS — voir docs/deploiement.md, section 9.
+  type: NodePort
+  selector: { app: api }
+  ports:
+    - { port: 3000, targetPort: 3000, nodePort: 30300 }

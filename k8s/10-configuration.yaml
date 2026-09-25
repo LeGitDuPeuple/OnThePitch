@@ -1,0 +1,14 @@
+# Configuration NON secrète. Les secrets (mot de passe de la base, JWT_SECRET)
+# ne sont JAMAIS dans un fichier versionné : ils sont créés à part par
+# scripts/k8s-local.sh (kubectl create secret) — en production, par un gestionnaire
+# de secrets.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: onthepitch-config
+  namespace: onthepitch
+data:
+  POSTGRES_DB: onthepitch
+  POSTGRES_USER: onthepitch
+  API_ADRESSE_URL: https://api-adresse.data.gouv.fr/search
+  PORT: "3000"
