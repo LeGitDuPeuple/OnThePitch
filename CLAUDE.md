@@ -572,12 +572,10 @@ terminé et testé.
       message d'erreur clair sur une seconde tentative).
 
 ### Compte et sécurité
-> **Chantier réalisé sur la branche `feature/double-auth`** (24/09/2026, à la
-> demande du porteur de projet : « commence le chantier, je teste ce soir, si
-> ce n'est pas bon je rollback »). **En attente de test manuel par le porteur
-> de projet** — pas encore fusionné dans `main`. `main` est intact et poussé
-> (commit `1244a18`) : revenir en arrière = `git checkout main`, rien à défaire ;
-> si le test est concluant, fusionner la branche.
+> **Chantier terminé, testé manuellement par le porteur de projet (25/09/2026,
+> « c'est ok ») et fusionné dans `main`** (branche `feature/double-auth`,
+> fusionnée en avance rapide puis supprimée). Demande d'origine du 24/09/2026 :
+> « commence le chantier, je teste ce soir, si ce n'est pas bon je rollback ».
 > Décisions prises pour la double authentification : **optionnelle** (jamais
 > imposée), **10 codes de secours** générés à l'activation et **affichés une
 > seule fois** (hachés en base, à usage unique), **activation et désactivation
@@ -1452,9 +1450,8 @@ Quatre écrans, maquettés pour les trois premiers :
 >    (Prisma 7 + adaptateur `pg`) : à traiter en attendant un correctif
 >    amont, ne pas forcer.
 >
-> 2. ~~Double authentification~~ — **réalisée le 24/09/2026** sur la branche
->    `feature/double-auth`, en attente de test manuel (voir section "Compte et
->    sécurité").
+> 2. ~~Double authentification~~ — **réalisée le 24/09/2026, testée et
+>    fusionnée dans `main` le 25/09/2026** (voir section "Compte et sécurité").
 
 **Cache Redis sur le géocodage.** Une adresse résolue ne change jamais : ses coordonnées
 peuvent être mises en cache sans risque d'obsolescence. Utile si plusieurs événements
