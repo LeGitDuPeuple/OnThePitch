@@ -18,7 +18,7 @@ cp .env.example .env          # renseigner POSTGRES_PASSWORD et JWT_SECRET (open
 
 | Document | Contenu |
 |---|---|
-| [`docs/deploiement.md`](docs/deploiement.md) | Procédure de déploiement, configuration, mise à jour, retour arrière, exploitation |
+| [`docs/deploiement.md`](docs/deploiement.md) | Procédure de déploiement (Docker Compose et Kubernetes local), configuration, mise à jour, retour arrière, exploitation |
 | [`docs/tests.md`](docs/tests.md) | Environnements de test, procédure d'exécution (unitaire, intégration, système, acceptation), CI Jenkins |
 | [`docs/veille.md`](docs/veille.md) | Veille technologique et sécurité : dispositif, processus, registre |
 | [`CLAUDE.md`](CLAUDE.md) | Spécifications, décisions d'architecture et journal d'avancement détaillé |
@@ -32,4 +32,5 @@ cp .env.example .env          # renseigner POSTGRES_PASSWORD et JWT_SECRET (open
 | `verifier.sh` | Compilation + tests Jest + build du front (sans base) |
 | `e2e.sh` | Pile jetable → tests d'intégration et de bout en bout → nettoyage |
 | `audit.sh` | Audit de sécurité des dépendances |
+| `k8s-local.sh` | Kubernetes en local (`kind`) : déploiement « comme en production, sans serveur » |
 | `jenkins-local.sh` | Jenkins de démonstration en local |

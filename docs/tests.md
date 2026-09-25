@@ -33,6 +33,7 @@ l'application elle-même, voir [`deploiement.md`](deploiement.md).
 | **Poste de développement** | Machine du développeur, `npm run dev` (back sur :3000, front sur :5173) + base Docker `onthepitch-db` | Base de dev, qui s'accumule | SMTP réel **ou** Ethereal selon `.env` | API Adresse réelle | Jest ; recette manuelle ; intégration/E2E ponctuelles |
 | **Pile jetable de test** | Conteneurs Docker `onthepitch-ci-*` créés par `scripts/e2e.sh` | **Base vide à chaque exécution**, détruite ensuite | Ethereal (SMTP non configuré) | API Adresse réelle | Intégration + E2E, en local ou en CI |
 | **CI (Jenkins)** | Conteneur Jenkins (image `ci/jenkins/`) pilotant le Docker de l'hôte | Pile jetable ci-dessus | Ethereal | API Adresse réelle | Push : Jest. Nuit : tout |
+| **Kubernetes local** | `./scripts/k8s-local.sh` : cluster `kind`, base neuve, secrets aléatoires | Base neuve ; supprimée avec le cluster | Ethereal (SMTP non configuré) | API Adresse réelle | Vérifier un déploiement « comme en production » ; la suite complète (29 tests) y passe |
 | **Démonstration** | `./scripts/deployer-dev.sh` | Base de démo | selon `.env` | API Adresse réelle | Présentation, recette d'acceptation |
 
 Règles de cet environnement de test :

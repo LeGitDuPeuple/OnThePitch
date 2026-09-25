@@ -1,0 +1,6 @@
+# Tout OnThePitch vit dans son propre espace de noms : isolé, supprimable d'un coup
+# (kubectl delete namespace onthepitch).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: onthepitch
