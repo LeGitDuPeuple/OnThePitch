@@ -1,0 +1,24 @@
+# Surcharge de docker-compose.yml pour l'environnement de test automatisé (CI).
+# Usage (voir scripts/e2e.sh) :
+#   docker compose -p onthepitch-ci -f docker-compose.yml -f docker-compose.ci.yml \
+#     --env-file .env.ci up -d --build
+#
+# Objectif : que la CI puisse tourner sur une machine où le poste de
+# développement (ou une autre pile) est déjà actif SANS jamais toucher à ses
+# conteneurs, à son volume de données ni à son port de base.
+services:
+  db:
+    container_name: onthepitch-ci-db
+    # Aucun port publié : seule l'API (même réseau Docker) atteint la base de test.
+    ports: !reset []
+    volumes:
+      - db_data_ci:/var/lib/postgresql/data
+  api:
+    container_name: onthepitch-ci-api
+  client:
+    container_name: onthepitch-ci-client
+
+volumes:
+  # Volume distinct de db_data (base de développement). Supprimé à la fin
+  # de chaque exécution (scripts/e2e.sh) : chaque nuit repart d'une base vide.
+  db_data_ci:

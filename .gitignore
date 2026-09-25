@@ -10,3 +10,7 @@ coverage/
 .idea/
 .DS_Store
 backend/src/generated/
+# Sorties des exécutions de test/CI (JUnit, rapports) et environnement jetable de la CI
+resultats/
+.env.ci
+
