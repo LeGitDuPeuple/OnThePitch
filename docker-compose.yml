@@ -24,7 +24,9 @@ services:
     container_name: onthepitch-api
     restart: unless-stopped
     env_file:
-      - .env
+      # ENV_FILE permet à la CI d'utiliser un fichier jetable (voir
+      # docker-compose.ci.yml et scripts/e2e.sh) sans toucher au .env de dev.
+      - ${ENV_FILE:-.env}
     environment:
       # "localhost" ne veut rien dire dans le réseau Docker : "db" est le nom
       # du service ci-dessus, résolu automatiquement par Docker. Seule cette

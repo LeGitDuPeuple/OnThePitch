@@ -13,7 +13,33 @@ type LigneRejoint = {
   statutInscription: string;
 };
 
-const NOMBRE_TENTATIVES_MAX = 3;
+// Autant de tentatives que de contendants plausibles sur les mêmes lignes : à
+// chaque vague de conflits, une seule transaction passe (les autres sont
+// annulées par PostgreSQL et rejouées). 3 tentatives ne suffisaient pas dès
+// que ~8 joueurs s'inscrivaient à la fois (constaté par le test d'intégration
+// de concurrence : des 500).
+const NOMBRE_TENTATIVES_MAX = 12;
+
+// Petit délai aléatoire avant de rejouer : sans lui, les transactions
+// perdantes repartent toutes au même instant et se télescopent à nouveau.
+const attendre = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const delaiAleatoireMs = (tentative: number) => Math.random() * 15 * tentative;
+
+// Conflit de sérialisation PostgreSQL (SQLSTATE 40001), sous ses DEUX formes :
+// P2034 (erreur Prisma "classique") ou, avec l'adaptateur `pg` utilisé ici, une
+// DriverAdapterError dont `cause.kind` vaut "TransactionWriteConflict". Ne
+// reconnaître que P2034 laissait passer le second cas : aucune reprise, et
+// l'erreur brute remontait en 500 sous concurrence.
+const estConflitDeSerialisation = (erreur: unknown): boolean => {
+  if (erreur instanceof Prisma.PrismaClientKnownRequestError) return erreur.code === "P2034";
+
+  if (typeof erreur === "object" && erreur !== null && "cause" in erreur) {
+    const cause = (erreur as { cause?: { kind?: unknown; originalCode?: unknown } }).cause;
+    return cause?.kind === "TransactionWriteConflict" || cause?.originalCode === "40001";
+  }
+
+  return false;
+};
 
 export class InscriptionRepositoryDatabase implements InscriptionRepositoryInterface {
   async trouver(idJoueur: number, idEvenement: number): Promise<Inscription | null> {
@@ -163,19 +189,16 @@ export class InscriptionRepositoryDatabase implements InscriptionRepositoryInter
           { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
         );
       } catch (erreur) {
-        const estConflitSerialisation =
-          erreur instanceof Prisma.PrismaClientKnownRequestError && erreur.code === "P2034";
+        if (!estConflitDeSerialisation(erreur)) throw erreur;
 
-        if (estConflitSerialisation && tentative < NOMBRE_TENTATIVES_MAX) {
-          continue; // deux inscriptions concurrentes se sont télescopées : on retente
-        }
-
-        throw erreur;
+        // Deux inscriptions concurrentes se sont télescopées : on retente.
+        await attendre(delaiAleatoireMs(tentative));
       }
     }
 
-    // Inatteignable : la boucle retourne ou lève à chaque itération.
-    throw new ServiceIndisponible("Impossible de traiter l'inscription, réessayez");
+    // Toutes les tentatives ont échoué à cause de la concurrence : 503 clair et
+    // réessayable, plutôt qu'une erreur interne brute.
+    throw new ServiceIndisponible("Trop d'inscriptions simultanées sur cet événement, réessayez");
   }
 
   private traduireErreurDoublon(erreur: unknown): Error {

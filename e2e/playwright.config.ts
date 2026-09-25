@@ -7,7 +7,6 @@ import { defineConfig, devices } from "@playwright/test";
 // dans backend/ et frontend/, base Docker déjà en route) — plus simple que de
 // dupliquer ici la logique de démarrage propre à chaque service.
 export default defineConfig({
-  testDir: "./tests",
   fullyParallel: false,
   // Un seul worker : les tests partagent la vraie base de données (pas de
   // mock), plusieurs en parallèle peuvent se marcher dessus (contention sur
@@ -16,7 +15,11 @@ export default defineConfig({
   // parallèle. Plus lent, mais plus simple que d'isoler chaque test.
   workers: 1,
   retries: 0,
-  reporter: "html",
+  // En CI : sortie console + rapport JUnit (résumé Jenkins) + rapport HTML
+  // (archivé, jamais ouvert automatiquement). En local : rapport HTML seul.
+  reporter: process.env.CI
+    ? [["list"], ["junit", { outputFile: "resultats/playwright-junit.xml" }], ["html", { open: "never" }]]
+    : "html",
   use: {
     baseURL: "http://localhost:5173",
     trace: "retain-on-failure",
@@ -24,7 +27,15 @@ export default defineConfig({
   },
   projects: [
     {
+      // Tests d'intégration : l'API contre la vraie base, sans navigateur
+      // (voir integration/aide.ts). Lancés avant les E2E, bien plus rapides :
+      // un échec ici dit tout de suite si c'est l'API ou l'interface.
+      name: "integration",
+      testDir: "./integration",
+    },
+    {
       name: "chromium",
+      testDir: "./tests",
       // "chrome" (le binaire système déjà installé) plutôt que le Chromium
       // que Playwright téléchargerait lui-même — évite une dépendance de
       // plus à récupérer, le comportement est identique pour ces tests.

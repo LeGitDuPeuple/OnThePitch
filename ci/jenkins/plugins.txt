@@ -1,0 +1,9 @@
+# Plugins strictement nécessaires au Jenkinsfile et à la configuration par fichier.
+workflow-aggregator
+git
+junit
+timestamper
+build-timeout
+ws-cleanup
+configuration-as-code
+job-dsl

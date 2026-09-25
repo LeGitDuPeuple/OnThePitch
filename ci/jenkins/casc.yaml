@@ -1,0 +1,38 @@
+# Configuration de Jenkins par fichier (plugin "Configuration as Code") :
+# reproductible, versionnée, sans clic dans l'interface.
+# DÉMONSTRATION uniquement : identifiants et dépôt viennent des variables
+# d'environnement passées par scripts/jenkins-local.sh.
+jenkins:
+  systemMessage: "Jenkins de démonstration — OnThePitch"
+  numExecutors: 2
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+unclassified:
+  location:
+    url: "http://localhost:${JENKINS_PORT}/"
+
+jobs:
+  - script: >
+      pipelineJob('onthepitch') {
+        description('Pipeline OnThePitch — défini par le Jenkinsfile du dépôt')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('file:///depot') }
+                branches('*/main')
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(false)
+          }
+        }
+      }
