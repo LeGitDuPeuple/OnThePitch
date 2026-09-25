@@ -1,0 +1,29 @@
+# Veille automatisée des dépendances (voir docs/veille.md) : GitHub ouvre une
+# demande de fusion (pull request) quand une version corrigée ou plus récente
+# existe. Hebdomadaire, plafonnée : on veut voir et traiter les mises à jour,
+# pas être noyé. Les alertes de SÉCURITÉ, elles, arrivent indépendamment de ce
+# fichier (onglet Security > Dependabot du dépôt).
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule: { interval: "weekly", day: "monday" }
+    open-pull-requests-limit: 5
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule: { interval: "weekly", day: "monday" }
+    open-pull-requests-limit: 5
+  - package-ecosystem: "npm"
+    directory: "/e2e"
+    schedule: { interval: "weekly", day: "monday" }
+    open-pull-requests-limit: 3
+  # Images de base des Dockerfiles (node:24-slim) et du compose (postgis).
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule: { interval: "weekly", day: "monday" }
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule: { interval: "weekly", day: "monday" }
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule: { interval: "weekly", day: "monday" }
