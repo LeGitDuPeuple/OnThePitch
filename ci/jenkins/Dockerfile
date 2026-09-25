@@ -36,6 +36,9 @@ COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
 
 # Pas d'assistant de configuration : tout vient de casc.yaml (Configuration as Code).
-ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
+# ALLOW_LOCAL_CHECKOUT : Jenkins refuse par défaut de lire un dépôt Git local
+# (file://), jugé risqué. Nécessaire ICI seulement, puisque la démo lit le dépôt
+# monté depuis le poste ; un vrai Jenkins clone depuis GitHub.
+ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false -Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true"
 ENV CASC_JENKINS_CONFIG=/usr/share/jenkins/casc.yaml
 COPY casc.yaml /usr/share/jenkins/casc.yaml
