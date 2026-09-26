@@ -23,11 +23,17 @@
 }
 
 .entete-logo {
-  font-weight: 800;
-  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
   text-decoration: none;
-  color: var(--vert-fonce);
-  letter-spacing: -0.01em;
+}
+
+/* Logo horizontal (pin + nom). Hauteur fixe, largeur suivant le rapport 3:1. */
+.entete-logo img {
+  display: block;
+  height: 3.25rem;
+  margin-block: -0.6rem;
+  width: auto;
 }
 
 .entete-nav {

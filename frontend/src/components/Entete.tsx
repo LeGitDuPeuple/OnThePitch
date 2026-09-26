@@ -16,7 +16,7 @@ export const Entete = () => {
       <div className="entete-barre">
         <div className="entete-gauche">
           <Link to="/" className="entete-logo" onClick={fermerMenu}>
-            OnThePitch
+            <img src="/logo/onthepitch-logo-horizontal.svg" alt="OnThePitch" />
           </Link>
           <nav className={menuOuvert ? "entete-nav entete-nav--ouvert" : "entete-nav"}>
             <Link to="/" className={pathname === "/" ? "actif" : ""} onClick={fermerMenu}>
