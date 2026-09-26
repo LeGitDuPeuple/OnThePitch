@@ -1,0 +1,46 @@
+.faq-question {
+  border-top: 1px solid var(--bordure);
+  padding: 0.6rem 0;
+}
+
+.faq-question summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.faq-question p {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+}
+
+.page-aide textarea {
+  width: 100%;
+  font: inherit;
+  padding: 0.5rem;
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon);
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+/* Pages de texte légal */
+.page-legale h2 {
+  font-size: 1.05rem;
+  margin: 1.25rem 0 0.25rem;
+}
+
+.page-legale p,
+.page-legale li {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.pied-de-page {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  font-size: 0.8rem;
+}
+
+.pied-de-page a {
+  margin: 0 0.5rem;
+}

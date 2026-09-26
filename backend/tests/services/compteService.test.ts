@@ -1,8 +1,18 @@
 import bcrypt from "bcrypt";
 import { CompteService } from "../../src/services/compteService";
 import { AuthService } from "../../src/services/authService";
-import { Conflit, NonAuthentifie, RequeteInvalide, RessourceIntrouvable } from "../../src/domain/erreurMetier";
+import { EvenementService } from "../../src/services/evenementService";
+import { DoubleAuthService } from "../../src/services/doubleAuthService";
+import { Evenement } from "../../src/domain/entities/Evenement";
+import { Inscription } from "../../src/domain/entities/Inscription";
+import { AccesRefuse, Conflit, NonAuthentifie, RequeteInvalide, RessourceIntrouvable } from "../../src/domain/erreurMetier";
 import { UtilisateurRepositoryFake } from "../doubles/UtilisateurRepositoryFake";
+import { EvenementRepositoryFake } from "../doubles/EvenementRepositoryFake";
+import { InscriptionRepositoryFake } from "../doubles/InscriptionRepositoryFake";
+import { EvaluationRepositoryFake } from "../doubles/EvaluationRepositoryFake";
+import { NotificationFake } from "../doubles/NotificationFake";
+import { GeocodeurFake, coordonneesTest } from "../doubles/GeocodeurFake";
+import { TotpFake, CODE_TOTP_VALIDE } from "../doubles/TotpFake";
 
 const MOT_DE_PASSE = "MotDePasse123!";
 
@@ -15,8 +25,37 @@ const preparer = async (email = "jean@example.com") => {
     email,
     motDePasse: MOT_DE_PASSE,
   });
-  return { repository, utilisateur, service: new CompteService(repository) };
+  const evenements = new EvenementRepositoryFake();
+  const inscriptions = new InscriptionRepositoryFake();
+  const notification = new NotificationFake();
+  const doubleAuth = new DoubleAuthService(repository, new TotpFake());
+  const evenementService = new EvenementService(
+    evenements,
+    new GeocodeurFake(coordonneesTest),
+    inscriptions,
+    notification,
+    new EvaluationRepositoryFake()
+  );
+  const service = new CompteService(repository, evenements, inscriptions, evenementService, doubleAuth);
+  return { repository, utilisateur, service, evenements, inscriptions, notification, doubleAuth };
 };
+
+const JOUR = 24 * 60 * 60 * 1000;
+
+// Événement organisé par `idOrganisateur`, décalé de `decalageJours` par rapport à maintenant.
+const evenementDe = (id: number, idOrganisateur: number, decalageJours: number, statut: "Ouvert" | "Termine" = "Ouvert") =>
+  new Evenement({
+    id,
+    titre: `Événement ${id}`,
+    nombrePlaces: 10,
+    estPrive: false,
+    dateDebut: new Date(Date.now() + decalageJours * JOUR),
+    dateFin: new Date(Date.now() + decalageJours * JOUR + 2 * 60 * 60 * 1000),
+    idLieu: id,
+    idOrganisateur,
+    statut,
+    niveauRequis: "tous_niveaux",
+  });
 
 describe("CompteService", () => {
   describe("changerEmail", () => {
@@ -118,6 +157,92 @@ describe("CompteService", () => {
       await expect(service.changerMotDePasse(utilisateur.id, MOT_DE_PASSE, MOT_DE_PASSE)).rejects.toMatchObject({
         champ: "nouveauMotDePasse",
       });
+    });
+  });
+
+  describe("supprimerCompte", () => {
+    it("anonymise le compte : identité effacée, connexion impossible, email libéré", async () => {
+      const { repository, service, utilisateur } = await preparer();
+
+      await service.supprimerCompte(utilisateur.id, MOT_DE_PASSE);
+
+      const relu = await repository.trouverParId(utilisateur.id);
+      expect(relu?.nom).toBe("Utilisateur");
+      expect(relu?.prenom).toBe("supprimé");
+      expect(relu?.email).not.toBe("jean@example.com");
+      expect(repository.idsAnonymises).toEqual([utilisateur.id]);
+      await expect(
+        new AuthService(repository).connecter({ email: "jean@example.com", motDePasse: MOT_DE_PASSE })
+      ).rejects.toBeInstanceOf(NonAuthentifie);
+      // L'adresse d'origine peut servir à ouvrir un nouveau compte.
+      await expect(
+        new AuthService(repository).inscrire({ nom: "Neuf", prenom: "Jean", email: "jean@example.com", motDePasse: MOT_DE_PASSE })
+      ).resolves.toBeDefined();
+    });
+
+    it("refuse un mot de passe incorrect et ne touche à rien", async () => {
+      const { repository, service, utilisateur } = await preparer();
+
+      await expect(service.supprimerCompte(utilisateur.id, "Faux123456!")).rejects.toMatchObject({
+        champ: "motDePasse",
+      });
+      expect(repository.idsAnonymises).toEqual([]);
+    });
+
+    it("refuse de supprimer un compte administrateur", async () => {
+      const { repository, service, utilisateur } = await preparer();
+      utilisateur.role = "administrateur";
+
+      await expect(service.supprimerCompte(utilisateur.id, MOT_DE_PASSE)).rejects.toBeInstanceOf(AccesRefuse);
+      expect(repository.idsAnonymises).toEqual([]);
+    });
+
+    it("exige un code quand la double authentification est active", async () => {
+      const { repository, service, utilisateur, doubleAuth } = await preparer();
+      await doubleAuth.initialiser(utilisateur.id);
+      await doubleAuth.activer(utilisateur.id, CODE_TOTP_VALIDE);
+
+      await expect(service.supprimerCompte(utilisateur.id, MOT_DE_PASSE)).rejects.toMatchObject({ champ: "code" });
+      await expect(service.supprimerCompte(utilisateur.id, MOT_DE_PASSE, "000000")).rejects.toMatchObject({
+        champ: "code",
+      });
+      expect(repository.idsAnonymises).toEqual([]);
+
+      await service.supprimerCompte(utilisateur.id, MOT_DE_PASSE, CODE_TOTP_VALIDE);
+      expect(repository.idsAnonymises).toEqual([utilisateur.id]);
+    });
+
+    it("annule ses événements à venir et prévient les inscrits acceptés", async () => {
+      const { service, utilisateur, evenements, inscriptions, notification } = await preparer();
+      evenements.ajouter(evenementDe(10, utilisateur.id, 3));
+      inscriptions.ajouter(new Inscription({ idJoueur: 2, idEvenement: 10, dateInscription: new Date(), statut: "acceptee" }));
+
+      await service.supprimerCompte(utilisateur.id, MOT_DE_PASSE);
+
+      expect((await evenements.trouverParId(10))?.estActif()).toBe(false);
+      expect(notification.appels).toEqual([{ idJoueur: 2, type: "evenement_annule", idEvenement: 10 }]);
+    });
+
+    it("laisse intacts ses événements terminés", async () => {
+      const { service, utilisateur, evenements } = await preparer();
+      evenements.ajouter(evenementDe(11, utilisateur.id, -5, "Termine"));
+
+      await service.supprimerCompte(utilisateur.id, MOT_DE_PASSE);
+
+      expect((await evenements.trouverParId(11))?.estActif()).toBe(true);
+    });
+
+    it("retire ses inscriptions à venir mais garde l'historique des événements passés", async () => {
+      const { service, utilisateur, evenements, inscriptions } = await preparer();
+      evenements.ajouter(evenementDe(20, 99, 3));
+      evenements.ajouter(evenementDe(21, 99, -5, "Termine"));
+      inscriptions.ajouter(new Inscription({ idJoueur: utilisateur.id, idEvenement: 20, dateInscription: new Date(), statut: "acceptee" }));
+      inscriptions.ajouter(new Inscription({ idJoueur: utilisateur.id, idEvenement: 21, dateInscription: new Date(), statut: "acceptee" }));
+
+      await service.supprimerCompte(utilisateur.id, MOT_DE_PASSE);
+
+      expect(await inscriptions.trouver(utilisateur.id, 20)).toBeNull();
+      expect(await inscriptions.trouver(utilisateur.id, 21)).not.toBeNull();
     });
   });
 });

@@ -74,6 +74,10 @@ model Utilisateur {
   otpActif        Boolean   @default(false) @map("otp_actif")
   codesSecours    String?   @map("codes_secours") @db.Text
 
+  // Suppression de compte (26/09/2026, RGPD) — absente du MCD, à AJOUTER au
+  // MCD Looping. Non nulle = compte anonymisé (voir CompteService.supprimerCompte).
+  dateSuppression DateTime? @map("date_suppression")
+
   statut        StatutUtilisateur? @relation(fields: [idStatut], references: [idStatut])
   niveau        NiveauUtilisateur? @relation(fields: [idNiveau], references: [idNiveau])
   evenements    Evenement[]

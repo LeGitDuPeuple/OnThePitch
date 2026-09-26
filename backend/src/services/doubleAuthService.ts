@@ -67,6 +67,16 @@ export class DoubleAuthService {
     return codes.map((c) => `${c.slice(0, 5)}-${c.slice(5)}`);
   }
 
+  // Confirmation d'une action sensible par un autre service (ex. suppression de
+  // compte) : sans effet si la 2FA n'est pas active, sinon exige un code valide.
+  async exigerCodeSiActive(utilisateur: Utilisateur, code: string | undefined): Promise<void> {
+    if (!utilisateur.doubleAuthActive) return;
+
+    if (!code || !(await this.verifierCode(utilisateur, code))) {
+      throw new RequeteInvalide("Code de double authentification invalide ou manquant", "code");
+    }
+  }
+
   // Exige un code valide (TOTP ou de secours) : sur une session laissée
   // ouverte, désactiver la 2FA sans preuve serait un moyen de la contourner.
   async desactiver(idUtilisateur: number, code: string): Promise<void> {

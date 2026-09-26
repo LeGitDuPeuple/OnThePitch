@@ -65,6 +65,8 @@ openssl rand -hex 32     # bon générateur pour JWT_SECRET
 | `APP_NAME` | non | Nom affiché dans l'application d'authentification (2FA). Défaut : `OnThePitch` |
 | `TRUST_PROXY` | non | Nombre de proxys devant l'API (voir section 8). À poser **derrière un proxy** |
 | `LIMITE_TENTATIVES` | non | Échecs tolérés par IP et par 15 min sur la connexion (défaut 10) |
+| `SUPPORT_EMAIL` | non | Adresse qui reçoit les messages du formulaire de contact (défaut `support@onthepitch.local`) |
+| `LIMITE_CONTACTS` | non | Envois du formulaire de contact tolérés par IP et par heure (défaut 5) |
 
 ## 4. Déployer (développement / démonstration)
 

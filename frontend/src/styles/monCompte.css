@@ -127,3 +127,8 @@
   gap: 0.5rem !important;
   font-weight: 600;
 }
+
+/* Zone dangereuse : suppression du compte */
+.carte-compte--danger {
+  border-color: var(--rouge);
+}

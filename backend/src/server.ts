@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import { errorHandlerMiddleware } from "./middlewares/erreur";
 import {
   authController,
+  contactController,
   evenementController,
   inscriptionController,
   presenceController,
@@ -27,6 +28,7 @@ import { registerEvaluationRoutes } from "./routes/evaluationRoute";
 import { registerPhotoRoutes } from "./routes/photoRoute";
 import { notificationRoutes, registerNotificationRoutes } from "./routes/notificationRoute";
 import { compteRoutes, registerCompteRoutes } from "./routes/compteRoute";
+import { aideRoutes, registerAideRoutes } from "./routes/aideRoute";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3000);
@@ -66,6 +68,7 @@ registerModerationRoutes(moderationController);
 registerPhotoRoutes(evenementRoutes, photoController);
 registerNotificationRoutes(notificationController);
 registerCompteRoutes(compteController, doubleAuthController);
+registerAideRoutes(contactController);
 
 // Route de santé, pour vérifier que l'API répond
 app.get("/api/v1/sante", (_req, res) => {
@@ -77,6 +80,7 @@ app.use("/api/v1/evenements", evenementRoutes);
 app.use("/api/v1/moderation", moderationRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/compte", compteRoutes);
+app.use("/api/v1/aide", aideRoutes);
 
 
 

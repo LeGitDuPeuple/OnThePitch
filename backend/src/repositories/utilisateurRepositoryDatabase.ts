@@ -57,7 +57,26 @@ export class UtilisateurRepositoryDatabase implements UtilisateurRepositoryInter
   }
 
   async compterJoueurs(): Promise<number> {
-    return prisma.utilisateur.count({ where: { role: "joueur" } });
+    return prisma.utilisateur.count({ where: { role: "joueur", dateSuppression: null } });
+  }
+
+  async anonymiser(id: number): Promise<void> {
+    await prisma.utilisateur.update({
+      where: { idJoueur: id },
+      data: {
+        nom: "Utilisateur",
+        prenom: "supprimé",
+        // Domaine réservé .invalid (RFC 2606) : jamais un vrai destinataire.
+        email: `supprime-${id}@onthepitch.invalid`,
+        ville: null,
+        // Pas un hachage bcrypt valide : bcrypt.compare renvoie toujours false.
+        motDePasse: "!",
+        otpSecret: null,
+        otpActif: false,
+        codesSecours: null,
+        dateSuppression: new Date(),
+      },
+    });
   }
 
   async changerEmail(id: number, email: string): Promise<Utilisateur> {

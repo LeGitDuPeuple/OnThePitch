@@ -2,6 +2,8 @@ import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useHydrateAuth } from "./hooks/useHydrateAuth";
 import { Entete } from "./components/Entete";
+import { PiedDePage } from "./components/PiedDePage";
+import "./styles/aide.css";
 import { CarteRecherche } from "./pages/CarteRecherche";
 
 // Découpage du code par route (voir CLAUDE.md, "Front React") : "/" (import
@@ -16,6 +18,9 @@ const Connexion = lazy(() => import("./pages/Connexion").then((m) => ({ default:
 const Inscription = lazy(() => import("./pages/Inscription").then((m) => ({ default: m.Inscription })));
 const Admin = lazy(() => import("./pages/Admin").then((m) => ({ default: m.Admin })));
 const Profil = lazy(() => import("./pages/Profil").then((m) => ({ default: m.Profil })));
+const Aide = lazy(() => import("./pages/Aide").then((m) => ({ default: m.Aide })));
+const MentionsLegales = lazy(() => import("./pages/MentionsLegales").then((m) => ({ default: m.MentionsLegales })));
+const Confidentialite = lazy(() => import("./pages/Confidentialite").then((m) => ({ default: m.Confidentialite })));
 const MonCompte = lazy(() => import("./pages/MonCompte").then((m) => ({ default: m.MonCompte })));
 
 export const App = () => {
@@ -35,8 +40,12 @@ export const App = () => {
           <Route path="/admin" element={<Admin />} />
           <Route path="/profil" element={<Profil />} />
           <Route path="/compte" element={<MonCompte />} />
+          <Route path="/aide" element={<Aide />} />
+          <Route path="/mentions-legales" element={<MentionsLegales />} />
+          <Route path="/confidentialite" element={<Confidentialite />} />
         </Routes>
       </Suspense>
+      <PiedDePage />
     </>
   );
 };

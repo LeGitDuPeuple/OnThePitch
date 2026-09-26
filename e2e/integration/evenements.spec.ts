@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { API, nouveauJoueur, dansMs, attendre } from "./aide";
+import { MOT_DE_PASSE_TEST } from "../utils/donneesTest";
 import { creerEvenement, dateISODansNJours } from "../utils/apiClient";
 
 const seed = (titre: string, extra: Record<string, unknown> = {}) => ({
@@ -146,5 +147,38 @@ test.describe("Intégration — événements, inscriptions, recherche", () => {
     const png = Buffer.from("89504e470d0a1a0a0000000d4948445200000001000000010806000000" + "1f15c4890000000d49444154789c6360000002000001e221bc330000000049454e44ae426082", "hex");
     const vrai = await orga.api.post(`${API}/evenements/${id}/photo`, { multipart: { photo: { name: "ok.png", mimeType: "image/png", buffer: png } } });
     expect(vrai.status()).toBe(204);
+  });
+
+  test("suppression de compte : événements à venir annulés, place libérée, email réutilisable, connexion impossible", async () => {
+    const partant = await nouveauJoueur("integ.suppr.p");
+    const inscrit = await nouveauJoueur("integ.suppr.i");
+    const idOrganise = await creerEvenement(partant.api, seed(`Integ suppr orga ${Date.now()}`));
+    const autreOrga = await nouveauJoueur("integ.suppr.o");
+    const idRejoint = await creerEvenement(autreOrga.api, seed(`Integ suppr rejoint ${Date.now()}`, { nombrePlaces: 2 }));
+    expect((await inscrit.api.post(`${API}/evenements/${idOrganise}/inscriptions`)).status()).toBe(201);
+    expect((await partant.api.post(`${API}/evenements/${idRejoint}/inscriptions`)).status()).toBe(201);
+
+    // Mot de passe faux : refusé, rien n'est touché.
+    const faux = await partant.api.delete(`${API}/compte`, { data: { motDePasse: "Faux123456!" } });
+    expect(faux.status()).toBe(400);
+    expect((await partant.api.get(`${API}/evenements/${idOrganise}`)).status()).toBe(200);
+
+    expect((await partant.api.delete(`${API}/compte`, { data: { motDePasse: MOT_DE_PASSE_TEST } })).status()).toBe(204);
+
+    // Événement organisé annulé ; inscription à l'événement d'un autre retirée.
+    expect((await inscrit.api.get(`${API}/evenements/${idOrganise}`)).status()).toBe(404);
+    const inscrits = await (await autreOrga.api.get(`${API}/evenements/${idRejoint}/inscriptions`)).json();
+    expect(inscrits.some((i: { idJoueur: number }) => i.idJoueur === partant.id)).toBe(false);
+
+    // Le cookie est effacé par le serveur, l'ancien email ne connecte plus.
+    expect((await partant.api.get(`${API}/auth/profil`)).status()).toBe(401);
+    const connexion = await partant.api.post(`${API}/auth/connexion`, { data: { email: partant.email, motDePasse: MOT_DE_PASSE_TEST } });
+    expect(connexion.status()).toBe(401);
+
+    // L'adresse libérée peut ouvrir un nouveau compte.
+    const reinscription = await partant.api.post(`${API}/auth/inscription`, {
+      data: { prenom: "Neuf", nom: "Compte", email: partant.email, motDePasse: MOT_DE_PASSE_TEST },
+    });
+    expect(reinscription.status()).toBe(201);
   });
 });

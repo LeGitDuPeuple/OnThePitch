@@ -1,5 +1,5 @@
-// Port d'envoi d'email, utilisé uniquement par NotificationService — jamais
-// directement par les autres services (voir CLAUDE.md, "Évolutions envisagées").
+// Port d'envoi d'email, utilisé par NotificationService (notifications) et
+// ContactService (formulaire de contact) — jamais par les autres services.
 export interface NotificationEmailInterface {
   envoyer(destinataire: string, sujet: string, corps: string): Promise<void>;
 }

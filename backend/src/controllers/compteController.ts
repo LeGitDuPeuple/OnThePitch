@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
+import { effacerCookieJeton } from "../config/cookie";
 import { CompteService } from "../services/compteService";
-import { changementEmailSchema, changementMotDePasseSchema } from "../schemas/compteSchema";
+import { changementEmailSchema, changementMotDePasseSchema, suppressionCompteSchema } from "../schemas/compteSchema";
 
 export class CompteController {
   constructor(private readonly compteService: CompteService) {}
@@ -23,6 +24,19 @@ export class CompteController {
       const { motDePasseActuel, nouveauMotDePasse } = changementMotDePasseSchema.parse(req.body);
       await this.compteService.changerMotDePasse(req.utilisateur!.id, motDePasseActuel, nouveauMotDePasse);
 
+      res.status(204).send();
+    } catch (erreur) {
+      next(erreur);
+    }
+  };
+
+  // DELETE /compte — anonymise le compte puis efface le cookie de session
+  deleteCompte = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { motDePasse, code } = suppressionCompteSchema.parse(req.body);
+      await this.compteService.supprimerCompte(req.utilisateur!.id, motDePasse, code);
+
+      effacerCookieJeton(res);
       res.status(204).send();
     } catch (erreur) {
       next(erreur);

@@ -4,6 +4,7 @@ import { useAppSelector } from "../store/hooks";
 import { useEmailForm } from "../hooks/useEmailForm";
 import { useMotDePasseForm } from "../hooks/useMotDePasseForm";
 import { useDoubleAuth } from "../hooks/useDoubleAuth";
+import { useSuppressionCompte } from "../hooks/useSuppressionCompte";
 import { ErreurChamp } from "../components/ErreurChamp";
 import { MessageConfirmation } from "../components/MessageConfirmation";
 import "../styles/monCompte.css";
@@ -29,6 +30,7 @@ export const MonCompte = () => {
       <SectionEmail />
       <SectionMotDePasse />
       <SectionDoubleAuth />
+      {utilisateur.role === "joueur" && <SectionSuppression />}
     </main>
   );
 };
@@ -332,6 +334,86 @@ const SectionDoubleAuth = () => {
           <div className="actions-compte">
             <button type="submit" className="bouton-danger" disabled={chargement}>
               {chargement ? "Vérification…" : "Désactiver"}
+            </button>
+            <button type="button" className="bouton-secondaire" onClick={annuler} disabled={chargement}>
+              Annuler
+            </button>
+          </div>
+        </form>
+      )}
+    </section>
+  );
+};
+
+const SectionSuppression = () => {
+  const {
+    etape,
+    doubleAuthActive,
+    motDePasse,
+    setMotDePasse,
+    code,
+    setCode,
+    erreurMotDePasse,
+    erreurCode,
+    erreur,
+    chargement,
+    commencer,
+    annuler,
+    soumettre,
+  } = useSuppressionCompte();
+
+  return (
+    <section className="carte-compte carte-compte--danger">
+      <h2>Supprimer mon compte</h2>
+
+      {etape === "repos" && (
+        <>
+          <p className="texte-attenue">
+            Vos données personnelles (nom, prénom, email, ville) sont effacées et vous ne pouvez plus vous connecter.
+            Vos événements à venir sont annulés (les inscrits sont prévenus) et vos inscriptions à venir sont retirées.
+            Cette action est définitive.
+          </p>
+          <button type="button" className="bouton-danger" onClick={commencer}>
+            Supprimer mon compte
+          </button>
+        </>
+      )}
+
+      {etape === "confirmation" && (
+        <form onSubmit={soumettre}>
+          <p className="texte-attenue">Pour confirmer, saisissez votre mot de passe.</p>
+          <label>
+            Mot de passe
+            <input
+              type="password"
+              value={motDePasse}
+              onChange={(evenement) => setMotDePasse(evenement.target.value)}
+              autoComplete="current-password"
+              required
+            />
+            <ErreurChamp message={erreurMotDePasse ?? undefined} />
+          </label>
+          {doubleAuthActive && (
+            <label>
+              Code de double authentification
+              <input
+                type="text"
+                value={code}
+                onChange={(evenement) => setCode(evenement.target.value)}
+                autoComplete="one-time-code"
+                required
+              />
+              <ErreurChamp message={erreurCode ?? undefined} />
+            </label>
+          )}
+          {erreur && (
+            <p role="alert" className="message-erreur">
+              {erreur}
+            </p>
+          )}
+          <div className="actions-compte">
+            <button type="submit" className="bouton-danger" disabled={chargement}>
+              {chargement ? "Suppression…" : "Supprimer définitivement"}
             </button>
             <button type="button" className="bouton-secondaire" onClick={annuler} disabled={chargement}>
               Annuler

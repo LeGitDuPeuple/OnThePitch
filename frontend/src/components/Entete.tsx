@@ -22,6 +22,9 @@ export const Entete = () => {
             <Link to="/" className={pathname === "/" ? "actif" : ""} onClick={fermerMenu}>
               Rechercher
             </Link>
+            <Link to="/aide" className={pathname === "/aide" ? "actif" : ""} onClick={fermerMenu}>
+              Aide
+            </Link>
             {utilisateur?.role === "joueur" && (
               <Link to="/profil" className={pathname === "/profil" ? "actif" : ""} onClick={fermerMenu}>
                 Mon profil

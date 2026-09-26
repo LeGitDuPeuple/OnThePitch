@@ -47,6 +47,19 @@ export class UtilisateurRepositoryFake implements UtilisateurRepositoryInterface
     this.idsAvertis.push(id);
   }
 
+  idsAnonymises: number[] = [];
+
+  async anonymiser(id: number): Promise<void> {
+    const utilisateur = this.utilisateurs.find((u) => u.id === id);
+    if (!utilisateur) throw new Error("Utilisateur introuvable (double de test)");
+    utilisateur.nom = "Utilisateur";
+    utilisateur.prenom = "supprimé";
+    utilisateur.email = `supprime-${id}@onthepitch.invalid`;
+    utilisateur.ville = null;
+    this.remplacer(id, { motDePasseHache: "!", secretTotp: null, doubleAuthActive: false, hachagesCodesSecours: [] });
+    this.idsAnonymises.push(id);
+  }
+
   async compterJoueurs(): Promise<number> {
     return this.utilisateurs.filter((utilisateur) => utilisateur.role === "joueur").length;
   }

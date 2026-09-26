@@ -51,4 +51,25 @@ test.describe("Mon compte", () => {
 
     await expect(page.getByRole("link", { name: "Se connecter" })).toBeVisible();
   });
+
+  test("supprimer son compte : mot de passe faux refusé, puis déconnexion et connexion impossible", async ({ page }) => {
+    const email = emailUnique("e2e.suppr");
+    await new InscriptionPage(page).inscrire({ prenom: "Suppr", nom: "E2E", email, motDePasse: MOT_DE_PASSE_TEST });
+
+    const entete = new EntetePage(page);
+    await entete.avatarCompte.click();
+    const compte = new MonComptePage(page);
+
+    await compte.ouvrirSuppression();
+    await compte.confirmerSuppression("MauvaisMotDePasse1!");
+    await expect(compte.erreurSuppression()).toContainText("Mot de passe incorrect");
+    await expect(page).toHaveURL("/compte");
+
+    await compte.confirmerSuppression(MOT_DE_PASSE_TEST);
+    await expect(page).toHaveURL("/");
+    await expect(entete.boutonDeconnexion).toBeHidden();
+
+    await new ConnexionPage(page).connecter(email, MOT_DE_PASSE_TEST);
+    await expect(page).not.toHaveURL("/");
+  });
 });

@@ -8,9 +8,9 @@ l'application elle-même, voir [`deploiement.md`](deploiement.md).
 
 | Niveau | Ce qui est vérifié | Outil | Nombre | Base de données | Durée |
 |---|---|---|---|---|---|
-| **Unitaire / Service** | Les règles métier (couche Service), isolées | Jest | 129 | Aucune (doubles en mémoire) | ≈ 20 s |
-| **Intégration** | L'API réelle contre la vraie base : contraintes SQL, transactions, cookies, codes HTTP | Playwright (mode API) | 14 | PostgreSQL + PostGIS réels | ≈ 40 s |
-| **Système (bout en bout)** | Parcours complets à travers l'interface, dans un vrai navigateur | Playwright + Chrome | 15 | PostgreSQL + PostGIS réels | ≈ 2 min |
+| **Unitaire / Service** | Les règles métier (couche Service), isolées | Jest | 138 | Aucune (doubles en mémoire) | ≈ 20 s |
+| **Intégration** | L'API réelle contre la vraie base : contraintes SQL, transactions, cookies, codes HTTP | Playwright (mode API) | 16 | PostgreSQL + PostGIS réels | ≈ 40 s |
+| **Système (bout en bout)** | Parcours complets à travers l'interface, dans un vrai navigateur | Playwright + Chrome | 18 | PostgreSQL + PostGIS réels | ≈ 2 min |
 | **Acceptation** | Le comportement attendu par le client, cas par cas | Cahier de recette (manuel) | 75 cas | Environnement de démonstration | — |
 | **Performance** | La recherche géolocalisée tient l'objectif | Mesure ponctuelle | — | 1 000 événements | — |
 | **Sécurité** | Dépendances vulnérables | `npm audit` | 3 projets | — | ≈ 10 s |
@@ -33,7 +33,7 @@ l'application elle-même, voir [`deploiement.md`](deploiement.md).
 | **Poste de développement** | Machine du développeur, `npm run dev` (back sur :3000, front sur :5173) + base Docker `onthepitch-db` | Base de dev, qui s'accumule | SMTP réel **ou** Ethereal selon `.env` | API Adresse réelle | Jest ; recette manuelle ; intégration/E2E ponctuelles |
 | **Pile jetable de test** | Conteneurs Docker `onthepitch-ci-*` créés par `scripts/e2e.sh` | **Base vide à chaque exécution**, détruite ensuite | Ethereal (SMTP non configuré) | API Adresse réelle | Intégration + E2E, en local ou en CI |
 | **CI (Jenkins)** | Conteneur Jenkins (image `ci/jenkins/`) pilotant le Docker de l'hôte | Pile jetable ci-dessus | Ethereal | API Adresse réelle | Push : Jest. Nuit : tout |
-| **Kubernetes local** | `./scripts/k8s-local.sh` : cluster `kind`, base neuve, secrets aléatoires | Base neuve ; supprimée avec le cluster | Ethereal (SMTP non configuré) | API Adresse réelle | Vérifier un déploiement « comme en production » ; la suite complète (29 tests) y passe |
+| **Kubernetes local** | `./scripts/k8s-local.sh` : cluster `kind`, base neuve, secrets aléatoires | Base neuve ; supprimée avec le cluster | Ethereal (SMTP non configuré) | API Adresse réelle | Vérifier un déploiement « comme en production » ; la suite complète y a passé (29 tests à la date de validation) |
 | **Démonstration** | `./scripts/deployer-dev.sh` | Base de démo | selon `.env` | API Adresse réelle | Présentation, recette d'acceptation |
 
 Règles de cet environnement de test :
@@ -59,7 +59,7 @@ Règles de cet environnement de test :
 cd backend
 npm ci
 npx prisma generate --config prisma7.config.ts    # une fois
-npm test                                          # attendu : 12 suites, 129 tests passés
+npm test                                          # attendu : 13 suites, 138 tests passés
 npm run typecheck:tests                           # typage strict des tests
 ```
 
@@ -81,7 +81,7 @@ Le script démarre la pile jetable, attend qu'elle réponde (`smoke-test.sh`), l
 les **deux** projets Playwright (`integration` puis `chromium`), puis détruit
 conteneurs et volume, même en cas d'échec.
 
-**Résultat attendu** : `29 passed` (14 intégration + 15 E2E), ≈ 2 min à chaud,
+**Résultat attendu** : `34 passed` (16 intégration + 18 E2E), ≈ 2 min à chaud,
 ≈ 4-5 min au premier lancement (construction des images).
 Rapports : `e2e/resultats/playwright-junit.xml` (résumé) et
 `e2e/playwright-report/index.html` (détail, captures et traces des échecs).
@@ -92,7 +92,7 @@ Plus rapide pour itérer : l'application tourne (`npm run dev`), on ne lance que
 
 ```bash
 # 1. Backend de dev avec un plafond de tentatives relevé (voir remarque)
-cd backend && LIMITE_TENTATIVES=1000 npm run dev
+cd backend && LIMITE_TENTATIVES=1000 LIMITE_CONTACTS=1000 npm run dev
 # 2. Front de dev, dans un autre terminal
 cd frontend && npm run dev
 # 3. Tests, dans un troisième

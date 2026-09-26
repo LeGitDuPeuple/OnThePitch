@@ -14,5 +14,12 @@ export const changementMotDePasseSchema = z.object({
   nouveauMotDePasse: z.string().min(8, "Le mot de passe doit faire au moins 8 caractères"),
 });
 
+// Validation du corps de DELETE /compte — mot de passe obligatoire, code de
+// double authentification seulement si elle est active (vérifié par le service).
+export const suppressionCompteSchema = z.object({
+  motDePasse: z.string().min(1, "Le mot de passe est obligatoire"),
+  code: z.string().optional(),
+});
+
 export type DonneesChangementEmail = z.infer<typeof changementEmailSchema>;
 export type DonneesChangementMotDePasse = z.infer<typeof changementMotDePasseSchema>;

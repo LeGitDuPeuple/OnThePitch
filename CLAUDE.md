@@ -734,6 +734,58 @@ terminé et testé.
       les codes de secours ; se déconnecter puis se reconnecter (code demandé) ;
       tester un code de secours (une seule fois) ; « Désactiver ».
 
+### Aide et conformité (RGPD)
+
+Ajouté le 26/09/2026, à la demande du porteur de projet, pour que le dossier
+projet (rédigé à partir des trois PDF de cours) décrive ce que l'application
+fait réellement : ces PDF promettaient « supprimer ses données à tout moment »,
+une FAQ, un contact et des mentions légales, qui n'existaient pas.
+
+- [x] **Suppression de compte** (droit à l'effacement) — `DELETE /compte`,
+      `CompteService.supprimerCompte`, section « Supprimer mon compte » de
+      `/compte` (`useSuppressionCompte`, confirmation en deux temps).
+      *Pourquoi pas un simple soft delete* : la ligne garderait nom, email et
+      ville, ce que le RGPD n'autorise pas. Le compte est donc **anonymisé** :
+      nom « Utilisateur », prénom « supprimé », email `supprime-<id>@onthepitch.invalid`
+      (libère l'email d'origine, contrainte `UNIQUE`), ville effacée, mot de
+      passe remplacé par une valeur qui n'est pas un hachage bcrypt (la
+      connexion échoue toujours), secret et codes de secours 2FA effacés,
+      `date_suppression` posée (colonne ajoutée, migration additive,
+      **à AJOUTER au MCD Looping** ; `compterJoueurs` exclut ces comptes).
+      La ligne reste : les événements passés et les évaluations qui s'y
+      rattachent gardent leur cohérence, sans plus de lien avec une identité.
+      *Ce qui se passe avant* : événements à venir organisés → annulés (les
+      inscrits acceptés sont prévenus, même mécanisme que l'annulation) ;
+      inscriptions à des événements à venir → retirées (place libérée) ;
+      événements terminés et inscriptions passées → conservés.
+      Confirmé par le mot de passe, et par un code si la 2FA est active. Un
+      compte administrateur ne peut pas être supprimé ici (403). Le serveur
+      efface le cookie. Limite assumée : le JWT (24 h, sans état) d'un autre
+      appareil reste techniquement valide jusqu'à expiration, comme pour un
+      changement de mot de passe (voir plus haut) ; le compte n'a plus de
+      données, mais ce jeton passerait `authentifier`.
+- [x] **Page Aide** (`/aide`, lien dans l'en-tête, accessible sans compte) :
+      FAQ statique (7 questions, contenu fixe dans `Aide.tsx`, pas en base) et
+      formulaire de contact (`POST /aide/contact`, `ContactService`, port
+      `NotificationEmailInterface` réutilisé). Le message part par email à
+      `SUPPORT_EMAIL` (défaut `support@onthepitch.local`), **rien n'est stocké
+      en base**. Contrairement aux notifications, un échec d'envoi remonte :
+      l'envoi est ici l'action demandée. `limiteurContact` : 5 envois par
+      heure et par IP, TOUTES les requêtes comptent (route publique qui
+      déclenche un email) ; `LIMITE_CONTACTS` le relève pour les tests.
+- [x] **Mentions légales** (`/mentions-legales`) et **politique de
+      confidentialité** (`/confidentialite`), pied de page sur toutes les pages.
+      Contenu écrit d'après ce que l'application fait réellement (données
+      collectées, un seul cookie technique, tiers : API Adresse, OpenStreetMap,
+      fournisseur d'emails). Écart assumé : nom, prénom et ville ne sont pas
+      modifiables dans l'application (seuls l'email et le mot de passe le
+      sont) ; la politique renvoie vers le formulaire de contact pour les
+      corriger.
+      Testé : 7 tests Jest sur la suppression + 2 sur le contact (138 au
+      total), 1 test d'intégration par sujet (`evenements.spec.ts`,
+      `authentification.spec.ts`), 3 tests E2E (`compte.spec.ts`,
+      `aide.spec.ts`) — 34 tests Playwright au total, tous verts.
+
 ### Qualité et déploiement
 - [x] Tests Jest sur la couche Service — 76 tests, 8 services (Auth, Evenement,
       RechercheEvenement, Inscription, Presence, Moderation, Geocodage, Photo), repositories
@@ -1278,6 +1330,7 @@ avec le choix de Prisma comme ORM (voir plus haut, section "Choix Prisma plutôt
 | Créer un événement | — | ✓ | — |
 | Rejoindre un événement | — | ✓ | — |
 | Se désinscrire d'un événement | — | ✓ | — |
+| Supprimer son compte | — | ✓ | — (voir section Aide et conformité) |
 | Annuler une annonce | — | ✓ (les siennes) | ✓ |
 | Marquer les présences | — | ✓ (les siennes) | — |
 | Modérer les annonces | — | — | ✓ |
@@ -1518,6 +1571,8 @@ Quatre écrans, maquettés pour les trois premiers :
   à mettre à jour pour rester cohérent avec le code
 - `photo` et `photo_type` doivent être ajoutés à `lieu` au MCD Looping (absents
   actuellement, voir section "Modèle de données")
+- `utilisateur.date_suppression` (suppression de compte, section "Aide et
+  conformité") doit être ajoutée au MCD Looping
 - La table `notification` (entière) doit être ajoutée au MCD Looping (absente
   actuellement, voir section "Modèle de données")
 

@@ -31,6 +31,8 @@ import { ModerationController } from "../controllers/moderationController";
 import { EvaluationController } from "../controllers/evaluationController";
 import { PhotoController } from "../controllers/photoController";
 import { NotificationController } from "../controllers/notificationController";
+import { ContactService } from "../services/contactService";
+import { ContactController } from "../controllers/contactController";
 import { CompteController } from "../controllers/compteController";
 import { DoubleAuthController } from "../controllers/doubleAuthController";
 
@@ -49,7 +51,6 @@ const notificationEmail = new NotificationEmailNodemailer();
 const totp = new TotpOtplib();
 
 const authService = new AuthService(utilisateurRepository);
-const compteService = new CompteService(utilisateurRepository);
 const doubleAuthService = new DoubleAuthService(utilisateurRepository, totp);
 const geocodageService = new GeocodageService();
 const notificationService = new NotificationService(notificationRepository, notificationEmail, utilisateurRepository);
@@ -60,11 +61,20 @@ const evenementService = new EvenementService(
   notificationService,
   evaluationRepository
 );
+const compteService = new CompteService(
+  utilisateurRepository,
+  evenementRepository,
+  inscriptionRepository,
+  evenementService,
+  doubleAuthService
+);
 const rechercheEvenementService = new RechercheEvenementService(evenementRepository);
 const inscriptionService = new InscriptionService(inscriptionRepository, evenementRepository, notificationService);
 const presenceService = new PresenceService(inscriptionRepository, evenementRepository);
 const moderationService = new ModerationService(signalementRepository, evenementRepository, utilisateurRepository);
 const evaluationService = new EvaluationService(evaluationRepository, evenementRepository, inscriptionRepository);
+// `||` : SUPPORT_EMAIL peut exister mais vide (copie de .env.example).
+const contactService = new ContactService(notificationEmail, process.env["SUPPORT_EMAIL"] || "support@onthepitch.local");
 const photoService = new PhotoService(lieuRepository, evenementRepository);
 
 // Exporté en plus des controllers : server.ts en a besoin directement pour la
@@ -72,6 +82,7 @@ const photoService = new PhotoService(lieuRepository, evenementRepository);
 export { evenementService };
 
 export const authController = new AuthController(authService);
+export const contactController = new ContactController(contactService);
 export const compteController = new CompteController(compteService);
 export const doubleAuthController = new DoubleAuthController(doubleAuthService);
 export const evenementController = new EvenementController(evenementService, rechercheEvenementService);

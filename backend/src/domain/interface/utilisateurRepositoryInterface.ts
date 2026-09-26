@@ -25,7 +25,13 @@ export interface UtilisateurRepositoryInterface {
   // Passe le statut de l'utilisateur à "averti" (modération).
   avertir(id: number): Promise<void>;
 
-  // Nombre de comptes joueurs — vue d'ensemble du tableau de bord admin.
+  // Anonymise le compte (droit à l'effacement) : nom, prénom, email, ville
+  // remplacés, mot de passe rendu inutilisable, 2FA effacée, date de
+  // suppression posée. La ligne reste (l'historique lui est rattaché) ; l'email
+  // d'origine est libéré (contrainte UNIQUE).
+  anonymiser(id: number): Promise<void>;
+
+  // Nombre de comptes joueurs (hors comptes supprimés) — vue d'ensemble du tableau de bord admin.
   compterJoueurs(): Promise<number>;
 
   // Remplace l'email (identifiant de connexion et destinataire des

@@ -13,6 +13,9 @@ export const registerCompteRoutes = (controller: CompteController, doubleAuthCon
   compteRoutes.patch("/email", authentifier, limiteurTentatives, controller.changerEmail);
   compteRoutes.patch("/mot-de-passe", authentifier, limiteurTentatives, controller.changerMotDePasse);
 
+  // Suppression du compte (RGPD) : mot de passe (et code 2FA) exigés, donc limiteur.
+  compteRoutes.delete("/", authentifier, limiteurTentatives, controller.deleteCompte);
+
   // Double authentification : activer et désactiver exigent un code valide,
   // donc le limiteur s'y applique aussi (codes devinés sur une session ouverte).
   compteRoutes.post("/2fa/initialiser", authentifier, doubleAuthController.initialiser);

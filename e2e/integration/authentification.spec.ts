@@ -117,4 +117,16 @@ test.describe("Intégration — authentification et compte", () => {
     expect(faux.status()).toBe(400);
     expect((await faux.json()).champ).toBe("motDePasse");
   });
+
+  test("contact (public) : 204 sans session, 400 si le message est trop court ou l'email invalide", async () => {
+    const api = await nouveauContexteApi();
+    const valide = { nom: "Visiteur", email: emailUnique("integ.contact"), message: "Bonjour, j'ai une question." };
+
+    expect((await api.post(`${API}/aide/contact`, { data: valide })).status()).toBe(204);
+
+    const court = await api.post(`${API}/aide/contact`, { data: { ...valide, message: "court" } });
+    expect(court.status()).toBe(400);
+    const mauvaisEmail = await api.post(`${API}/aide/contact`, { data: { ...valide, email: "pas-un-email" } });
+    expect(mauvaisEmail.status()).toBe(400);
+  });
 });

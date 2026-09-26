@@ -19,4 +19,9 @@ export const compteService = {
 
   desactiverDoubleAuth: (code: string): Promise<void> =>
     appelApi("/compte/2fa/desactiver", { methode: "POST", corps: { code } }),
+
+  // Anonymise le compte (droit à l'effacement) ; le serveur efface aussi le cookie.
+  // Le code n'est exigé que si la double authentification est active.
+  supprimerCompte: (motDePasse: string, code?: string): Promise<void> =>
+    appelApi("/compte", { methode: "DELETE", corps: { motDePasse, code: code || undefined } }),
 };

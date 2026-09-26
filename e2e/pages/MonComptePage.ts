@@ -15,6 +15,24 @@ export class MonComptePage {
     this.sectionDoubleAuth = page.locator("section", { has: page.getByRole("heading", { name: "Double authentification" }) });
   }
 
+  private get sectionSuppression(): Locator {
+    return this.page.locator("section", { has: this.page.getByRole("heading", { name: "Supprimer mon compte" }) });
+  }
+
+  async ouvrirSuppression(): Promise<void> {
+    await this.sectionSuppression.getByRole("button", { name: "Supprimer mon compte" }).click();
+  }
+
+  // Suppose la confirmation ouverte (ouvrirSuppression) ; reste ouverte après un refus.
+  async confirmerSuppression(motDePasse: string): Promise<void> {
+    await this.sectionSuppression.getByLabel("Mot de passe").fill(motDePasse);
+    await this.sectionSuppression.getByRole("button", { name: "Supprimer définitivement" }).click();
+  }
+
+  erreurSuppression(): Locator {
+    return this.sectionSuppression.getByRole("alert").or(this.sectionSuppression.locator(".erreur-champ"));
+  }
+
   async aller(): Promise<void> {
     await this.page.goto("/compte");
   }
