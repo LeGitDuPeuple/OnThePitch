@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import "../styles/monCompte.css";
 import "../styles/aide.css";
+import { TitrePage } from "../components/TitrePage";
 
 export const Confidentialite = () => (
   <main className="page-compte page-legale">
+<TitrePage titre={"Politique de confidentialité"} description={"Données collectées par OnThePitch, cookies utilisés et droits des utilisateurs."} />
     <h1>Politique de confidentialité</h1>
 
     <h2>Responsable du traitement</h2>

@@ -5,6 +5,7 @@ import { LIBELLES_NIVEAU } from "../types/evenement";
 import type { Evenement } from "../types/evenement";
 import "../styles/carteRecherche.css";
 import "../styles/profil.css";
+import { TitrePage } from "../components/TitrePage";
 
 const formaterDateCourte = (date: string) => {
   const d = new Date(date);
@@ -84,6 +85,7 @@ export const Profil = () => {
   if (!utilisateur) {
     return (
       <main className="page-profil">
+<TitrePage titre={"Mon profil"} description={"Vos événements organisés, rejoints et vos demandes en attente."} indexable={false} />
         <p>
           <Link to="/connexion">Connectez-vous</Link> pour voir votre profil.
         </p>
@@ -93,6 +95,7 @@ export const Profil = () => {
 
   return (
     <main className="page-profil">
+<TitrePage titre={"Mon profil"} description={"Vos événements organisés, rejoints et vos demandes en attente."} indexable={false} />
       <div className="profil-entete">
         <Avatar nom={utilisateur.nom} prenom={utilisateur.prenom} taille={48} />
         <h1>

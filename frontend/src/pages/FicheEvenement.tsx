@@ -23,6 +23,7 @@ import {
   type PresenceReponse,
 } from "../types/evenement";
 import "../styles/ficheEvenement.css";
+import { TitrePage } from "../components/TitrePage";
 
 const formaterDateLongue = (date: string) =>
   new Date(date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -83,6 +84,7 @@ export const FicheEvenement = () => {
   if (!evenement) {
     return (
       <main className="page-fiche">
+<TitrePage titre="Événement" description="Fiche d'un événement de football amical sur OnThePitch." />
         <p role="alert" className="message-erreur">
           {erreur ?? "Événement introuvable"}
         </p>
@@ -109,6 +111,7 @@ export const FicheEvenement = () => {
 
   return (
     <main className="page-fiche">
+<TitrePage titre={evenement.titre} description={`Événement de football amical à ${evenement.lieu.ville}, le ${new Date(evenement.dateDebut).toLocaleDateString("fr-FR")}. Consultez les détails et inscrivez-vous.`} />
       <Link to="/" className="lien-retour">
         ← Retour aux résultats
       </Link>

@@ -3,6 +3,7 @@ import { useConnexionForm } from "../hooks/useConnexionForm";
 import { ErreurChamp } from "../components/ErreurChamp";
 import { FormulaireCodeDoubleAuth } from "../components/FormulaireCodeDoubleAuth";
 import "../styles/connexion.css";
+import { TitrePage } from "../components/TitrePage";
 
 export const Connexion = () => {
   const {
@@ -20,6 +21,7 @@ export const Connexion = () => {
 
   return (
     <main className="page-connexion">
+<TitrePage titre={"Connexion"} description={"Connectez-vous à votre compte OnThePitch."} indexable={false} />
       <h1>Connexion</h1>
       {doubleAuth.codeRequis ? (
         <FormulaireCodeDoubleAuth {...doubleAuth} />

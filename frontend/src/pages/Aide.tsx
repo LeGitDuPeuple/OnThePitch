@@ -5,6 +5,7 @@ import { ErreurChamp } from "../components/ErreurChamp";
 import { MessageConfirmation } from "../components/MessageConfirmation";
 import "../styles/monCompte.css";
 import "../styles/aide.css";
+import { TitrePage } from "../components/TitrePage";
 
 const QUESTIONS: { question: string; reponse: React.ReactNode }[] = [
   {
@@ -73,6 +74,7 @@ export const Aide = () => {
 
   return (
     <main className="page-compte page-aide">
+<TitrePage titre={"Aide et questions fréquentes"} description={"Réponses aux questions fréquentes sur OnThePitch et formulaire pour contacter l'équipe."} />
       <h1>Aide</h1>
 
       <section className="carte-compte">

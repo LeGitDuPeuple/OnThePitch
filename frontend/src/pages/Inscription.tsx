@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useInscriptionForm } from "../hooks/useInscriptionForm";
 import { ErreurChamp } from "../components/ErreurChamp";
 import "../styles/connexion.css";
+import { TitrePage } from "../components/TitrePage";
 
 export const Inscription = () => {
   const {
@@ -26,6 +27,7 @@ export const Inscription = () => {
 
   return (
     <main className="page-connexion">
+<TitrePage titre={"Créer un compte"} description={"Créez votre compte OnThePitch pour publier et rejoindre des événements de football amicaux."} />
       <h1>Créer un compte</h1>
       <form onSubmit={soumettre}>
         <div className="ligne-champs">

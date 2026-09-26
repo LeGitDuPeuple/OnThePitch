@@ -9,6 +9,7 @@ import { ErreurChamp } from "../components/ErreurChamp";
 import { MessageConfirmation } from "../components/MessageConfirmation";
 import { LIBELLES_NIVEAU } from "../types/evenement";
 import "../styles/carteRecherche.css";
+import { TitrePage } from "../components/TitrePage";
 
 const RAYONS_KM = [5, 10, 20, 50, 100];
 
@@ -50,6 +51,7 @@ export const CarteRecherche = () => {
 
   return (
     <main className="page-recherche">
+<TitrePage titre={"Trouver un événement de football près de chez vous"} description={"Recherchez des événements de football amicaux autour de vous, dans le rayon de votre choix, et rejoignez une partie."} />
       <h1 className="sr-only">Rechercher un événement</h1>
       <MessageConfirmation message={messageConfirmation} lien={lienConfirmation} onFermer={effacerConfirmation} />
       <div className="panneau-recherche">

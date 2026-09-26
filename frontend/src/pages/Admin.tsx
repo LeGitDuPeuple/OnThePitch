@@ -7,6 +7,7 @@ import { useDeconnexion } from "../hooks/useDeconnexion";
 import type { SignalementDetail, EvenementAdmin } from "../types/moderation";
 import type { StatutEvenement } from "../types/evenement";
 import "../styles/admin.css";
+import { TitrePage } from "../components/TitrePage";
 
 const formaterDate = (date: string) =>
   new Date(date).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
@@ -32,6 +33,7 @@ export const Admin = () => {
   if (utilisateur.role !== "administrateur") {
     return (
       <main className="page-admin">
+<TitrePage titre={"Administration"} description={"Espace de modération réservé aux administrateurs."} indexable={false} />
         <p>Ce tableau de bord est réservé aux administrateurs.</p>
       </main>
     );
@@ -45,6 +47,7 @@ const ConnexionAdmin = () => {
 
   return (
     <main className="page-admin">
+<TitrePage titre={"Administration"} description={"Espace de modération réservé aux administrateurs."} indexable={false} />
       <h1>Administration</h1>
       {doubleAuth.codeRequis ? (
         <FormulaireCodeDoubleAuth {...doubleAuth} />
@@ -91,6 +94,7 @@ const TableauDeBord = () => {
 
   return (
     <main className="page-admin">
+<TitrePage titre={"Administration"} description={"Espace de modération réservé aux administrateurs."} indexable={false} />
       <div className="entete-admin">
         <h1>Tableau de bord</h1>
         <button type="button" className="bouton-secondaire" onClick={() => void deconnecter()} disabled={deconnexionEnCours}>

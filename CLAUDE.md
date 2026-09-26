@@ -786,6 +786,22 @@ une FAQ, un contact et des mentions légales, qui n'existaient pas.
       `authentification.spec.ts`), 3 tests E2E (`compte.spec.ts`,
       `aide.spec.ts`) — 34 tests Playwright au total, tous verts.
 
+### Référencement (SEO)
+- [x] **Socle de référencement naturel** (26/09/2026, à la demande du porteur de
+      projet, pour que la rubrique « Référencement » du dossier projet décrive
+      du réel). `components/TitrePage.tsx` pose, à l'affichage de chaque écran,
+      un titre (`<titre> | OnThePitch`), une description et, pour les écrans
+      privés (compte, profil, connexion, création, admin), `noindex, nofollow`.
+      La fiche événement prend le titre de l'événement et une description
+      composée (ville, date). `index.html` porte les valeurs par défaut
+      (description, `theme-color`, balises Open Graph texte). `public/robots.txt`
+      exclut `/admin`, `/compte`, `/profil`, `/connexion`, `/creer`.
+      Limites assumées : application à page unique (le titre est posé par
+      JavaScript, Google l'exécute mais les robots de partage de lien non — les
+      balises Open Graph restent donc génériques, sans image), pas de plan du site
+      (`sitemap.xml`) ni de rendu côté serveur. Vérifié : titres et balises par
+      page relevés dans un navigateur, 34 tests Playwright toujours verts.
+
 ### Qualité et déploiement
 - [x] Tests Jest sur la couche Service — 76 tests, 8 services (Auth, Evenement,
       RechercheEvenement, Inscription, Presence, Moderation, Geocodage, Photo), repositories

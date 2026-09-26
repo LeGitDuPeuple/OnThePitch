@@ -6,6 +6,7 @@ import { SuggestionsAdresse } from "../components/SuggestionsAdresse";
 import { ErreurChamp } from "../components/ErreurChamp";
 import { FORMATS_COURANTS, LIBELLES_NIVEAU, type NiveauRequis } from "../types/evenement";
 import "../styles/creationAnnonce.css";
+import { TitrePage } from "../components/TitrePage";
 
 const NIVEAUX: NiveauRequis[] = ["tous_niveaux", "debutant", "intermediaire", "confirme"];
 
@@ -52,6 +53,7 @@ export const CreationAnnonce = () => {
   if (!utilisateur) {
     return (
       <main className="page-creation">
+<TitrePage titre={"Publier un événement"} description={"Publiez un événement de football amical et trouvez des joueurs près de chez vous."} indexable={false} />
         <p>
           <Link to="/connexion">Connectez-vous</Link> pour créer un événement.
         </p>
@@ -62,6 +64,7 @@ export const CreationAnnonce = () => {
   if (utilisateur.role !== "joueur") {
     return (
       <main className="page-creation">
+<TitrePage titre={"Publier un événement"} description={"Publiez un événement de football amical et trouvez des joueurs près de chez vous."} indexable={false} />
         <p>Seuls les joueurs peuvent créer un événement.</p>
       </main>
     );
@@ -76,6 +79,7 @@ export const CreationAnnonce = () => {
 
   return (
     <main className="page-creation">
+<TitrePage titre={"Publier un événement"} description={"Publiez un événement de football amical et trouvez des joueurs près de chez vous."} indexable={false} />
       <h1>Créer une annonce</h1>
       <p className="texte-accroche">Publiez votre événement, les joueurs à proximité pourront le trouver et s'y inscrire.</p>
 

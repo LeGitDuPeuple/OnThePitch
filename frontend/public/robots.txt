@@ -1,0 +1,8 @@
+# Les pages publiques (recherche, fiches d'événements, aide) peuvent être
+# indexées ; les pages liées à un compte ou à l'administration, non.
+User-agent: *
+Disallow: /admin
+Disallow: /compte
+Disallow: /profil
+Disallow: /connexion
+Disallow: /creer

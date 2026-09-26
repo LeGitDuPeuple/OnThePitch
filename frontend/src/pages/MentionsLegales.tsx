@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import "../styles/monCompte.css";
 import "../styles/aide.css";
+import { TitrePage } from "../components/TitrePage";
 
 export const MentionsLegales = () => (
   <main className="page-compte page-legale">
+<TitrePage titre={"Mentions légales"} description={"Mentions légales de la plateforme OnThePitch."} />
     <h1>Mentions légales</h1>
 
     <h2>Éditeur du site</h2>

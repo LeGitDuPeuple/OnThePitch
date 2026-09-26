@@ -8,6 +8,7 @@ import { useSuppressionCompte } from "../hooks/useSuppressionCompte";
 import { ErreurChamp } from "../components/ErreurChamp";
 import { MessageConfirmation } from "../components/MessageConfirmation";
 import "../styles/monCompte.css";
+import { TitrePage } from "../components/TitrePage";
 
 export const MonCompte = () => {
   const { utilisateur, chargementInitial } = useAppSelector((state) => state.auth);
@@ -17,6 +18,7 @@ export const MonCompte = () => {
   if (!utilisateur) {
     return (
       <main className="page-compte">
+<TitrePage titre={"Mon compte"} description={"Gérez votre adresse email, votre mot de passe et votre double authentification."} indexable={false} />
         <p>
           Vous devez être connecté pour accéder à votre compte. <Link to="/connexion">Se connecter</Link>
         </p>
@@ -26,6 +28,7 @@ export const MonCompte = () => {
 
   return (
     <main className="page-compte">
+<TitrePage titre={"Mon compte"} description={"Gérez votre adresse email, votre mot de passe et votre double authentification."} indexable={false} />
       <h1>Mon compte</h1>
       <SectionEmail />
       <SectionMotDePasse />
