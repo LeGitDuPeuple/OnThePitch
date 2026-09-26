@@ -4,7 +4,7 @@
 # en partant d'une image Debian dès le départ. Prisma, lui, n'a pas ce
 # problème ici : ce projet utilise @prisma/adapter-pg (requêtes via le driver
 # pg standard), donc aucun moteur binaire Prisma à gérer.
-FROM node:24-slim AS build
+FROM node:26-slim AS build
 WORKDIR /app
 
 COPY package*.json ./
@@ -17,7 +17,7 @@ RUN npm run build
 # --- Image finale : le code compilé (dist/) plutôt que les sources
 # TypeScript, mais node_modules complet — la CLI Prisma (normalement une
 # dépendance de dev) reste nécessaire au démarrage pour "migrate deploy".
-FROM node:24-slim
+FROM node:26-slim
 WORKDIR /app
 
 # Recommandé par Prisma lui-même pour Docker : sans openssl, le moteur de
